@@ -2,14 +2,14 @@
   "$comment": "The Appropriate Legal Notices of Market Canopy Office (ADR 0527 decision 2; the additional terms 1 to 5 of LICENSE). build_tools/make.py turns this file into the start page's About notice and the editors' About notice and adds the build fields (version, number, flavor, upstream tag, source commit, modification dates). English only. Wording is not legal clearance: the legal review is the owner's (P03 report).",
   "product": "Market Canopy Office",
   "origin": "Market Canopy Office is a modified version of ONLYOFFICE Desktop Editors, the original software developed by Ascensio System SIA.",
-  "modification": "Modified by Market Canopy. This version differs from the original: it carries Market Canopy names, artwork and update feeds, and leaves out ONLYOFFICE's commercial add-on and some web links.",
+  "modification": "Modified by Market Canopy LLC. This version differs from the original: it carries Market Canopy names, artwork and update feeds, and leaves out ONLYOFFICE's commercial add-on and some web links.",
   "copyright": [
     "Copyright (C) Ascensio System SIA 2009-{year}. ONLYOFFICE Desktop Editors and its components.",
-    "Modifications copyright (C) Market Canopy {modificationYears}."
+    "Modifications copyright (C) Market Canopy LLC {modificationYears}."
   ],
   "license": "Market Canopy Office is free software: you can redistribute it and/or modify it under the terms of the GNU Affero General Public License version 3, as published by the Free Software Foundation, together with the additional terms in its LICENSE file.",
   "warranty": "This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more details.",
-  "trademarks": "ONLYOFFICE is a trademark of Ascensio System SIA. Market Canopy Office is not affiliated with, sponsored or endorsed by Ascensio System SIA. The Market Canopy name and artwork are not licensed under the AGPL or CC BY-SA.",
+  "trademarks": "ONLYOFFICE is a trademark of Ascensio System SIA. Market Canopy Office is not affiliated with, sponsored or endorsed by Ascensio System SIA. Market Canopy™ is an unregistered trademark of Market Canopy LLC. The Market Canopy name and artwork are not licensed under the AGPL or CC BY-SA.",
   "nonCode": "Some non-code elements of the original program (illustrations, icon sets, technical writing) are licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.",
   "links": {
     "license": {"label": "GNU AGPL v3", "url": "https://www.gnu.org/licenses/agpl-3.0.html"},

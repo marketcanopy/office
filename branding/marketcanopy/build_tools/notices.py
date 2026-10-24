@@ -1,6 +1,6 @@
 #
 # Market Canopy Office: the Appropriate Legal Notices shown in About.
-# Copyright (C) 2026 Market Canopy
+# Copyright (C) 2026 Market Canopy LLC
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License version 3 as published by

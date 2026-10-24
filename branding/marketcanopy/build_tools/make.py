@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Market Canopy Office: build_tools branding hook.
-# Copyright (C) 2026 Market Canopy
+# Copyright (C) 2026 Market Canopy LLC
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License version 3 as published by
@@ -212,7 +212,7 @@ def set_build_settings(settings):
     # web-apps build/Gruntfile.js replaces these in the editors. Its defaults are
     # ONLYOFFICE's, and an empty value falls back to them, so every one is set.
     editor_strings = {
-        "PUBLISHER_NAME": identity["companyName"],
+        "PUBLISHER_NAME": identity["copyrightHolder"],
         "PUBLISHER_URL": urls["site"],
         "COMPANY_NAME": identity["companyName"],
         "APP_TITLE_TEXT": identity["productName"],
@@ -229,8 +229,6 @@ def set_build_settings(settings):
         if not value:
             fail("settings.json leaves %s empty; web-apps would fall back to ONLYOFFICE's value" % name)
         os.environ[name] = value
-    if urls["supportMail"].endswith(".invalid"):
-        log("warning: urls.supportMail is the placeholder %s (owner item)" % urls["supportMail"])
 
 
 def build_fields(root, upstream, flavor):

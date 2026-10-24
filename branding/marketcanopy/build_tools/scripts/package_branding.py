@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 #
 # Market Canopy Office: packaging names for build_tools' make_package.py.
-# Copyright (C) 2026 Market Canopy
+# Copyright (C) 2026 Market Canopy LLC
 #
 # Modified version of build_tools/scripts/package_branding.py from ONLYOFFICE
 # build_tools (Copyright (C) Ascensio System SIA), based on the tag recorded in

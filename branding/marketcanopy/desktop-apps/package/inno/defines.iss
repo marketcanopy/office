@@ -12,10 +12,10 @@
 #define sIntProductName                 "Office"
 #define sAppName                        "Market Canopy Office"
 #define sPackageName                    str(sIntCompanyName + "-" + sIntProductName)
-#define sAppPublisher                   "Market Canopy"
+#define sAppPublisher                   "Market Canopy LLC"
 #define sAppPublisherURL                "https://marketcanopy.com/"
 #define sAppSupportURL                  "https://marketcanopy.com/help"
-#define sAppCopyright                   str("Copyright (C) Ascensio System SIA 2009-" + GetDateTimeString("yyyy",,) + ". Modifications copyright (C) Market Canopy 2026-" + GetDateTimeString("yyyy",,) + ".")
+#define sAppCopyright                   str("Copyright (C) Ascensio System SIA 2009-" + GetDateTimeString("yyyy",,) + ". Modifications copyright (C) Market Canopy LLC 2026-" + GetDateTimeString("yyyy",,) + ".")
 #define sAppIconName                    "Market Canopy Office"
 ; Upstream deletes shortcuts its older versions left; ours has no older version,
 ; and must never delete an ONLYOFFICE shortcut, so the name is our own.

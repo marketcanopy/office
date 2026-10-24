@@ -1,6 +1,6 @@
 # Market Canopy Office integration contract
 
-- Contract version: `1.0.0` (see `VERSION`), frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
+- Contract version: `1.1.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
 - Upstream baseline: ONLYOFFICE Desktop Editors `v10.0.0.176` (desktop-apps `3fd628f986f5ae42853fefa3dbbb10c3992bf71c`, desktop-sdk `a75c35326aad475a5a4ec904baa9a5d518bcc162`). Every upstream seam cited below was read at that tag and is byte-identical to the research pins (desktop-apps `332c1905`, desktop-sdk `ae6cf2a0`).
 - Decision records: platform-api ADRs 0523 to 0530. This document replaces the contract baseline in platform-api `docs/architecture/marketcanopy-office/contracts.md` where they differ; section 14 lists every difference and why.
 - Normative words: MUST, MUST NOT, SHOULD. Examples are synthetic; no value in this folder is a real credential.
@@ -194,15 +194,16 @@ All API routes follow the API's conventions: `/v1` prefix, `{ success, data, met
 
 - `POST /v1/auth/refresh` with `{ "refreshToken": "dsr_…" }` and Office's client headers returns `{ accessToken, refreshToken, expiresIn }`. Access tokens live 15 minutes (`DEVICE_SESSION_ACCESS_EXPIRES_IN`); every refresh rotates; a rotated token presented again after 30 seconds revokes the session. At most 10 sessions per user per app.
 - `POST /v1/auth/logout` from Office's session revokes it. Desktop sign-out revokes the desktop device group and every linked grant under it (P06). A revoked or expired session answers 401: Office treats any 401 from a credential route as signed out (clears its grant entry by compare-and-delete, drops the provider's cookies and AI state, keeps editing local files).
-- Below the client app's minimum version the API answers 426 `CLIENT_UPGRADE_REQUIRED` (existing code, ADR 0404 decision 2); Office shows "Update required" for cloud and AI and keeps local editing.
+- Below the client app's minimum version the API answers 426 `CLIENT_UPGRADE_REQUIRED` (existing code and response, ADR 0404 decision 2, `ClientContextGuard`): message `Version <X-Client-Version> is no longer supported; update the app`, `details: { storeUrl, minSupportedVersion }` from the client-app registry (`storeUrl` may be empty while none is registered). Office shows "Update required" for cloud and AI, offers `details.storeUrl` when it is not empty, and keeps local editing.
 
 ### 6.4 Standalone browser sign-in (new)
 
-1. Office generates a PKCE verifier (43 to 128 characters, RFC 7636) and `state`, and opens the system browser at `<appOrigin>/auth/native?clientApp=com.marketcanopy.office&codeChallenge=<S256>&state=<state>`. That page offers every sign-in method the web offers (password, SSO, MFA) and ends by redirecting to the client app's registered `ssoRedirectUri`, `mc-office://auth/callback` (section 4.2).
-2. Office redeems: `POST /v1/auth/native/exchange` with `{ code, codeVerifier }` and its client headers. Response `data`: `{ accessToken, refreshToken, expiresIn, deviceSessionId, user: { id, email, displayName } }`, or the second-factor challenge the sign-in still owes (the existing mobile exchange's shape).
-3. Office writes the grant entry with `writtenBy: "office"`.
+1. Office generates a PKCE verifier (43 to 128 characters, RFC 7636) and `state` (43 base64url characters), and opens the system browser at `<appOrigin>/auth/native?clientApp=com.marketcanopy.office&codeChallenge=<S256>&state=<state>`. That dashboard page signs the person in with every method the web offers (password, SSO, every second factor) and requires that the web session passed all of them in the last 5 minutes; an older session signs in again first.
+2. The page mints the handoff: `POST /v1/auth/native/handoffs` (new), bearer the dashboard's web session, body `{ clientApp, codeChallenge, state }`. `clientApp` must be a registered client app with an `ssoRedirectUri`; `codeChallenge` is the S256 challenge (43 base64url characters); `state` is Office's value, which the API only echoes. Response `data`: `{ redirectUri, expiresAt }`, where `redirectUri` is the app's registered `ssoRedirectUri` with `code` and `state` added, `mc-office://auth/callback?code=<code>&state=<state>` (section 4.2), and `expiresAt` is the code's expiry (5 minutes). The page sends the browser to `redirectUri`. Errors: `UNAUTHORIZED` (401, no web session, or one whose factors are older than 5 minutes), `VALIDATION_ERROR` (422, an unknown client app, one without `ssoRedirectUri`, or a malformed challenge or state).
+3. Office redeems: `POST /v1/auth/native/exchange` with `{ code, codeVerifier }` and its client headers. Response `data`: `{ accessToken, refreshToken, expiresIn, deviceSessionId, user: { id, email, displayName } }`. A code is minted only after every factor passed, so the exchange never returns a second-factor challenge.
+4. Office writes the grant entry with `writtenBy: "office"`.
 
-Errors: `CODE_EXPIRED` (401), `CODE_REPLAYED` (401), `UNAUTHORIZED` (401, verifier mismatch; the code stays redeemable by the holder of the right verifier, as `SsoDesktopHandoffService.exchange` does today).
+Exchange errors: `CODE_EXPIRED` (401), `CODE_REPLAYED` (401), `UNAUTHORIZED` (401, verifier mismatch; the code stays redeemable by the holder of the right verifier, as `SsoDesktopHandoffService.exchange` does today).
 
 ## 7. Market Canopy Cloud connection
 
@@ -215,7 +216,7 @@ Errors: `CODE_EXPIRED` (401), `CODE_REPLAYED` (401), `UNAUTHORIZED` (401, verifi
 
 ### 7.2 Redeem (new)
 
-`POST /v1/office/web-session/redeem`, called server-side by the connect page with `{ code }`. Response `data`: `{ userId, organizationId, displayName, deviceSessionId, sessionExpiresAt }`, and the page sets:
+`POST /v1/office/web-session/redeem`, called server-side by the connect page with `{ code }`. Response `data`: `{ userId, organizationId, displayName, deviceSessionId, sessionExpiresAt }`, and the response carries the cookie, which the page's server relays to the browser unchanged:
 
 ```
 Set-Cookie: __Host-mc_office_web=<opaque>; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=28800
@@ -225,7 +226,21 @@ The session is renewed while used, ends at the device session's revocation, and 
 
 Errors: `CODE_EXPIRED` (401), `CODE_REPLAYED` (401), `WRONG_AUDIENCE` (403, a code minted for another audience), `GRANT_REVOKED` (401), `NOT_A_MEMBER` (403).
 
-After redemption the page calls `portal:login` with `{ provider: "marketcanopy", domain: <appOrigin>, uid: <userId>, displayName }`. Logout revokes the web session, clears the cookie and calls `portal:logout`.
+After redemption the page calls `portal:login` with `{ provider: "marketcanopy", domain: <appOrigin>, uid: <userId>, displayName }`.
+
+### 7.4 Access token for the connect pages (new)
+
+`POST /v1/office/web-session/token`, called server-side by the connect and document pages, which forward the browser's `Cookie: __Host-mc_office_web=<opaque>` header and nothing else. Body `{}`. Response `data`: `{ accessToken, expiresAt, organizationId }`: an access token of the Office device session the web session is bound to (Office's own audience, never `office-ai`), living at most 15 minutes (`DEVICE_SESSION_ACCESS_EXPIRES_IN`), and the organization the session is bound to. The page's server sends that token as the bearer and `organizationId` as `x-active-organization-id` on its API calls, and never hands the token to the browser. Errors: `UNAUTHORIZED` (401, no cookie, or an expired or revoked web session), `GRANT_REVOKED` (401, the device session was revoked), `NOT_A_MEMBER` (403).
+
+### 7.5 Web-session logout (new)
+
+`POST /v1/office/web-session/logout`, called server-side with the forwarded cookie. Body `{}`. Revokes the web session (not the device session) and answers `data`: `{ revoked }` (`false` when there was no live web session; the call is idempotent and never fails for a missing or expired cookie) with the cookie cleared:
+
+```
+Set-Cookie: __Host-mc_office_web=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0
+```
+
+The page relays the cookie and calls `portal:logout`.
 
 ### 7.3 Provider declaration
 
@@ -372,13 +387,13 @@ Signed with the runtime-pack key the desktop app already trusts (ADR 0528 decisi
 
 | Code | HTTP | Surfaces | Office shows |
 | --- | --- | --- | --- |
-| `UNAUTHORIZED` | 401 | All API | Signed out |
-| `GRANT_REVOKED` | 401 | Linked grant, refresh, web session, gateway | Signed out |
+| `UNAUTHORIZED` | 401 | All API, including the handoff and the web-session token | Signed out |
+| `GRANT_REVOKED` | 401 | Linked grant, refresh, web session and its token, gateway | Signed out |
 | `ACCOUNT_CHANGED` | 409 | Office internal: the grant entry now names another user | Reconnecting |
 | `CODE_EXPIRED` | 401 | Sign-in exchange, web-session redeem | Retry silently once, then "Couldn't connect" |
 | `CODE_REPLAYED` | 401 | Same | Same |
 | `WRONG_AUDIENCE` | 403 | Web-session redeem, gateway, every route given an `office-ai` token | Signed out |
-| `NOT_A_MEMBER` | 403 | Bootstrap, web session, gateway | Organization picker |
+| `NOT_A_MEMBER` | 403 | Bootstrap, web session and its token, gateway | Organization picker |
 | `CLIENT_UPGRADE_REQUIRED` | 426 | All API (existing code) | Update required |
 | `AI_NOT_ENTITLED` | 403 | Gateway | "AI isn't included in your plan" |
 | `QUOTA_EXCEEDED` | 429 | Gateway | "Your organization has used its AI allowance" |
@@ -401,7 +416,7 @@ Every error carries safe text and a request id, never a token, a code, a path fr
 
 ## 14. Versioning, freeze and changes from the baseline
 
-- Frozen as `1.0.0` once P01's tag (`v10.0.0.176` in every component) and seam list matched the citations at the top of this document. The coordinator records the version and the hash printed by `npm run hash` (also in `CONTRACT.sha256`).
+- `1.0.0` was frozen once P01's tag (`v10.0.0.176` in every component) and seam list matched the citations at the top of this document. The coordinator records the version and the hash printed by `npm run hash` (also in `CONTRACT.sha256`).
 - After freeze, any change increments the version (minor for additions a consumer can ignore, major otherwise), adds a `CHANGELOG.md` entry naming the downstream units that rerun, and recomputes the hash. No consumer changes the contract privately.
 
 Changes from the baseline (`contracts.md`, 2026-10-24):

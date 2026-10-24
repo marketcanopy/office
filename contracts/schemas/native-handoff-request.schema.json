@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/native-handoff-request.schema.json",
+  "title": "POST /v1/auth/native/handoffs body (6.4)",
+  "type": "object",
+  "properties": {
+    "clientApp": {
+      "$ref": "common.schema.json#/$defs/officeClientApp"
+    },
+    "codeChallenge": {
+      "$ref": "common.schema.json#/$defs/base64url43"
+    },
+    "state": {
+      "$ref": "common.schema.json#/$defs/base64url43"
+    }
+  },
+  "required": [
+    "clientApp",
+    "codeChallenge",
+    "state"
+  ],
+  "additionalProperties": false
+}

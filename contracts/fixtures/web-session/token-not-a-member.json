@@ -1,0 +1,35 @@
+{
+  "fixture": 1,
+  "name": "token-not-a-member",
+  "description": "Membership of the bound organization ended",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/token",
+      "headers": {
+        "Cookie": "__Host-mc_office_web=<opaque>",
+        "Content-Type": "application/json"
+      },
+      "body": {}
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "NOT_A_MEMBER",
+          "message": "Choose another organization."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/web-session/token",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "NOT_A_MEMBER"
+  }
+}

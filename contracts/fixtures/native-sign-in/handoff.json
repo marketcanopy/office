@@ -1,0 +1,40 @@
+{
+  "fixture": 1,
+  "name": "handoff",
+  "description": "The /auth/native page mints the code after every factor passed in the last 5 minutes",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/auth/native/handoffs",
+      "headers": {
+        "Authorization": "Bearer <dashboard web session access token>",
+        "Content-Type": "application/json"
+      },
+      "schema": "native-handoff-request",
+      "body": {
+        "clientApp": "com.marketcanopy.office",
+        "codeChallenge": "ZXhhbXBsZS1jaGFsbGVuZ2Utbm90LXJlYWwtMDAwMDE",
+        "state": "ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE"
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "success": true,
+        "data": {
+          "redirectUri": "mc-office://auth/callback?code=ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE&state=ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE",
+          "expiresAt": "2026-10-24T21:45:00.000Z"
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "requestId": "req_example"
+        }
+      },
+      "schema": "native-handoff-response"
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

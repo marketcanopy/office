@@ -56,6 +56,14 @@ function assertValid(schema: string, value: unknown): void {
 
 const OFFICE_APPS = new Set(['com.marketcanopy.office', 'com.marketcanopy.desktop']);
 const GATEWAY_PREFIX = '/v1/office/ai/';
+/** Routes the dashboard or the connect pages' server call, without Office's client headers. */
+const WEB_CALLED = new Set([
+  '/v1/auth/native/handoffs',
+  '/v1/office/web-session/redeem',
+  '/v1/office/web-session/token',
+  '/v1/office/web-session/logout',
+]);
+const WEB_COOKIE = '__Host-mc_office_web';
 
 function header(headers: Json | undefined, name: string): string | undefined {
   if (headers === undefined) return undefined;
@@ -93,8 +101,8 @@ function checkExchange(folder: string, fixture: Fixture): void {
   }
 
   const gateway = path.startsWith(GATEWAY_PREFIX);
-  const redeem = path === '/v1/office/web-session/redeem';
-  if (!gateway && !redeem) {
+  const webCalled = WEB_CALLED.has(path);
+  if (!gateway && !webCalled) {
     const headersValid = clientHeadersValid(request['headers'] as Json | undefined);
     assert.equal(headersValid, expect['headersValid'] !== false, 'client headers');
   }
@@ -102,6 +110,12 @@ function checkExchange(folder: string, fixture: Fixture): void {
     const authorization = header(request['headers'] as Json, 'Authorization') ?? '';
     assert.ok(authorization.startsWith('Bearer '), 'gateway requests carry a bearer token');
     assert.ok(/^[0-9a-f]{24}$/.test(header(request['headers'] as Json, 'x-active-organization-id') ?? ''), 'gateway requests name the organization');
+  }
+
+  const cookie = header(request['headers'] as Json | undefined, 'Cookie');
+  if (cookie !== undefined) {
+    assert.ok(path.startsWith('/v1/office/web-session/'), 'only the web-session routes take the cookie');
+    assert.match(cookie, new RegExp(`^${WEB_COOKIE}=[^;]+$`), 'the page forwards the web-session cookie and nothing else');
   }
 
   const status = response['status'] as number;
@@ -128,6 +142,19 @@ function checkExchange(folder: string, fixture: Fixture): void {
       }
       assert.ok(!cookie.includes('Domain='), '__Host- cookies carry no Domain');
       assert.ok(!/asc_auth_key/.test(cookie), 'never the cookie upstream exposes to plugins');
+    }
+    if (typeof expect['clearsCookie'] === 'string') {
+      const cleared = (header(headers, 'Set-Cookie') ?? '').split('; ');
+      assert.equal(cleared[0], `${expect['clearsCookie']}=`, 'cookie emptied');
+      for (const attribute of ['Path=/', 'Secure', 'HttpOnly', 'SameSite=Lax', 'Max-Age=0']) {
+        assert.ok(cleared.includes(attribute), `cleared cookie ${attribute}`);
+      }
+    }
+    const data = gateway ? undefined : (body?.['data'] as Json | undefined);
+    if (typeof data?.['redirectUri'] === 'string') {
+      const callback = parseSchemeUrl(data['redirectUri']);
+      assert.ok(callback.ok && callback.kind === 'auth_callback', 'the redirect is the sign-in callback');
+      assert.equal(callback.state, (request['body'] as Json)['state'], 'the API echoes Office\'s state');
     }
     if (typeof expect['sameAs'] === 'string') {
       const first = exchanges.get(`${folder}/${expect['sameAs']}`);

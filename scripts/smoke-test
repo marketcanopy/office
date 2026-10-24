@@ -79,7 +79,8 @@ def defines(text, pattern):
 
 
 def parse_patch(path):
-    """[(file, is_new, added_lines)] of one format-patch file."""
+    """[(file, is_new, added_lines)] of one format-patch file; is_new is None
+    for a deleted file, whose notice is the patch's commit message."""
     files = []
     current = None
     for line in read(path).splitlines():
@@ -90,6 +91,8 @@ def parse_patch(path):
             continue
         elif line.startswith("new file mode"):
             current[1] = True
+        elif line.startswith("deleted file mode"):
+            current[1] = None
         elif line.startswith("+") and not line.startswith("+++ "):
             current[2].append(line[1:])
     return files
@@ -190,6 +193,8 @@ def check_queue(results):
         for path in files:
             for name, is_new, lines in parse_patch(path):
                 text = "\n".join(lines)
+                if is_new is None:
+                    continue
                 if is_new:
                     if "Market Canopy" not in text or "AGPL-3.0-only" not in text:
                         unlicensed.append(repo + "/" + name)

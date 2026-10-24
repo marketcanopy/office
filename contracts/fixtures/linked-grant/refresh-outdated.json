@@ -24,7 +24,11 @@
         "success": false,
         "error": {
           "code": "CLIENT_UPGRADE_REQUIRED",
-          "message": "Update Market Canopy Office."
+          "message": "Version 10.0.0.1 is no longer supported; update the app",
+          "details": {
+            "storeUrl": "https://app.marketcanopy.com/download/office",
+            "minSupportedVersion": "10.0.0.2"
+          }
         },
         "meta": {
           "timestamp": "2026-10-24T21:40:00.000Z",

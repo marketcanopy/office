@@ -1,0 +1,16 @@
+{
+  "fixture": 1,
+  "name": "exchange-no-second-factor",
+  "description": "The exchange never returns a second-factor challenge: codes are minted only after every factor passed",
+  "subject": "document",
+  "input": {
+    "schema": "native-exchange-response",
+    "value": {
+      "mfaRequired": true,
+      "mfaToken": "<mfa challenge token>"
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

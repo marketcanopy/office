@@ -1,0 +1,40 @@
+{
+  "fixture": 1,
+  "name": "handoff-stale-session",
+  "description": "A web session whose factors passed more than 5 minutes ago signs in again first",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/auth/native/handoffs",
+      "headers": {
+        "Authorization": "Bearer <dashboard web session access token>",
+        "Content-Type": "application/json"
+      },
+      "schema": "native-handoff-request",
+      "body": {
+        "clientApp": "com.marketcanopy.office",
+        "codeChallenge": "ZXhhbXBsZS1jaGFsbGVuZ2Utbm90LXJlYWwtMDAwMDE",
+        "state": "ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "UNAUTHORIZED",
+          "message": "Sign in again to continue."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/auth/native/handoffs",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "UNAUTHORIZED"
+  }
+}

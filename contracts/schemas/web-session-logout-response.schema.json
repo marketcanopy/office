@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/web-session-logout-response.schema.json",
+  "title": "POST /v1/office/web-session/logout data (7.5)",
+  "type": "object",
+  "properties": {
+    "revoked": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "revoked"
+  ],
+  "additionalProperties": false
+}

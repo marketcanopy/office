@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/native-handoff-response.schema.json",
+  "title": "POST /v1/auth/native/handoffs data (6.4)",
+  "type": "object",
+  "properties": {
+    "redirectUri": {
+      "type": "string",
+      "pattern": "^mc-office://auth/callback\\?code=[A-Za-z0-9_-]{43}&state=[A-Za-z0-9_-]{43}$"
+    },
+    "expiresAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    }
+  },
+  "required": [
+    "redirectUri",
+    "expiresAt"
+  ],
+  "additionalProperties": false
+}

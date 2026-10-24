@@ -1,0 +1,41 @@
+{
+  "fixture": 1,
+  "name": "handoff-bad-state",
+  "description": "state is 43 base64url characters",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/auth/native/handoffs",
+      "headers": {
+        "Authorization": "Bearer <dashboard web session access token>",
+        "Content-Type": "application/json"
+      },
+      "schema": null,
+      "body": {
+        "clientApp": "com.marketcanopy.office",
+        "codeChallenge": "ZXhhbXBsZS1jaGFsbGVuZ2Utbm90LXJlYWwtMDAwMDE",
+        "state": "abc"
+      }
+    },
+    "response": {
+      "status": 422,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "state is invalid."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/auth/native/handoffs",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "VALIDATION_ERROR",
+    "requestValid": false
+  }
+}

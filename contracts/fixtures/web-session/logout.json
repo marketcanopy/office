@@ -1,0 +1,38 @@
+{
+  "fixture": 1,
+  "name": "logout",
+  "description": "Logout revokes the web session and clears the cookie",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/logout",
+      "headers": {
+        "Cookie": "__Host-mc_office_web=<opaque>",
+        "Content-Type": "application/json"
+      },
+      "body": {}
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "revoked": true
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "requestId": "req_example"
+        }
+      },
+      "schema": "web-session-logout-response",
+      "headers": {
+        "Set-Cookie": "__Host-mc_office_web=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0"
+      }
+    }
+  },
+  "expect": {
+    "outcome": "ok",
+    "clearsCookie": "__Host-mc_office_web"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "fixture": 1,
+  "name": "token-revoked",
+  "description": "The Office device session was revoked",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/token",
+      "headers": {
+        "Cookie": "__Host-mc_office_web=<opaque>",
+        "Content-Type": "application/json"
+      },
+      "body": {}
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "GRANT_REVOKED",
+          "message": "This device was signed out."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/web-session/token",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "GRANT_REVOKED"
+  }
+}

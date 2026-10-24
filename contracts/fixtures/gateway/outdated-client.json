@@ -35,7 +35,7 @@
       "status": 426,
       "body": {
         "error": {
-          "message": "Update Market Canopy Office.",
+          "message": "Version 10.0.0.1 is no longer supported; update the app",
           "type": "invalid_request_error",
           "code": "CLIENT_UPGRADE_REQUIRED",
           "param": null,

@@ -63,7 +63,7 @@ then does not apply either again).
 | Host | Needs |
 | --- | --- |
 | Linux x64 | Ubuntu 22.04 or 24.04, sudo, about 100 GB free, 16 GB of memory or swap. `--install-deps` runs build_tools' `deps.py` and fetches its prebuilt Qt 5.9.9. |
-| Windows x64 | Visual Studio 2022 with the C++ and ARM64 tools, Python 3, Git; Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
+| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components, Python 3, Git; Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
 | macOS | Xcode, Python 3, Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`. |
 
 The release builds run in `circuitid/marketcanopy-office-release`

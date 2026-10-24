@@ -34,7 +34,7 @@ for every other requested target; it exits `3` when it can build none of them.
 | `--phase` | Run one of `prepare`, `compile`, `stage`, `installers`, `seal`. |
 | `--work-dir` | The workspace (default `$OFFICE_WORK_DIR`, else `../office-work`). It must be outside any git work tree. |
 | `--out` | Artifact directory (default `build/out/`). |
-| `--install-deps` | Provision the toolchain (CI runners): apt packages, Qt, Inno Setup. |
+| `--install-deps` | Provision the toolchain (CI runners): apt packages, Qt, Inno Setup, Visual Studio 2019 Build Tools, CMake 3. |
 | `--check-patches` | Only check out the components, apply the patch queue and the overlay, and report the patch budget. |
 | `--dry-run` | Print the plan and the commands; run nothing. |
 
@@ -63,8 +63,8 @@ then does not apply either again).
 | Host | Needs |
 | --- | --- |
 | Linux x64 | Ubuntu 22.04 or 24.04, sudo, about 100 GB free, 16 GB of memory or swap. `--install-deps` runs build_tools' `deps.py` and fetches its prebuilt Qt 5.9.9. |
-| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components, Python 3, Git; Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
-| macOS | Xcode, Python 3, Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`. |
+| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components, Python 3, Git, CMake 3 (CMake 4 refuses x265's policies; `--install-deps` puts CMake 3.31.6 first on `PATH`); Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
+| macOS | Xcode, Python 3, CMake 3 (as on Windows), Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`. |
 
 The release builds run in `circuitid/marketcanopy-office-release`
 (`office-release.yml`). This repository's own CI runs on GitHub-hosted runners

@@ -26,4 +26,4 @@ ctest --test-dir "$TMPDIR/account-tests" -V
 - `os_store_tests` writes the real OS credential store and takes the real lock.
   It runs only with `MC_OS_STORE_TESTS=1`, under a test service name. On Linux
   it needs an unlocked Secret Service, and the workflow shows how to start one.
-  `MC_OS_STORE_EXPECT=unavailable` checks the memory-only fallback instead.
+  `MC_OS_STORE_EXPECT=unavailable` checks the memory-only fallback instead (point `DBUS_SESSION_BUS_ADDRESS` at a bus that does not exist).

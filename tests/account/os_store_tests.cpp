@@ -8,7 +8,7 @@
 // keychain, Credential Manager or Secret Service: CI sets it on throwaway
 // GitHub-hosted runners. It uses its own service name, never the product's.
 // With MC_OS_STORE_EXPECT=unavailable it checks the memory-only fallback
-// instead (Linux with no Secret Service on the bus).
+// instead (Linux with no reachable session bus, so no Secret Service).
 
 #include <chrono>
 #include <cstdlib>

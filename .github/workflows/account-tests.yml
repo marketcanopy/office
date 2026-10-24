@@ -66,9 +66,10 @@ jobs:
         env:
           MC_OS_STORE_TESTS: "1"
         run: |
-          dbus-run-session -- bash -c 'echo -n ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null && ctest --test-dir "$RUNNER_TEMP/account" -C Release --output-on-failure -V -R os_store_tests'
-          # With no Secret Service on the bus the session is memory-only.
-          MC_OS_STORE_EXPECT=unavailable env -u DBUS_SESSION_BUS_ADDRESS "$RUNNER_TEMP/account/os_store_tests"
+          dbus-run-session -- bash -c "echo -n ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null && ctest --test-dir '$RUNNER_TEMP/account' -C Release --output-on-failure -V -R os_store_tests"
+          # With no reachable session bus there is no Secret Service: the session is memory-only.
+          # (The runner has its own user bus, so unsetting the address is not enough.)
+          MC_OS_STORE_EXPECT=unavailable DBUS_SESSION_BUS_ADDRESS=unix:path=/nonexistent/bus "$RUNNER_TEMP/account/os_store_tests"
 
       - name: OS credential store and lock (macOS)
         if: runner.os == 'macOS'

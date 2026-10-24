@@ -13,6 +13,10 @@
   tools/win/arm64/fetch_qt.py provides win-arm64's.
 - macOS uses Xcode on the runner and Qt 5.15.2 clang_64 through aqtinstall; the
   editors are a Cocoa app, so Qt only provides qmake for core.
+- Windows and macOS need CMake 3: the third-party CMakeLists build_tools builds
+  (x265 for heif) set pre-3.5 policies to OLD, which CMake 4 refuses. Hosted
+  images ship CMake 4, so --install-deps puts a pinned CMake 3 first on PATH.
+  Linux gets CMake 3 from build_tools' own cmake.sh.
 """
 
 import os
@@ -26,6 +30,7 @@ from . import util
 
 QT_VERSION = "5.15.2"
 AQT_VERSION = "3.3.0"
+CMAKE_VERSION = "3.31.6"
 
 
 @dataclass
@@ -46,6 +51,22 @@ def _aqt(work_root: str, host: str, arch: str, dry_run: bool) -> str:
             dry_run=dry_run,
         )
     return qt_dir
+
+
+def _cmake3(work_root: str, dry_run: bool) -> Dict[str, str]:
+    """PATH with a CMake 3 from PyPI first, in its own venv so no other tool is shadowed."""
+    venv = os.path.join(work_root, "cmake3")
+    python = os.path.join(venv, "Scripts", "python.exe") if os.name == "nt" else os.path.join(venv, "bin", "python")
+    if not os.path.isfile(python):
+        util.run([util.python(), "-m", "venv", venv], dry_run=dry_run)
+    util.run([python, "-m", "pip", "install", "--quiet", "cmake==" + CMAKE_VERSION], dry_run=dry_run)
+    if dry_run:
+        bin_dir = os.path.join(venv, "<cmake bin>")
+    else:
+        bin_dir = subprocess.run(
+            [python, "-c", "import cmake; print(cmake.CMAKE_BIN_DIR)"], stdout=subprocess.PIPE, text=True, check=True
+        ).stdout.strip()
+    return {"PATH": bin_dir + os.pathsep + os.environ.get("PATH", "")}
 
 
 def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
@@ -140,7 +161,8 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
     vs_path = visual_studio(install_deps, dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         util.run(["choco", "install", "innosetup", "--no-progress", "-y"], dry_run=dry_run, check=False)
-    return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], {}, util.python())
+    env = _cmake3(work_root, dry_run) if install_deps else {}
+    return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], env, util.python())
 
 
 def macos(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
@@ -152,7 +174,8 @@ def macos(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
         if not install_deps:
             raise util.BuildError("set OFFICE_QT_DIR to a Qt %s with clang_64, or pass --install-deps" % QT_VERSION)
         qt_dir = _aqt(work_root, "mac", "clang_64", dry_run)
-    return Toolchain(["--qt-dir", qt_dir], {}, util.python())
+    env = _cmake3(work_root, dry_run) if install_deps else {}
+    return Toolchain(["--qt-dir", qt_dir], env, util.python())
 
 
 def prepare(host: targetlib.Host, work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:

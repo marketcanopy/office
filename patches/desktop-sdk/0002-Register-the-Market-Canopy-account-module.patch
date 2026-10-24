@@ -1,0 +1,236 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Register the Market Canopy account module
+
+The account module (src/marketcanopy, added by the branding overlay)
+fills the "additional" extension point and gets five one-line hooks:
+start page "mc:" commands and its "portal:logout" of Market Canopy
+(cefview.cpp on_exec_command), main frame loads for launch and the
+connect page's web-session POST (OnLoadEnd), scheme links handed over by
+the shells (CAscApplicationManager::CallCommand, and CCefView::load,
+which never loads a sign-in callback or a link carrying a credential),
+and window.AscDesktopEditor.getMarketCanopyAiSession() for the two AI
+plugins in the system plugins folder only (P02 contract section 9; the
+method is restricted, and any other caller gets undefined).
+---
+ ChromiumBasedEditors/lib/ascdocumentscore.pro |  3 +++
+ .../lib/src/additional/create.cpp             |  6 ++++--
+ .../lib/src/applicationmanager.cpp            |  4 +++-
+ ChromiumBasedEditors/lib/src/cefview.cpp      | 11 ++++++++++
+ .../cefwrapper/client_renderer_wrapper.cpp    | 21 ++++++++++++++++++-
+ .../lib/src/plugin_permissions.h              |  3 +++
+ 6 files changed, 44 insertions(+), 4 deletions(-)
+
+diff --git a/ChromiumBasedEditors/lib/ascdocumentscore.pro b/ChromiumBasedEditors/lib/ascdocumentscore.pro
+index bcdebfc..05575f4 100644
+--- a/ChromiumBasedEditors/lib/ascdocumentscore.pro
++++ b/ChromiumBasedEditors/lib/ascdocumentscore.pro
+@@ -3,3 +3,6 @@ PWD_ROOT_DIR = $$PWD
+ include($$PWD/ascdocumentscore.pri)
+ 
+ SOURCES += $$PWD/src/additional/create.cpp
++
++# Modified by Market Canopy on 2026-10-24 for Market Canopy Office: builds the account module (ADR 0524).
++include($$PWD/src/marketcanopy/marketcanopy.pri)
+diff --git a/ChromiumBasedEditors/lib/src/additional/create.cpp b/ChromiumBasedEditors/lib/src/additional/create.cpp
+index 66ba1cc..bdc39cb 100644
+--- a/ChromiumBasedEditors/lib/src/additional/create.cpp
++++ b/ChromiumBasedEditors/lib/src/additional/create.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: the account module fills the additional extension point.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -38,15 +39,16 @@
+ 
+ #include "./renderer.h"
+ #include "./manager.h"
++#include "../marketcanopy/additional.h"
+ 
+ CApplicationRendererAdditionalBase* Create_ApplicationRendererAdditional()
+ {
+-    return NULL;
++    return new CMarketCanopyRendererAdditional();
+ }
+ 
+ CApplicationManagerAdditionalBase* Create_ApplicationManagerAdditional(CAscApplicationManager* pManager)
+ {
+-    return new CApplicationManagerAdditionalBase(pManager);
++    return new CMarketCanopyManagerAdditional(pManager);
+ }
+ 
+ #endif // ADDITIONAL_CREATE_H
+diff --git a/ChromiumBasedEditors/lib/src/applicationmanager.cpp b/ChromiumBasedEditors/lib/src/applicationmanager.cpp
+index 4ac6abe..f423371 100644
+--- a/ChromiumBasedEditors/lib/src/applicationmanager.cpp
++++ b/ChromiumBasedEditors/lib/src/applicationmanager.cpp
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
+  * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: mc-office URL scheme (9 characters, as CCefView::load expects).
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: CallCommand hands scheme links to the account module.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -35,6 +36,7 @@
+  */
+ 
+ #include "./applicationmanager_p.h"
++#include "./marketcanopy/hooks.h"
+ #include "./plugins.h"
+ #include "./cefwrapper/client_resource_handler_async.h"
+ #include "./cefwrapper/monitor_info.h"
+@@ -1705,7 +1707,7 @@ bool CAscApplicationManager::RemoveRecentByViewId(const int& nId)
+ 
+ int CAscApplicationManager::CallCommand(const std::wstring& command)
+ {
+-	return 0;
++	return NSMarketCanopy::CallCommand(this, command);
+ }
+ 
+ int CAscApplicationManager::InstallMainAddon(const std::wstring& path)
+diff --git a/ChromiumBasedEditors/lib/src/cefview.cpp b/ChromiumBasedEditors/lib/src/cefview.cpp
+index 555dd6a..75804b8 100644
+--- a/ChromiumBasedEditors/lib/src/cefview.cpp
++++ b/ChromiumBasedEditors/lib/src/cefview.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: account module hooks (start page commands, main frame loads, scheme links).
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -103,6 +104,7 @@ void CCefViewWidgetImpl::SetParentNull(WindowHandleId handle)
+ 
+ #include "./cors_resource_hanler.h"
+ #include "./nocors_file_downloader.h"
++#include "./marketcanopy/hooks.h"
+ 
+ std::wstring GetUrlWithoutProtocol(const std::wstring& url)
+ {
+@@ -3003,6 +3005,9 @@ public:
+ 		}
+ 		else if (message_name == "on_exec_command")
+ 		{
++			if (NSMarketCanopy::OnExecCommand(m_pParent, browser, args->GetString(0).ToWString(), args->GetSize() == 2 ? args->GetString(1).ToWString() : L""))
++				return true;
++
+ 			NSEditorApi::CAscCefMenuEvent* pEvent = m_pParent->CreateCefEvent(ASC_MENU_EVENT_TYPE_CEF_EXECUTE_COMMAND);
+ 
+ 			NSEditorApi::CAscExecCommand* pData = new NSEditorApi::CAscExecCommand();
+@@ -5029,6 +5034,8 @@ virtual void OnLoadEnd(CefRefPtr<CefBrowser> browser,
+ 
+ 	if (frame->IsMain())
+ 	{
++		NSMarketCanopy::OnMainFrameLoaded(m_pParent, browser, httpStatusCode);
++
+ 		std::wstring sUrl = m_pParent->GetUrl();
+ 		if ((0 != sUrl.find(L"file:///") && (0 != sUrl.find(L"onlyoffice://plugin/"))) || !m_pParent->m_pInternal->m_bIsOnlyPassSupport || m_pParent->GetType() == cvwtEditor)
+ 			return;
+@@ -6677,6 +6684,10 @@ void CCefView::load(const std::wstring& urlInputSrc)
+ {
+ 	std::wstring urlInput = urlInputSrc;
+ 
++	// a sign-in callback or a link that carries a credential is never loaded
++	if (0 != NSMarketCanopy::CallCommand(m_pInternal->m_pManager, L"mc:scheme:" + urlInputSrc))
++		return;
++
+ 	// заглушка, чтобы не проверять выше
+ 	NSStringUtils::string_replace(urlInput, L"//?desktop=true", L"/?desktop=true");
+ 
+diff --git a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
+index ac0baf6..7698e91 100644
+--- a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
++++ b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: getMarketCanopyAiSession for the two AI plugins.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -58,6 +59,7 @@
+ #include "../plugin_permissions.h"
+ 
+ #include "../../src/additional/renderer.h"
++#include "../../src/marketcanopy/hooks.h"
+ #include "../crypto_mode.h"
+ #include "../../../../../core/DesktopEditor/common/CalculatorCRC32.h"
+ #include "./client_renderer_params.h"
+@@ -1252,6 +1254,12 @@ window._external_process_callback[" + std::to_string(id) + "]._onprocess(" + std
+ 
+ 		bool IsMethodAllowed(const std::string& sName)
+ 		{
++			if (sName == NSMarketCanopy::kAiSessionMethod)
++			{
++				CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
++				return context && NSMarketCanopy::AiSessionCallerAllowed(context->GetFrame(), m_sSystemPlugins);
++			}
++
+ 			if (!NSPluginPermissions::IsRestrictedMethod(sName))
+ 				return true;
+ 
+@@ -1269,6 +1277,13 @@ window._external_process_callback[" + std::to_string(id) + "]._onprocess(" + std
+ 			if (!IsMethodAllowed(name))
+ 				return true;
+ 
++			if (name == NSMarketCanopy::kAiSessionMethod)
++			{
++				CefRefPtr<CefV8Context> context = CefV8Context::GetCurrentContext();
++				retval = CefV8Value::CreateString(NSMarketCanopy::AiSession(context->GetBrowser(), context->GetFrame()));
++				return true;
++			}
++
+ 			// native-plugin JS methods (window.AscDesktopEditor.<name> from plugins)
+ 			{
+ 				CRendererPluginHost& oPluginHost = CRendererPluginHost::Instance();
+@@ -6382,6 +6397,8 @@ if (targetElem) { targetElem.dispatchEvent(event); }})();";
+ 			// load native plugins once (renderer role); registers their JS methods
+ 			CRendererPluginHost::Instance().Init();
+ 
++			NSMarketCanopy::OnRendererContextCreated(browser, frame, CAscRendererProcessParams::getInstance().GetValueW("system_plugins_path"));
++
+ 			// add AscEditorNative
+ 			CefRefPtr<CefV8Value> object = context->GetGlobal();
+ 
+@@ -6400,7 +6417,7 @@ if (targetElem) { targetElem.dispatchEvent(event); }})();";
+ 
+ 			CefRefPtr<CefV8Handler> handler = pWrapper;
+ 
+-#define EXTEND_METHODS_COUNT 205
++#define EXTEND_METHODS_COUNT 206
+ 			const char* methods[EXTEND_METHODS_COUNT] = {
+ 				"Copy",
+ 				"Paste",
+@@ -6687,6 +6704,8 @@ if (targetElem) { targetElem.dispatchEvent(event); }})();";
+ 				"updateClouds",
+ 				"addCloud",
+ 
++				NSMarketCanopy::kAiSessionMethod,
++
+ 				NULL};
+ 
+ 			ExtendObject(obj, handler, methods);
+diff --git a/ChromiumBasedEditors/lib/src/plugin_permissions.h b/ChromiumBasedEditors/lib/src/plugin_permissions.h
+index 6f6f7e0..da50200 100644
+--- a/ChromiumBasedEditors/lib/src/plugin_permissions.h
++++ b/ChromiumBasedEditors/lib/src/plugin_permissions.h
+@@ -1,5 +1,6 @@
+ /*
+  * (c) Copyright Ascensio System SIA 2010-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: getMarketCanopyAiSession is a restricted method.
+  *
+  * SPDX-License-Identifier: AGPL-3.0-only
+  */
+@@ -36,6 +37,8 @@ namespace NSPluginPermissions
+ 			"getMcpServers",
+ 
+ 			"_getPortalAuthToken",
++
++			"getMarketCanopyAiSession",
+ 			NULL
+ 		};
+ 

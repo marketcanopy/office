@@ -149,6 +149,7 @@ def main(argv: List[str]) -> int:
                 )
             applied = patches.apply(source_root, workspace.root, args.dry_run)
             patches.apply_replacements(source_root, workspace.root, args.dry_run)
+            patches.apply_additions(source_root, workspace.root, args.dry_run)
             util.end_group()
         elif os.path.isfile(os.path.join(workspace.root, "resolved-commits.json")):
             with open(os.path.join(workspace.root, "resolved-commits.json"), encoding="utf-8") as handle:

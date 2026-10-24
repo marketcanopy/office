@@ -21,8 +21,9 @@
 #   1. refuses a configuration that would let build_tools check components out
 #      again (update=1), since that would discard the patch queue;
 #   2. checks every component is at the commit UPSTREAM pins;
-#   3. applies the patch queue and the replacement assets, unless office-build
-#      already did (OFFICE_PATCHES_APPLIED=1, OFFICE_OVERLAY_APPLIED=1);
+#   3. applies the patch queue, the replacement assets and the added files,
+#      unless office-build already did (OFFICE_PATCHES_APPLIED=1,
+#      OFFICE_OVERLAY_APPLIED=1);
 #   4. sets the build-time settings (update feeds, help URL, launcher name,
 #      editor publisher strings) and refuses upstream's update feeds;
 #   5. writes the notices the About dialogs show (notices.py) and names the
@@ -171,6 +172,28 @@ def apply_replacements(root):
     log("copied %d replacement file(s)" % count)
 
 
+def apply_additions():
+    # branding/marketcanopy/add/<repo>/<path>: new files only, never an upstream one
+    # (build/officebuild/patches.py apply_additions).
+    if os.environ.get("OFFICE_OVERLAY_APPLIED") == "1":
+        return
+    add_dir = os.path.join(BRANDING_DIR, "add")
+    count = 0
+    for current, _, names in os.walk(add_dir):
+        for name in sorted(names):
+            source = os.path.join(current, name)
+            relative = os.path.relpath(source, add_dir).replace(os.sep, "/")
+            repo, _, inner = relative.partition("/")
+            folder = os.path.join(WORKSPACE, repo)
+            if git(folder, "ls-files", "--", inner):
+                fail("add/%s is an upstream file; change it with a patch" % relative)
+            target = os.path.join(folder, inner)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copyfile(source, target)
+            count += 1
+    log("added %d file(s)" % count)
+
+
 def resolve_feeds(settings):
     flavor = os.environ.get("OFFICE_FLAVOR", "staging")
     if flavor not in ("staging", "production"):
@@ -290,6 +313,7 @@ def main():
 
     check_and_patch_components(root, upstream)
     apply_replacements(root)
+    apply_additions()
     flavor = resolve_feeds(settings)
     set_build_settings(settings)
     write_notices(build_fields(root, upstream, flavor))

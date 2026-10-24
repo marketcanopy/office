@@ -108,6 +108,40 @@ def apply(source_root: str, work_root: str, dry_run: bool = False) -> List[Patch
     return patches
 
 
+def additions(source_root: str) -> List[str]:
+    """branding/marketcanopy/add/<repo>/<path>: new files the build adds to a
+    component, such as the account module (ADR 0524). Paths are relative to add/."""
+    root = os.path.join(source_root, "branding", "marketcanopy", "add")
+    found = []
+    for current, _, names in os.walk(root):
+        for name in names:
+            found.append(os.path.relpath(os.path.join(current, name), root).replace(os.sep, "/"))
+    return sorted(found)
+
+
+def apply_additions(source_root: str, work_root: str, dry_run: bool = False) -> int:
+    """Copy branding/marketcanopy/add/<repo>/<path> into the checkout. An
+    addition never replaces an upstream file: one that upstream tracks is an
+    error, so a change to upstream code stays in the patch queue where the
+    budget counts it."""
+    root = os.path.join(source_root, "branding", "marketcanopy", "add")
+    files = additions(source_root)
+    for relative in files:
+        repo, _, inner = relative.partition("/")
+        folder = os.path.join(work_root, repo)
+        util.log("add %s" % relative)
+        if dry_run:
+            continue
+        if not os.path.isdir(folder):
+            raise util.BuildError("add/%s names %s, which is not checked out" % (relative, repo))
+        if util.git(["ls-files", "--", inner], cwd=folder, capture=True).strip():
+            raise util.BuildError("add/%s is an upstream file; change it with a patch" % relative)
+        target = os.path.join(folder, inner)
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        shutil.copyfile(os.path.join(root, relative), target)
+    return len(files)
+
+
 def apply_replacements(source_root: str, work_root: str, dry_run: bool = False) -> int:
     """Copy branding/marketcanopy/replace/<repo>/<path> over the checkout: the
     binary replacements (icons, logos) P03 lists in replace/MANIFEST.json as

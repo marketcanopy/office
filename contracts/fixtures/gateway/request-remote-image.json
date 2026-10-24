@@ -1,0 +1,28 @@
+{
+  "fixture": 1,
+  "name": "request-remote-image",
+  "description": "Images are data URLs only",
+  "subject": "document",
+  "input": {
+    "schema": "gateway-chat-request",
+    "value": {
+      "model": "mc-standard",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "image_url",
+              "image_url": {
+                "url": "https://example.com/a.png"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

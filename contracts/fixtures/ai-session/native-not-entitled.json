@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "native-not-entitled",
+  "description": "getMarketCanopyAiSession() state not_entitled",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "not_entitled"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

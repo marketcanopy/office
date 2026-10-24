@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "open-staging",
+  "description": "The staging app origin",
+  "subject": "deep-link",
+  "input": "mc-office://open|n|Budget|https://staging-app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001",
+  "expect": {
+    "ok": true,
+    "kind": "open",
+    "name": "Budget",
+    "appOrigin": "https://staging-app.marketcanopy.com",
+    "documentId": "66f0c0ffee0000000000c001",
+    "organizationId": "66f0c0ffee0000000000b001"
+  }
+}

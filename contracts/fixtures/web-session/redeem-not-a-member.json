@@ -1,0 +1,37 @@
+{
+  "fixture": 1,
+  "name": "redeem-not-a-member",
+  "description": "Membership of the bound organization ended",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/redeem",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "schema": "web-session-redeem-request",
+      "body": {
+        "code": "ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "NOT_A_MEMBER",
+          "message": "Choose another organization."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/web-session/redeem",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "NOT_A_MEMBER"
+  }
+}

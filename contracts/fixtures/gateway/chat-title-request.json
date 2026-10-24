@@ -1,0 +1,56 @@
+{
+  "fixture": 1,
+  "name": "chat-title-request",
+  "description": "The agent's non-streaming title call",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": "Name this chat"
+          }
+        ],
+        "stream": false
+      }
+    },
+    "response": {
+      "status": 200,
+      "schema": "gateway-chat-completion",
+      "body": {
+        "id": "chatcmpl-example",
+        "object": "chat.completion",
+        "created": 1761341000,
+        "model": "mc-standard",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Document summary"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 12,
+          "completion_tokens": 2,
+          "total_tokens": 14
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

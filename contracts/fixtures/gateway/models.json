@@ -1,0 +1,41 @@
+{
+  "fixture": 1,
+  "name": "models",
+  "description": "Only the organization's aliases",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "GET",
+      "path": "/v1/office/ai/models",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "schema": "gateway-models",
+      "body": {
+        "object": "list",
+        "data": [
+          {
+            "id": "mc-standard",
+            "object": "model",
+            "created": 1761300000,
+            "owned_by": "marketcanopy"
+          },
+          {
+            "id": "mc-reasoning",
+            "object": "model",
+            "created": 1761300000,
+            "owned_by": "marketcanopy"
+          }
+        ]
+      }
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

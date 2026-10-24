@@ -1,0 +1,50 @@
+{
+  "fixture": 1,
+  "name": "provider-unavailable",
+  "description": "Upstream failure after the router's fallbacks",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Translate to French: Hello"
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "max_tokens": 512,
+        "temperature": 0.2
+      }
+    },
+    "response": {
+      "status": 503,
+      "body": {
+        "error": {
+          "message": "AI is unavailable, try again.",
+          "type": "api_error",
+          "code": "PROVIDER_UNAVAILABLE",
+          "param": null,
+          "request_id": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "PROVIDER_UNAVAILABLE"
+  }
+}

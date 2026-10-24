@@ -1,0 +1,44 @@
+{
+  "fixture": 1,
+  "name": "redeem-valid",
+  "description": "The connect page redeems a valid code",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/redeem",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "schema": "web-session-redeem-request",
+      "body": {
+        "code": "ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "userId": "66f0c0ffee0000000000a001",
+          "organizationId": "66f0c0ffee0000000000b001",
+          "displayName": "Example Person",
+          "deviceSessionId": "66f0c0ffee0000000000d001",
+          "sessionExpiresAt": "2026-10-25T05:40:00.000Z"
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "requestId": "req_example"
+        }
+      },
+      "schema": "web-session-redeem-response",
+      "headers": {
+        "Set-Cookie": "__Host-mc_office_web=<opaque>; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=28800"
+      }
+    }
+  },
+  "expect": {
+    "outcome": "ok",
+    "cookie": "__Host-mc_office_web"
+  }
+}

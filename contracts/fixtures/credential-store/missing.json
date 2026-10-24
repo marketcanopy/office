@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "missing",
+  "description": "No entry",
+  "subject": "credential-read",
+  "input": {
+    "raw": null,
+    "apiOrigin": "https://api.marketcanopy.com"
+  },
+  "expect": {
+    "state": "absent",
+    "reason": "missing"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "https-url",
+  "description": "A URL is not a path",
+  "subject": "launch-args",
+  "input": [
+    "https://example.com/a.docx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

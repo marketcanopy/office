@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/gateway-error.schema.json",
+  "title": "Gateway error body (8.3)",
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "enum": [
+            "authentication_error",
+            "permission_error",
+            "invalid_request_error",
+            "rate_limit_error",
+            "insufficient_quota",
+            "api_error"
+          ]
+        },
+        "code": {
+          "enum": [
+            "UNAUTHORIZED",
+            "GRANT_REVOKED",
+            "WRONG_AUDIENCE",
+            "NOT_A_MEMBER",
+            "CLIENT_UPGRADE_REQUIRED",
+            "AI_NOT_ENTITLED",
+            "MODEL_NOT_ALLOWED",
+            "REQUEST_TOO_LARGE",
+            "RATE_LIMITED",
+            "QUOTA_EXCEEDED",
+            "PROVIDER_UNAVAILABLE"
+          ]
+        },
+        "param": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "message",
+        "type",
+        "code",
+        "param",
+        "request_id"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "error"
+  ],
+  "additionalProperties": false
+}

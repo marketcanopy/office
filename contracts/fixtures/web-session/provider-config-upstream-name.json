@@ -1,0 +1,32 @@
+{
+  "fixture": 1,
+  "name": "provider-config-upstream-name",
+  "description": "The provider id must be marketcanopy",
+  "subject": "document",
+  "input": {
+    "schema": "provider-config",
+    "value": [
+      {
+        "provider": "onlyoffice",
+        "name": "Market Canopy",
+        "check": {
+          "url": "/x"
+        },
+        "editorPage": "/x",
+        "entryPage": "/x",
+        "order": 0,
+        "icons": {
+          "light": {
+            "normal": "a"
+          },
+          "dark": {
+            "normal": "b"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": false
+  }
+}

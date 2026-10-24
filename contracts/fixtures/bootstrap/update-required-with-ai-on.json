@@ -1,0 +1,71 @@
+{
+  "fixture": 1,
+  "name": "update-required-with-ai-on",
+  "description": "updateRequired forces docs and AI off",
+  "subject": "document",
+  "input": {
+    "schema": "bootstrap",
+    "value": {
+      "contractVersion": "1",
+      "user": {
+        "id": "66f0c0ffee0000000000a001",
+        "email": "person@example.com",
+        "displayName": "Example Person"
+      },
+      "organizations": [
+        {
+          "id": "66f0c0ffee0000000000b001",
+          "name": "Example Co"
+        },
+        {
+          "id": "66f0c0ffee0000000000b002",
+          "name": "Example Brand"
+        }
+      ],
+      "activeOrganizationId": "66f0c0ffee0000000000b001",
+      "office": {
+        "minimumVersion": "10.0.0-mc.4",
+        "latestVersion": "10.0.0-mc.3",
+        "updateRequired": true
+      },
+      "docs": {
+        "enabled": false,
+        "appOrigin": "https://app.marketcanopy.com",
+        "connectPath": "/office/connect",
+        "documentsPath": "/office/documents"
+      },
+      "ai": {
+        "enabled": true,
+        "disabledReason": null,
+        "baseUrl": "https://api.marketcanopy.com/v1/office/ai",
+        "models": [
+          {
+            "id": "mc-standard",
+            "name": "Standard",
+            "capabilities": [
+              "chat",
+              "tools"
+            ]
+          },
+          {
+            "id": "mc-reasoning",
+            "name": "Reasoning",
+            "capabilities": [
+              "chat",
+              "tools",
+              "reasoning"
+            ]
+          }
+        ],
+        "defaultModel": "mc-standard",
+        "limits": {
+          "maxRequestBytes": 1048576,
+          "maxOutputTokens": 8192
+        }
+      }
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

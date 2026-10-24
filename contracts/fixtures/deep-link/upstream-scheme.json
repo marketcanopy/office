@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "upstream-scheme",
+  "description": "Upstream's scheme is not ours",
+  "subject": "deep-link",
+  "input": "oo-office://open|n|Budget|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

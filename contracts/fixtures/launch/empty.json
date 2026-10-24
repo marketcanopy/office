@@ -1,0 +1,10 @@
+{
+  "fixture": 1,
+  "name": "empty",
+  "description": "No arguments: Office opens its start window",
+  "subject": "launch-args",
+  "input": [],
+  "expect": {
+    "ok": true
+  }
+}

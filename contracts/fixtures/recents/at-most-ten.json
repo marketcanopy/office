@@ -1,0 +1,84 @@
+{
+  "fixture": 1,
+  "name": "at-most-ten",
+  "description": "At most 10 entries, in file order",
+  "subject": "recents",
+  "input": {
+    "text": "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><recents><file path=\"/home/u/f00.txt\" type=\"69\" date=\"24.10.2026 09:00\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f01.txt\" type=\"69\" date=\"24.10.2026 09:01\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f02.txt\" type=\"69\" date=\"24.10.2026 09:02\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f03.txt\" type=\"69\" date=\"24.10.2026 09:03\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f04.txt\" type=\"69\" date=\"24.10.2026 09:04\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f05.txt\" type=\"69\" date=\"24.10.2026 09:05\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f06.txt\" type=\"69\" date=\"24.10.2026 09:06\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f07.txt\" type=\"69\" date=\"24.10.2026 09:07\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f08.txt\" type=\"69\" date=\"24.10.2026 09:08\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f09.txt\" type=\"69\" date=\"24.10.2026 09:09\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f10.txt\" type=\"69\" date=\"24.10.2026 09:10\" url=\"\" parent=\"/home/u\" /><file path=\"/home/u/f11.txt\" type=\"69\" date=\"24.10.2026 09:11\" url=\"\" parent=\"/home/u\" /></recents>"
+  },
+  "expect": {
+    "state": "ok",
+    "files": [
+      {
+        "path": "/home/u/f00.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:00",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f01.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:01",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f02.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:02",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f03.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:03",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f04.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:04",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f05.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:05",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f06.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:06",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f07.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:07",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f08.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:08",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/u/f09.txt",
+        "kind": "document",
+        "date": "24.10.2026 09:09",
+        "pinned": false,
+        "encrypted": false
+      }
+    ]
+  }
+}

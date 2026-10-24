@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "file-url",
+  "description": "A file URL is not a path",
+  "subject": "launch-args",
+  "input": [
+    "file:///home/u/a.docx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

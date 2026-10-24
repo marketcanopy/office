@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "not-a-release",
+  "description": "Upstream's own version is not ours",
+  "subject": "client-version",
+  "input": {
+    "release": "10.0.0.176"
+  },
+  "expect": {
+    "header": null
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "compare-equal",
+  "description": "Release and header forms compare equal",
+  "subject": "client-version",
+  "input": {
+    "compare": [
+      "10.0.0-mc.3",
+      "10.0.0.3"
+    ]
+  },
+  "expect": {
+    "result": 0
+  }
+}

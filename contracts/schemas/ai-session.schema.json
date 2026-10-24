@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/ai-session.schema.json",
+  "title": "AscDesktopEditor.getMarketCanopyAiSession() result (9)",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "state": {
+          "const": "ready"
+        },
+        "baseUrl": {
+          "type": "string",
+          "pattern": "^https://[a-z0-9.-]+/v1/office/ai$"
+        },
+        "accessToken": {
+          "$ref": "common.schema.json#/$defs/jwt"
+        },
+        "expiresAt": {
+          "$ref": "common.schema.json#/$defs/instant"
+        },
+        "organizationId": {
+          "$ref": "common.schema.json#/$defs/objectId"
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/model"
+          },
+          "minItems": 1
+        },
+        "defaultModel": {
+          "$ref": "common.schema.json#/$defs/modelAlias"
+        }
+      },
+      "required": [
+        "state",
+        "baseUrl",
+        "accessToken",
+        "expiresAt",
+        "organizationId",
+        "models",
+        "defaultModel"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "state": {
+          "enum": [
+            "signed_out",
+            "offline",
+            "update_required",
+            "not_entitled"
+          ]
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "additionalProperties": false
+    }
+  ]
+}

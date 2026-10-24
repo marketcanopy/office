@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "auth-callback-short-state",
+  "description": "state is 43 base64url characters",
+  "subject": "deep-link",
+  "input": "mc-office://auth/callback?code=ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE&state=abc",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

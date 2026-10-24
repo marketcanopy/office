@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "compare-newer-minor",
+  "description": "A newer minor wins over a larger build number",
+  "subject": "client-version",
+  "input": {
+    "compare": [
+      "10.1.0-mc.1",
+      "10.0.0-mc.99"
+    ]
+  },
+  "expect": {
+    "result": 1
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "fixture": 1,
+  "name": "stream-tool-call",
+  "description": "A tool call: id, type and name first with empty arguments, then argument fragments",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":null,\"tool_calls\":[{\"index\":0,\"id\":\"call_1\",\"type\":\"function\",\"function\":{\"name\":\"insert_text\",\"arguments\":\"\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"{\\\"text\\\":\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"\\\"Title\\\"}\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]\n\n",
+  "expect": {
+    "ok": true,
+    "done": true,
+    "choices": [
+      {
+        "content": "",
+        "reasoning": "",
+        "toolCalls": [
+          {
+            "id": "call_1",
+            "name": "insert_text",
+            "arguments": "{\"text\":\"Title\"}"
+          }
+        ],
+        "finishReason": "tool_calls"
+      }
+    ],
+    "usage": null
+  }
+}

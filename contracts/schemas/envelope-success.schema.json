@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/envelope-success.schema.json",
+  "title": "API success envelope",
+  "type": "object",
+  "properties": {
+    "success": {
+      "const": true
+    },
+    "data": {},
+    "meta": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "success",
+    "data",
+    "meta"
+  ],
+  "additionalProperties": false
+}

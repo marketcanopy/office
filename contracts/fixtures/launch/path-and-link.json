@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "path-and-link",
+  "description": "Two paths and one deep link",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/docs/Quarterly plan.docx",
+    "/home/u/docs/Budget.xlsx",
+    "mc-office://open|n|Quarterly%20plan|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/common.schema.json",
+  "title": "Shared definitions",
+  "$defs": {
+    "objectId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{24}$"
+    },
+    "uuidV4": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "instant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "base64url43": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{43}$"
+    },
+    "refreshToken": {
+      "type": "string",
+      "pattern": "^dsr_[A-Za-z0-9_-]{20,200}$"
+    },
+    "jwt": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$",
+      "maxLength": 4096
+    },
+    "apiOrigin": {
+      "type": "string",
+      "enum": [
+        "https://api.marketcanopy.com",
+        "https://staging-api.marketcanopy.com"
+      ]
+    },
+    "appOrigin": {
+      "type": "string",
+      "enum": [
+        "https://app.marketcanopy.com",
+        "https://staging-app.marketcanopy.com"
+      ]
+    },
+    "releaseVersion": {
+      "type": "string",
+      "pattern": "^\\d{1,6}\\.\\d{1,6}\\.\\d{1,6}-mc\\.\\d{1,6}$"
+    },
+    "officeClientApp": {
+      "const": "com.marketcanopy.office"
+    },
+    "user": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "common.schema.json#/$defs/objectId"
+        },
+        "email": {
+          "type": "string",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "displayName"
+      ],
+      "additionalProperties": false
+    },
+    "modelAlias": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{0,63}$"
+    },
+    "capability": {
+      "enum": [
+        "chat",
+        "tools",
+        "vision",
+        "reasoning"
+      ]
+    },
+    "model": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/modelAlias"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "capabilities": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/capability"
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "capabilities"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "fixture": 1,
+  "name": "stream-error-mid-stream",
+  "description": "A failure after the stream started: one error event, no [DONE]",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Partial\"},\"finish_reason\":null}]}\n\ndata: {\"error\": {\"message\": \"AI is unavailable, try again.\", \"type\": \"api_error\", \"code\": \"PROVIDER_UNAVAILABLE\", \"param\": null, \"request_id\": \"req_example\"}}\n\n",
+  "expect": {
+    "ok": true,
+    "done": false,
+    "choices": [
+      {
+        "content": "Partial",
+        "reasoning": "",
+        "toolCalls": [],
+        "finishReason": null
+      }
+    ],
+    "usage": null,
+    "error": {
+      "code": "PROVIDER_UNAVAILABLE",
+      "type": "api_error"
+    }
+  }
+}

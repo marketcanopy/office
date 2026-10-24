@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "extension-not-offered",
+  "description": "An executable is not a document",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/run.exe"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

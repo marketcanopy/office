@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "force-window",
+  "description": "Every other option is refused",
+  "subject": "launch-args",
+  "input": [
+    "--force-use-window"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

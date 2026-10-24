@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "compare-malformed",
+  "description": "Malformed versions do not compare",
+  "subject": "client-version",
+  "input": {
+    "compare": [
+      "10.0.0-beta",
+      "10.0.0-mc.1"
+    ]
+  },
+  "expect": {
+    "result": null
+  }
+}

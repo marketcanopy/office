@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "release",
+  "description": "The release form becomes the header form",
+  "subject": "client-version",
+  "input": {
+    "release": "10.0.0-mc.3"
+  },
+  "expect": {
+    "header": "10.0.0.3"
+  }
+}

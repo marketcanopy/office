@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "missing",
+  "description": "No file: Office has not written one, or is rewriting it",
+  "subject": "recents",
+  "input": {
+    "text": null
+  },
+  "expect": {
+    "state": "unknown",
+    "reason": "missing"
+  }
+}

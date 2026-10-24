@@ -1,0 +1,39 @@
+{
+  "fixture": 1,
+  "name": "native-ready",
+  "description": "getMarketCanopyAiSession() when AI is available",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "ready",
+      "baseUrl": "https://api.marketcanopy.com/v1/office/ai",
+      "accessToken": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJvZmZpY2UtYWkiLCJleGFtcGxlIjp0cnVlfQ.ZXhhbXBsZS1zaWduYXR1cmUtbm90LXJlYWw",
+      "expiresAt": "2026-10-24T21:55:00.000Z",
+      "organizationId": "66f0c0ffee0000000000b001",
+      "models": [
+        {
+          "id": "mc-standard",
+          "name": "Standard",
+          "capabilities": [
+            "chat",
+            "tools"
+          ]
+        },
+        {
+          "id": "mc-reasoning",
+          "name": "Reasoning",
+          "capabilities": [
+            "chat",
+            "tools",
+            "reasoning"
+          ]
+        }
+      ],
+      "defaultModel": "mc-standard"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

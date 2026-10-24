@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "native-update-required",
+  "description": "getMarketCanopyAiSession() state update_required",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "update_required"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "fixture": 1,
+  "name": "request-n-2",
+  "description": "n other than 1 is not in the subset",
+  "subject": "document",
+  "input": {
+    "schema": "gateway-chat-request",
+    "value": {
+      "model": "mc-standard",
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "Translate to French: Hello"
+            }
+          ]
+        }
+      ],
+      "stream": false,
+      "max_tokens": 512,
+      "temperature": 0.2,
+      "n": 2
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

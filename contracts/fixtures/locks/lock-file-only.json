@@ -1,0 +1,18 @@
+{
+  "fixture": 1,
+  "name": "lock-file-only",
+  "description": "A killed Office leaves the lock file and releases the OS lock (observed)",
+  "subject": "lock-state",
+  "input": {
+    "osLock": false,
+    "lockFile": true,
+    "writable": true
+  },
+  "expect": {
+    "state": "lock_file_only",
+    "write": {
+      "allowed": false,
+      "error": "DOCUMENT_OPEN_IN_OFFICE"
+    }
+  }
+}

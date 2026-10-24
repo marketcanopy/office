@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "command-link",
+  "description": "Command links are disabled",
+  "subject": "deep-link",
+  "input": "mc-office://command/open",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

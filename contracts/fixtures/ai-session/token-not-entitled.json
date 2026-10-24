@@ -1,0 +1,39 @@
+{
+  "fixture": 1,
+  "name": "token-not-entitled",
+  "description": "No AI in the plan",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai-session",
+      "headers": {
+        "X-Client-App": "com.marketcanopy.office",
+        "X-Client-Platform": "linux",
+        "X-Client-Version": "10.0.0.3",
+        "X-Device-Id": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11",
+        "Authorization": "Bearer <office access token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001"
+      },
+      "body": {}
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "AI_NOT_ENTITLED",
+          "message": "AI isn't included in your plan."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/ai-session",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "AI_NOT_ENTITLED"
+  }
+}

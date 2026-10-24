@@ -1,0 +1,63 @@
+{
+  "fixture": 1,
+  "name": "chat-agent-request",
+  "description": "The agent's streaming request shape (desktop-sdk ai-agent openai provider)",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are an assistant in Market Canopy Office."
+          },
+          {
+            "role": "user",
+            "content": "Summarize this document."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "insert_text",
+              "description": "Insert text at the cursor",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        ],
+        "stream": true,
+        "reasoning_effort": "low"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "Content-Type": "text/event-stream"
+      },
+      "sse": "text"
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

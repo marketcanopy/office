@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/web-session-redeem-request.schema.json",
+  "title": "POST /v1/office/web-session/redeem body (7.2)",
+  "type": "object",
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/base64url43"
+    }
+  },
+  "required": [
+    "code"
+  ],
+  "additionalProperties": false
+}

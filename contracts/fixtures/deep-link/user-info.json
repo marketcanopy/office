@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "user-info",
+  "description": "User info in the URL",
+  "subject": "deep-link",
+  "input": "mc-office://open|n|Budget|https://a@app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

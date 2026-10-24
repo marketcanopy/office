@@ -1,0 +1,37 @@
+{
+  "fixture": 1,
+  "name": "redeem-expired",
+  "description": "Older than 60 seconds",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session/redeem",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "schema": "web-session-redeem-request",
+      "body": {
+        "code": "ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE"
+      }
+    },
+    "response": {
+      "status": 401,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "CODE_EXPIRED",
+          "message": "That connection expired."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/web-session/redeem",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "CODE_EXPIRED"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "path-linux",
+  "description": "An absolute Linux path",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/docs/Quarterly plan.docx"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

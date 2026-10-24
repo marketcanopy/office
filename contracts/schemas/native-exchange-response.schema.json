@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/native-exchange-response.schema.json",
+  "title": "POST /v1/auth/native/exchange data (6.4)",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "$ref": "common.schema.json#/$defs/jwt"
+        },
+        "refreshToken": {
+          "$ref": "common.schema.json#/$defs/refreshToken"
+        },
+        "expiresIn": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 900
+        },
+        "deviceSessionId": {
+          "$ref": "common.schema.json#/$defs/objectId"
+        },
+        "user": {
+          "$ref": "common.schema.json#/$defs/user"
+        }
+      },
+      "required": [
+        "accessToken",
+        "refreshToken",
+        "expiresIn",
+        "deviceSessionId",
+        "user"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "mfaRequired": {
+          "const": true
+        },
+        "mfaToken": {
+          "type": "string",
+          "minLength": 1
+        },
+        "methods": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "mfaRequired",
+        "mfaToken"
+      ],
+      "additionalProperties": true,
+      "description": "The second-factor challenge the existing mobile exchange returns."
+    }
+  ]
+}

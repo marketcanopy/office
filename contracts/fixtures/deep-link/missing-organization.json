@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "missing-organization",
+  "description": "organizationId is required",
+  "subject": "deep-link",
+  "input": "mc-office://open|n|Budget|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

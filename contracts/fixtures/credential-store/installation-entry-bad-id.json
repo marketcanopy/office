@@ -1,0 +1,16 @@
+{
+  "fixture": 1,
+  "name": "installation-entry-bad-id",
+  "description": "The installation id is a UUID v4",
+  "subject": "document",
+  "input": {
+    "schema": "credential-installation",
+    "value": {
+      "version": 1,
+      "installationId": "office-1"
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

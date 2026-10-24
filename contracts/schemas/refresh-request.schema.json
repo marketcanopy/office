@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/refresh-request.schema.json",
+  "title": "POST /v1/auth/refresh body (6.3, existing)",
+  "type": "object",
+  "properties": {
+    "refreshToken": {
+      "$ref": "common.schema.json#/$defs/refreshToken"
+    }
+  },
+  "required": [
+    "refreshToken"
+  ],
+  "additionalProperties": false
+}

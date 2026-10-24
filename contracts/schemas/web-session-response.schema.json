@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/web-session-response.schema.json",
+  "title": "POST /v1/office/web-session data (7.1)",
+  "type": "object",
+  "properties": {
+    "code": {
+      "$ref": "common.schema.json#/$defs/base64url43"
+    },
+    "audience": {
+      "const": "office-web"
+    },
+    "expiresAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    }
+  },
+  "required": [
+    "code",
+    "audience",
+    "expiresAt"
+  ],
+  "additionalProperties": false
+}

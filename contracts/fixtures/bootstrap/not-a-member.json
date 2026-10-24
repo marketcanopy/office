@@ -1,0 +1,38 @@
+{
+  "fixture": 1,
+  "name": "not-a-member",
+  "description": "The selected organization is no longer the person's",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "GET",
+      "path": "/v1/office/bootstrap",
+      "headers": {
+        "X-Client-App": "com.marketcanopy.office",
+        "X-Client-Platform": "linux",
+        "X-Client-Version": "10.0.0.3",
+        "X-Device-Id": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11",
+        "Authorization": "Bearer <office access token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001"
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "NOT_A_MEMBER",
+          "message": "Choose another organization."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/bootstrap",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "NOT_A_MEMBER"
+  }
+}

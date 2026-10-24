@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "open-desktop-param",
+  "description": "Office appends desktop=true when it loads the URL (observed)",
+  "subject": "deep-link",
+  "input": "mc-office://open|n|Quarterly%20plan|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001&desktop=true",
+  "expect": {
+    "ok": true,
+    "kind": "open",
+    "name": "Quarterly plan",
+    "appOrigin": "https://app.marketcanopy.com",
+    "documentId": "66f0c0ffee0000000000c001",
+    "organizationId": "66f0c0ffee0000000000b001"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "new-upper-case",
+  "description": "--new: values are lower case only",
+  "subject": "launch-args",
+  "input": [
+    "--new:Word"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

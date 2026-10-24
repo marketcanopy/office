@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/install-manifest.schema.json",
+  "title": "Office install manifest (12)",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "channel": {
+      "enum": [
+        "stable",
+        "beta",
+        "staging"
+      ]
+    },
+    "version": {
+      "$ref": "common.schema.json#/$defs/releaseVersion"
+    },
+    "publishedAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    },
+    "minimumDesktopVersion": {
+      "type": "string",
+      "pattern": "^\\d{1,6}\\.\\d{1,6}\\.\\d{1,6}$"
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "os": {
+            "enum": [
+              "windows",
+              "macos",
+              "linux"
+            ]
+          },
+          "arch": {
+            "enum": [
+              "x64",
+              "arm64"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "kind": {
+            "enum": [
+              "exe",
+              "msi",
+              "dmg",
+              "deb",
+              "rpm",
+              "appimage"
+            ]
+          },
+          "publisher": {
+            "type": "string"
+          },
+          "sourceArchiveUrl": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://"
+          },
+          "sourceArchiveSha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "required": [
+          "os",
+          "arch",
+          "url",
+          "sha256",
+          "size",
+          "kind",
+          "publisher",
+          "sourceArchiveUrl",
+          "sourceArchiveSha256"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "os": {
+                  "const": "linux"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "publisher": {
+                  "const": ""
+                },
+                "kind": {
+                  "enum": [
+                    "deb",
+                    "rpm",
+                    "appimage"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "publisher": {
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "os": {
+                  "const": "windows"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "kind": {
+                  "enum": [
+                    "exe",
+                    "msi"
+                  ]
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "os": {
+                  "const": "macos"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "kind": {
+                  "const": "dmg"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "channel",
+    "version",
+    "publishedAt",
+    "minimumDesktopVersion",
+    "targets"
+  ],
+  "additionalProperties": false
+}

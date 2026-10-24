@@ -1,0 +1,54 @@
+{
+  "fixture": 1,
+  "name": "valid",
+  "description": "The shape P12 fills (values synthetic)",
+  "subject": "document",
+  "input": {
+    "schema": "install-manifest",
+    "value": {
+      "schemaVersion": 1,
+      "channel": "stable",
+      "version": "10.0.0-mc.3",
+      "publishedAt": "2026-10-24T21:40:00.000Z",
+      "minimumDesktopVersion": "0.1.190",
+      "targets": [
+        {
+          "os": "windows",
+          "arch": "x64",
+          "url": "https://downloads.marketcanopy.com/office/stable/MarketCanopyOffice-10.0.0-mc.3-x64.exe",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+          "size": 250000000,
+          "kind": "exe",
+          "publisher": "CN=Market Canopy, Inc.",
+          "sourceArchiveUrl": "https://github.com/marketcanopy/office/releases/download/v10.0.0-mc.3/marketcanopy-office-10.0.0-mc.3-source.tar.gz",
+          "sourceArchiveSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "os": "macos",
+          "arch": "arm64",
+          "url": "https://downloads.marketcanopy.com/office/stable/MarketCanopyOffice-10.0.0-mc.3-arm64.dmg",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+          "size": 300000000,
+          "kind": "dmg",
+          "publisher": "ABCDE12345",
+          "sourceArchiveUrl": "https://github.com/marketcanopy/office/releases/download/v10.0.0-mc.3/marketcanopy-office-10.0.0-mc.3-source.tar.gz",
+          "sourceArchiveSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        },
+        {
+          "os": "linux",
+          "arch": "x64",
+          "url": "https://downloads.marketcanopy.com/office/stable/marketcanopy-office_10.0.0-mc.3_amd64.deb",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+          "size": 280000000,
+          "kind": "deb",
+          "publisher": "",
+          "sourceArchiveUrl": "https://github.com/marketcanopy/office/releases/download/v10.0.0-mc.3/marketcanopy-office-10.0.0-mc.3-source.tar.gz",
+          "sourceArchiveSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

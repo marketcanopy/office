@@ -1,0 +1,263 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Sign in to Market Canopy from the start screen
+
+The start screen shows the Market Canopy account the native account
+module keeps (desktop-sdk patch 0002): Sign in to Market Canopy opens the
+system browser, then the signed-in person, the organization picker,
+Update required or offline. Market Canopy's cloud connection is made by
+native code after sign-in, so there is no connect step. Window focus
+asks the module to read the credential store again (P02 contract 5.4).
+
+Both shells hand every launch argument and opened link to the module
+first (CallCommand "mc:scheme:"), so a sign-in callback forwarded by the
+single-instance check, or a link that carries a credential, is never
+opened as a document.
+---
+ .../home/components/MarketCanopyAccount.jsx   | 117 ++++++++++++++++++
+ .../components/MarketCanopyAccount.styles.css |  34 +++++
+ common/loginpage/src/routes/home/index.jsx    |   5 +
+ macos/ONLYOFFICE/AppDelegate.mm               |   6 +
+ .../src/cascapplicationmanagerwrapper.cpp     |   5 +
+ 5 files changed, 167 insertions(+)
+ create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
+ create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
+
+diff --git a/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
+new file mode 100644
+index 0000000..87dc35b
+--- /dev/null
++++ b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
+@@ -0,0 +1,117 @@
++/*
++ * Market Canopy Office: the Market Canopy account on the start screen.
++ * Copyright (C) 2026 Market Canopy LLC
++ *
++ * This program is free software: you can redistribute it and/or modify it
++ * under the terms of the GNU Affero General Public License version 3 as
++ * published by the Free Software Foundation, together with the additional
++ * terms in the LICENSE file of https://github.com/marketcanopy/office.
++ *
++ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * AGPL at https://www.gnu.org/licenses/agpl-3.0.html.
++ *
++ * SPDX-License-Identifier: AGPL-3.0-only
++ */
++
++// The native account module (desktop-sdk src/marketcanopy) owns everything:
++// this only shows its state and sends the person's choices. It never sees a
++// token, a code or a device id. Market Canopy's cloud connection is set up by
++// native code after sign-in, so there is no "connect a cloud" step.
++import { For, Match, Show, Switch, createSignal, onCleanup, onMount } from "solid-js";
++import { onNativeMessage } from "@/sdk/events.js";
++import { command } from "@/sdk/bridge.js";
++import { t } from "@/services/l10n.js";
++import { Button } from "@/components";
++import "./MarketCanopyAccount.styles.css";
++
++function send(action, extra) {
++  command("mc:account", { action, ...(extra ?? {}) });
++}
++
++export function MarketCanopyAccount() {
++  const [account, setAccount] = createSignal(null);
++
++  onMount(() => {
++    const unsub = onNativeMessage((cmd, param) => {
++      if (cmd !== "mc:account") return;
++      try {
++        setAccount(JSON.parse(param));
++      } catch {
++        // a malformed state leaves the last one on screen
++      }
++    });
++    // SPEC 5.4 rule 5: a signed-out Office reads the credential store again when its window gains focus
++    const activate = () => send("activate");
++    window.addEventListener("focus", activate);
++    send("state");
++    onCleanup(() => {
++      unsub();
++      window.removeEventListener("focus", activate);
++    });
++  });
++
++  const state = () => account()?.state ?? "starting";
++  const organizations = () => account()?.organizations ?? [];
++
++  return (
++    <section class="mc-account" aria-live="polite">
++      <Switch>
++        <Match when={state() === "starting" || state() === "connecting"}>
++          <p class="mc-account-text">{t("mcAccountConnecting", "Connecting to Market Canopy...")}</p>
++        </Match>
++        <Match when={state() === "signing_in"}>
++          <p class="mc-account-text">{t("mcAccountFinishInBrowser", "Finish signing in in your browser.")}</p>
++          <Button onClick={() => send("cancelSignIn")}>{t("btnCancel", "Cancel")}</Button>
++        </Match>
++        <Match when={state() === "signed_in" || state() === "no_organization" || state() === "offline"}>
++          <p class="mc-account-text">
++            <Show when={account()?.user} fallback={t("mcAccountSignedIn", "Signed in to Market Canopy")}>
++              {t("mcAccountSignedInAs", "Signed in to Market Canopy as $1").replace("$1", account().user.displayName || account().user.email)}
++            </Show>
++          </p>
++          <Show when={state() === "offline"}>
++            <p class="mc-account-note">{t("mcAccountOffline", "Market Canopy can't be reached. Local files still open and save.")}</p>
++          </Show>
++          <Show when={state() === "no_organization"}>
++            <p class="mc-account-note">{t("mcAccountChooseOrganization", "Choose an organization to use Market Canopy.")}</p>
++          </Show>
++          <Show when={organizations().length > 1 || state() === "no_organization"}>
++            <select
++              class="mc-account-organization"
++              aria-label={t("mcAccountOrganization", "Organization")}
++              value={account()?.activeOrganizationId ?? ""}
++              onChange={(e) => e.currentTarget.value && send("selectOrganization", { organizationId: e.currentTarget.value })}
++            >
++              <Show when={!account()?.activeOrganizationId}>
++                <option value="">{t("mcAccountChoose", "Choose...")}</option>
++              </Show>
++              <For each={organizations()}>{(org) => <option value={org.id}>{org.name}</option>}</For>
++            </select>
++          </Show>
++          <Button onClick={() => send("signOut")}>{t("mcAccountSignOut", "Sign out")}</Button>
++        </Match>
++        <Match when={state() === "update_required"}>
++          <p class="mc-account-text">{t("mcAccountUpdateRequired", "Update required")}</p>
++          <p class="mc-account-note">
++            {t("mcAccountUpdateNote", "Market Canopy cloud and AI need a newer version of Office. Local files still open and save.")}
++          </p>
++          <Show when={account()?.update?.storeUrl}>
++            <Button variant="accent" onClick={() => send("openStore")}>{t("mcAccountGetUpdate", "Get the update")}</Button>
++          </Show>
++        </Match>
++        <Match when={true}>
++          <Button variant="accent" onClick={() => send("signIn")}>{t("mcAccountSignIn", "Sign in to Market Canopy")}</Button>
++          <Show when={account()?.credentialStore === "unavailable"}>
++            <p class="mc-account-note">
++              {t("mcAccountMemoryOnly", "This computer has no secure credential store, so you stay signed in only until Office closes.")}
++            </p>
++          </Show>
++          <Show when={account()?.error && account().error !== "SIGNED_OUT"}>
++            <p class="mc-account-note">{t("mcAccountCouldNotConnect", "Couldn't connect to Market Canopy. Try again.")}</p>
++          </Show>
++        </Match>
++      </Switch>
++    </section>
++  );
++}
+diff --git a/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css b/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
+new file mode 100644
+index 0000000..749d03a
+--- /dev/null
++++ b/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
+@@ -0,0 +1,34 @@
++/*
++ * Market Canopy Office: styles of the start screen's Market Canopy account.
++ * Copyright (C) 2026 Market Canopy LLC
++ * SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the
++ * LICENSE file of https://github.com/marketcanopy/office)
++ */
++
++.mc-account {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  gap: 8px 12px;
++  margin-bottom: 16px;
++  padding: 12px 16px;
++  border-radius: 4px;
++  background: var(--background-action-panel);
++  color: var(--text-normal);
++
++  .mc-account-text {
++    margin: 0;
++    font-weight: 600;
++  }
++
++  .mc-account-note {
++    flex-basis: 100%;
++    margin: 0;
++    font-size: 12px;
++    line-height: 18px;
++  }
++
++  .mc-account-organization {
++    min-width: 160px;
++  }
++}
+diff --git a/common/loginpage/src/routes/home/index.jsx b/common/loginpage/src/routes/home/index.jsx
+index ecc4c63..3de4ba6 100644
+--- a/common/loginpage/src/routes/home/index.jsx
++++ b/common/loginpage/src/routes/home/index.jsx
+@@ -1,3 +1,5 @@
++// Modified by Market Canopy on 2026-10-24 for Market Canopy Office: the start
++// screen shows the Market Canopy account (MarketCanopyAccount.jsx).
+ import { Show, createSignal, onCleanup, onMount } from "solid-js";
+ import { createStore, reconcile } from "solid-js/store";
+ import { t } from "@/services/l10n.js";
+@@ -19,6 +21,7 @@ import { DocTypeGrid } from "./components/DocTypeGrid.jsx";
+ import { RecentList } from "./components/RecentList.jsx";
+ import { RecoverList } from "./components/RecoverList.jsx";
+ import { FileDropZone } from "./components/FileDropZone.jsx";
++import { MarketCanopyAccount } from "./components/MarketCanopyAccount.jsx";
+ import { aichat, openFullAIPanel, openSidePanel } from "@/stores/aichat.js";
+ import { command } from "@/sdk/bridge.js";
+ import "@/styles/components/home.css";
+@@ -205,6 +208,8 @@ export default function Index() {
+ 
+   return (
+     <div class="home-page">
++      <MarketCanopyAccount />
++
+       <div class="cnt-title">
+         <h1>{t("actCreateNew")}</h1>
+       </div>
+diff --git a/macos/ONLYOFFICE/AppDelegate.mm b/macos/ONLYOFFICE/AppDelegate.mm
+index fbad228..95843b2 100644
+--- a/macos/ONLYOFFICE/AppDelegate.mm
++++ b/macos/ONLYOFFICE/AppDelegate.mm
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
+  * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme action and command links ignored.
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme links go to the account module first.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -258,6 +259,11 @@
+     NSMutableArray<NSURL *> * openLinks = @[].mutableCopy;
+     
+     [urls enumerateObjectsUsingBlock:^(NSURL * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
++        // Market Canopy Office: a sign-in callback, or a link that carries a credential, is the account module's
++        CAscApplicationManager * accountManager = [NSAscApplicationWorker getAppManager];
++        if (accountManager && accountManager->CallCommand(L"mc:scheme:" + [obj.absoluteString stdwstring]) != 0) {
++            return;
++        }
+         if ([obj.scheme isEqualToString:kSchemeApp]) {
+             NSString * strLink = [obj.absoluteString stringByRemovingPercentEncoding];
+             
+diff --git a/win-linux/src/cascapplicationmanagerwrapper.cpp b/win-linux/src/cascapplicationmanagerwrapper.cpp
+index e463d05..b1c5ebe 100644
+--- a/win-linux/src/cascapplicationmanagerwrapper.cpp
++++ b/win-linux/src/cascapplicationmanagerwrapper.cpp
+@@ -1,6 +1,7 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
+  * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme action and command links ignored.
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme links go to the account module first.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -1167,6 +1168,10 @@ void CAscApplicationManagerWrapper::handleInputCmd(const std::vector<wstring>& v
+ //            if ( check_param(arg, L"single-window") )
+ //                in_new_window = true;
+         } else
++        if ( _app.CallCommand(L"mc:scheme:" + arg) != 0 ) {
++            // Market Canopy Office: a sign-in callback, or a link that carries a credential
++            continue;
++        } else
+         if ( arg.rfind(app_action, 0) == 0 ) {
+             // Market Canopy Office: <scheme>://action|... links (plugin store installs,
+             // panel selection) are ignored; a web page must not drive the app.

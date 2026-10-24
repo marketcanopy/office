@@ -1,0 +1,90 @@
+# Builds the account module's plain C++ sources and runs tests/account
+# (platform-api ADR 0524) on Windows, macOS and Linux.
+#
+# GitHub-hosted runners only, no secrets, read-only token. The OS store test
+# writes to the throwaway runner's own keychain, Credential Manager or Secret
+# Service under a test service name.
+
+name: Account module tests
+
+on:
+  pull_request:
+    paths:
+      - "branding/marketcanopy/add/desktop-sdk/ChromiumBasedEditors/lib/src/marketcanopy/**"
+      - "tests/account/**"
+      - "contracts/fixtures/**"
+      - ".github/workflows/account-tests.yml"
+  push:
+    branches: [main]
+    paths:
+      - "branding/marketcanopy/add/desktop-sdk/ChromiumBasedEditors/lib/src/marketcanopy/**"
+      - "tests/account/**"
+      - "contracts/fixtures/**"
+      - ".github/workflows/account-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: account-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Account module (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install the Secret Service (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends dbus gnome-keyring libsecret-1-0
+
+      - name: Configure and build
+        run: |
+          cmake -S tests/account -B "$RUNNER_TEMP/account" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/account" --config Release --parallel
+
+      - name: Fixtures and traces
+        run: ctest --test-dir "$RUNNER_TEMP/account" -C Release --output-on-failure -V -R "fixture_tests|trace_tests"
+
+      - name: OS credential store and lock (Linux)
+        if: runner.os == 'Linux'
+        env:
+          MC_OS_STORE_TESTS: "1"
+        run: |
+          dbus-run-session -- bash -c 'echo -n ci | gnome-keyring-daemon --unlock --components=secrets >/dev/null && ctest --test-dir "$RUNNER_TEMP/account" -C Release --output-on-failure -V -R os_store_tests'
+          # With no Secret Service on the bus the session is memory-only.
+          MC_OS_STORE_EXPECT=unavailable env -u DBUS_SESSION_BUS_ADDRESS "$RUNNER_TEMP/account/os_store_tests"
+
+      - name: OS credential store and lock (macOS)
+        if: runner.os == 'macOS'
+        env:
+          MC_OS_STORE_TESTS: "1"
+        run: |
+          # A throwaway default keychain, unlocked, so no access prompt can block the run.
+          security create-keychain -p ci mc-account-tests.keychain
+          security set-keychain-settings mc-account-tests.keychain
+          security unlock-keychain -p ci mc-account-tests.keychain
+          security default-keychain -s mc-account-tests.keychain
+          security list-keychains -d user -s mc-account-tests.keychain
+          ctest --test-dir "$RUNNER_TEMP/account" -C Release --output-on-failure -V -R os_store_tests
+
+      - name: OS credential store and lock (Windows)
+        if: runner.os == 'Windows'
+        env:
+          MC_OS_STORE_TESTS: "1"
+        run: ctest --test-dir "$RUNNER_TEMP/account" -C Release --output-on-failure -V -R os_store_tests

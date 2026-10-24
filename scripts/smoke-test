@@ -264,6 +264,17 @@ def check_overlay(results, settings):
     results.check("no branding file names an ONLYOFFICE update feed", not offenders, ", ".join(offenders))
 
 
+def check_additions(results):
+    # branding/marketcanopy/add/<repo>/<path>: new files, each with its license line
+    missing = []
+    for current, _, names in os.walk(os.path.join(BRANDING, "add")):
+        for name in names:
+            path = os.path.join(current, name)
+            if "SPDX-License-Identifier: AGPL-3.0-only" not in read(path):
+                missing.append(os.path.relpath(path, BRANDING))
+    results.check("added files carry the AGPL license line", not missing, ", ".join(missing[:5]))
+
+
 def check_notices(results):
     build = {
         "version": "0.0.0-mc.0",
@@ -326,6 +337,16 @@ def check_work(results, work, settings):
         ):
             # A replacement whose upstream file is gone means upstream moved it.
             results.check("replacement target exists upstream", False, relative)
+    add_root = os.path.join(BRANDING, "add")
+    for current, _, names in os.walk(add_root):
+        for name in names:
+            relative = os.path.relpath(os.path.join(current, name), add_root)
+            target = os.path.join(work, relative)
+            results.check(
+                "added file is in the workspace",
+                os.path.isfile(target) and sha256(target) == sha256(os.path.join(current, name)),
+                relative,
+            )
     sdk = os.path.join(work, "desktop-sdk", "ChromiumBasedEditors", "lib", "src", "applicationmanager.cpp")
     if os.path.isfile(sdk):
         results.check("desktop-sdk returns the scheme", 'L"%s"' % settings["identity"]["urlScheme"] in read(sdk))
@@ -342,6 +363,7 @@ def main():
     check_identity(results, settings)
     check_queue(results)
     check_overlay(results, settings)
+    check_additions(results)
     check_notices(results)
     if args.work:
         check_work(results, os.path.abspath(args.work), settings)

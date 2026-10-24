@@ -56,7 +56,7 @@ memory's peak use, and the host. In GitHub Actions it also writes the
 `PRODUCT_VERSION`, `BUILD_NUMBER`, `OFFICE_VERSION`, `OFFICE_UPSTREAM_TAG`,
 `OFFICE_FLAVOR`, `OFFICE_BUILD_SIGNED`, `OFFICE_SOURCE_ROOT`,
 `OFFICE_PATCHES_APPLIED=1` and `OFFICE_OVERLAY_APPLIED=1` (the branding hook
-then does not apply either again).
+then does not apply the queue, the replacements or the added files again).
 
 ## Requirements
 

@@ -5,10 +5,12 @@
   deps.py (apt packages, Node, Java), the prebuilt Qt 5.9.9 from
   ONLYOFFICE-data/build_tools_data, and the Ubuntu 16.04 sysroot (`--sysroot 1`,
   also the arm64 cross toolchain).
-- Windows uses the Visual Studio found by vswhere, passed as build_tools'
-  `vs-version 2019` layout with an explicit `--vs-path` (hosted windows-2025 has
-  only Visual Studio 2022), Qt 5.15.2 msvc2019_64 through aqtinstall, and
-  upstream's tools/win/arm64/fetch_qt.py for win-arm64.
+- Windows needs Visual Studio 2019 (the v142 toolset): build_tools' boost 1.72
+  bootstraps with `vc142` and builds with `msvc-14.2`, which find only a 2019
+  installation. Hosted windows-2025 has Visual Studio 2026, so --install-deps
+  installs the 2019 Build Tools beside it. The one vswhere finds is passed as
+  `--vs-path`; Qt 5.15.2 msvc2019_64 comes through aqtinstall, and upstream's
+  tools/win/arm64/fetch_qt.py provides win-arm64's.
 - macOS uses Xcode on the runner and Qt 5.15.2 clang_64 through aqtinstall; the
   editors are a Cocoa app, so Qt only provides qmake for core.
 """
@@ -69,7 +71,16 @@ def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
     return Toolchain(["--qt-dir", qt_dir, "--sysroot", "1"], {"PATH": path}, python)
 
 
-def visual_studio() -> str:
+VS2019_COMPONENTS = [
+    "Microsoft.VisualStudio.Workload.VCTools",
+    "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
+    "Microsoft.VisualStudio.Component.VC.ATL",
+    "Microsoft.VisualStudio.Component.VC.ATL.ARM64",
+]
+
+
+def _find_vs2019() -> str:
     vswhere = os.path.join(
         os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"),
         "Microsoft Visual Studio",
@@ -77,11 +88,12 @@ def visual_studio() -> str:
         "vswhere.exe",
     )
     if not os.path.isfile(vswhere):
-        raise util.BuildError("vswhere.exe not found; install Visual Studio 2019 or 2022 with C++ tools")
+        return ""
     found = subprocess.run(
         [
             vswhere,
-            "-latest",
+            "-version",
+            "[16.0,17.0)",
             "-products",
             "*",
             "-requires",
@@ -93,8 +105,25 @@ def visual_studio() -> str:
         text=True,
         check=False,
     ).stdout.strip()
+    return found.splitlines()[0] if found else ""
+
+
+def visual_studio(install_deps: bool, dry_run: bool) -> str:
+    """vcvarsall.bat's folder of a Visual Studio 2019 with the x64 and ARM64 C++ tools."""
+    if dry_run:
+        return "<vswhere 2019>"
+    found = _find_vs2019()
+    if not found and install_deps:
+        parameters = " ".join("--add " + name for name in VS2019_COMPONENTS) + " --includeRecommended --passive"
+        package = ["choco", "install", "visualstudio2019buildtools", "--no-progress", "-y"]
+        # A reboot request (3010) is not a failure; the vswhere query below decides.
+        util.run(package + ["--package-parameters", parameters], check=False)
+        found = _find_vs2019()
     if not found:
-        raise util.BuildError("no Visual Studio with the C++ x64 tools was found by vswhere")
+        raise util.BuildError(
+            "no Visual Studio 2019 with the C++ x64 tools was found (build_tools' boost needs the v142 toolset); "
+            "install the 2019 Build Tools or pass --install-deps"
+        )
     return os.path.join(found, "VC", "Auxiliary", "Build")
 
 
@@ -108,7 +137,7 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
         arm_tools = os.path.join(work_root, "build_tools", "tools", "win", "arm64")
         if not os.path.isdir(os.path.join(arm_tools, "qt_build", "Qt-5.15.2")):
             util.run([util.python(), "fetch_qt.py"], cwd=arm_tools, dry_run=dry_run)
-    vs_path = "<vswhere>" if dry_run else visual_studio()
+    vs_path = visual_studio(install_deps, dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         util.run(["choco", "install", "innosetup", "--no-progress", "-y"], dry_run=dry_run, check=False)
     return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], {}, util.python())

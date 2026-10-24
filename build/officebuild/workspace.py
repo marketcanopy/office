@@ -70,7 +70,8 @@ class Workspace:
         pin = self.upstream.commit(repo)
         ref = pin or "refs/tags/" + self.upstream.tag
         if not os.path.isdir(os.path.join(folder, ".git")):
-            os.makedirs(folder, exist_ok=True)
+            if not self.dry_run:
+                os.makedirs(folder, exist_ok=True)
             util.git(["init", "--quiet"], folder, self.dry_run)
             util.git(["remote", "add", "origin", ONLYOFFICE + repo + ".git"], folder, self.dry_run)
         if os.path.isdir(os.path.join(folder, ".git", "rebase-apply")):

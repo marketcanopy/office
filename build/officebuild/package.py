@@ -220,7 +220,7 @@ def mac_app(ctx: Context) -> str:
     stage = _mac_dirs(ctx)["stage"]
     apps = glob.glob(os.path.join(stage, "*.app"))
     if ctx.dry_run:
-        return os.path.join(stage, "ONLYOFFICE.app")
+        return os.path.join(stage, (PRODUCT_SLUG if ctx.branded else "ONLYOFFICE") + ".app")
     if len(apps) != 1:
         raise util.BuildError("expected one .app in %s, found %s" % (stage, apps))
     return apps[0]

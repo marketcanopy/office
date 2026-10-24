@@ -1,0 +1,71 @@
+# Public checks for the build tooling and the patch queue (platform-api ADR 0530).
+#
+# GitHub-hosted runners only, no secrets, read-only token: release builds and
+# signing run in the private release repository, never here.
+
+name: Office build checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: office-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Ruff
+        run: |
+          python -m pip install --disable-pip-version-check ruff==0.16.9
+          ruff check build
+          ruff format --check build
+
+      - name: Unit tests
+        run: python -m unittest discover -s build/tests -t build -v
+
+      - name: Dry run of every target
+        run: build/office-build --targets all --package --upstream-tag v10.0.0.176 --dry-run --work-dir "$RUNNER_TEMP/ow"
+
+      - name: actionlint
+        run: |
+          bash <(curl -sSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+
+  patch-apply:
+    name: Patch apply check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply the patch queue and the overlay to UPSTREAM's commits
+        shell: bash
+        run: |
+          if [ ! -f UPSTREAM ]; then
+            echo "::notice::No UPSTREAM file yet, so there is no patch queue to check."
+            exit 0
+          fi
+          build/office-build --check-patches --targets linux-x64 --work-dir "$RUNNER_TEMP/ow"

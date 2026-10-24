@@ -1,0 +1,145 @@
+{
+  "$comment": "Market Canopy artwork copied from platform-dashboard main. Market Canopy trademarks; not licensed under the AGPL or CC BY-SA (NOTICE). desktop/assets/logo-icon.png is byte-identical to icon.png and is not copied.",
+  "files": {
+    "canopy-mark.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "public/canopy-mark.png",
+      "gitBlob": "f6ad749a9ae8e3777af49df57c21db4a0090b1a8",
+      "sha256": "d1c444512533edfe930479f9b7e73536e7227a3b215416a35977f0e982e49fbe"
+    },
+    "documents/excel.icns": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/excel.icns",
+      "gitBlob": "a405b0e6c32ec4691c3c78160751b9cd1e2cddea",
+      "sha256": "f61c833ddb3d2f3028d475d9bd51309ea4ee05d4e0fa3ab91a8bbcb0f0559e59"
+    },
+    "documents/excel.ico": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/excel.ico",
+      "gitBlob": "5a2206c39030328f9014c7c223403a04023370d9",
+      "sha256": "eeee85bfa3eec06f7eb2312b27f4baafecdc53a15d9d70f5d34d5714191c1fc6"
+    },
+    "documents/excel.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/excel.png",
+      "gitBlob": "42a1d6facb0782b9845ee0d7d2f7ff3702871d70",
+      "sha256": "ecdab475bc65dcdb7e48cc19e60e8213b285fd51d394edb39e810d707f42f26c"
+    },
+    "documents/excel.svg": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/excel.svg",
+      "gitBlob": "0071c77ba69c315d831dd64beb41ff190f52a6fb",
+      "sha256": "56886bc293cac303de727df3546af70a646fb14bac88f414781febd9fd020bd7"
+    },
+    "documents/pdf.icns": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/pdf.icns",
+      "gitBlob": "33fe06f5c874913d5ebfb8aec6ba5b9c8fe6a5cb",
+      "sha256": "844cab0ab72afab2e4f3c5288e080af0d0550cb1b0783b431fd4065c5253520b"
+    },
+    "documents/pdf.ico": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/pdf.ico",
+      "gitBlob": "61d78648aab30673b1aa4e4be2816a988682fec2",
+      "sha256": "e104ac223f14de2a09a9f22964ae9da0606acdf641aacb428c4787d663040344"
+    },
+    "documents/pdf.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/pdf.png",
+      "gitBlob": "d9fd518156f65b8ebc8428355e1758601d5c6f73",
+      "sha256": "f64a71422ab4027138adbfc95aa1481a51f7894a1599326c36fe06d37cdda5e7"
+    },
+    "documents/pdf.svg": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/pdf.svg",
+      "gitBlob": "135301d90ccc1eddd527eddcfb7405a3abc874b5",
+      "sha256": "ba0a5f67e7ce771ba0d0071437c63dcf3a2a36858ce61ec5b8f4ae2f1ae239b3"
+    },
+    "documents/powerpoint.icns": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/powerpoint.icns",
+      "gitBlob": "22f31783d531a4f3a44763728572960756eb81ce",
+      "sha256": "34df0697f1a98cac539ccd7cddbf1864c4b7cb71f43e9b2653a0a4d1a25fe519"
+    },
+    "documents/powerpoint.ico": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/powerpoint.ico",
+      "gitBlob": "15ff8dd4f92e15848a0582c352816f321e8e5042",
+      "sha256": "4caa630cf72f543bbb553a3fd21587bc886382327a51645d3980b1864b5b894d"
+    },
+    "documents/powerpoint.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/powerpoint.png",
+      "gitBlob": "8eeb909a7b383b6469eba2cb597621cd80b31c72",
+      "sha256": "07dc74f95fa92133fcc9982e237eff67fc0f8ff297de6feff20053461d424a2a"
+    },
+    "documents/powerpoint.svg": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/powerpoint.svg",
+      "gitBlob": "fbbf80886d5e05a1f7046324708bb118f27f6b1e",
+      "sha256": "988cf478643f04fbbae76993a57929cabceb3b794d36335327c9a7a7206005f7"
+    },
+    "documents/word.icns": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/word.icns",
+      "gitBlob": "2542dc4e306378da608beccee87f824384787025",
+      "sha256": "e3bc82158d3b5ba20710860b3de1db427fc5c083e13ec8d186efe2b64bcc117a"
+    },
+    "documents/word.ico": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/word.ico",
+      "gitBlob": "6a29df2954d351c2e65185a179e06e90052782c7",
+      "sha256": "aad3d2de12b08b17b4533f5626b196000a6dee9bb67f7be257e78b42ce545f5d"
+    },
+    "documents/word.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/word.png",
+      "gitBlob": "1e4027fde9187e45a6635de9a4be4c0ba17f535e",
+      "sha256": "4e230d614944bee14d471a49b4d96008d612d0d9bca1f294421a06fad347e623"
+    },
+    "documents/word.svg": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/documents/word.svg",
+      "gitBlob": "d884c343c0eff5e26644111b41358932be1b2e9b",
+      "sha256": "4cc9f28b4f4c83957fad22133f35923c4fa7072ab521c3bcc5cd093165c9cb9a"
+    },
+    "icon.icns": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/icon.icns",
+      "gitBlob": "dd94029a0a5f887c0f5920fffe54234208963c7e",
+      "sha256": "c0b96170af33cf4b2b737c1eff45ec6d9fca7672ef5626c96ced33ca8b2b651d"
+    },
+    "icon.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/icon.png",
+      "gitBlob": "f6ad749a9ae8e3777af49df57c21db4a0090b1a8",
+      "sha256": "d1c444512533edfe930479f9b7e73536e7227a3b215416a35977f0e982e49fbe"
+    },
+    "logo.png": {
+      "repository": "circuitid/platform-dashboard",
+      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
+      "path": "desktop/assets/logo.png",
+      "gitBlob": "77cf25eedd4873a009b5f024b99dd92fe85162be",
+      "sha256": "3c01ae46a3a7440d8611a96d90764a84027bab3e6af1b27ee0080f31734a35ec"
+    }
+  }
+}

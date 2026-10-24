@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Package notices and uninstall scope for Market Canopy Office
+
+The Debian copyright file named the branding's publisher as the copyright
+holder since 2009; it now names Ascensio System SIA as the original
+developer and Market Canopy for the modifications, with the origin
+statement. The Windows uninstaller removed Software\<company> and
+%LOCALAPPDATA%\<company> whole; it now removes only the product's key
+and folder, so it never touches other Market Canopy software.
+---
+ package/deb/template/copyright.m4 | 10 ++++++++--
+ package/inno/_code.iss            | 12 +++++++-----
+ 2 files changed, 15 insertions(+), 7 deletions(-)
+
+diff --git a/package/deb/template/copyright.m4 b/package/deb/template/copyright.m4
+index 25b20c5..ac53cd7 100644
+--- a/package/deb/template/copyright.m4
++++ b/package/deb/template/copyright.m4
+@@ -1,15 +1,21 @@
++dnl Modified by Market Canopy on 2026-10-24 for Market Canopy Office: the original
++dnl developer's copyright and the origin of the modified version.
+ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+ Upstream-Name: M4_COMPANY_NAME M4_PRODUCT_NAME
+ Upstream-Contact: M4_PUBLISHER_NAME <M4_SUPPORT_MAIL>
+ Source: M4_PUBLISHER_URL
+ 
+ Files: *
+-Copyright: 2009-M4_CURRENT_YEAR, M4_PUBLISHER_NAME <M4_SUPPORT_MAIL>
++Copyright: 2009-M4_CURRENT_YEAR, Ascensio System SIA <info@onlyoffice.com>
++ 2026-M4_CURRENT_YEAR, M4_PUBLISHER_NAME <M4_SUPPORT_MAIL>
++Comment: M4_COMPANY_NAME M4_PRODUCT_NAME is a modified version of ONLYOFFICE
++ Desktop Editors, the original software developed by Ascensio System SIA.
+ ifelse(M4_PACKAGE_EDITION, commercial,
+ `License: Proprietary',
+ `License: AGPL-3.0-only')
+ 
+ ifelse(M4_PACKAGE_EDITION, commercial,,
+ `Files: *.gif *.ico *.jpg *.png *.svg
+-Copyright: 2009-M4_CURRENT_YEAR, M4_PUBLISHER_NAME <M4_SUPPORT_MAIL>
++Copyright: 2009-M4_CURRENT_YEAR, Ascensio System SIA <info@onlyoffice.com>
++ 2026-M4_CURRENT_YEAR, M4_PUBLISHER_NAME <M4_SUPPORT_MAIL>
+ License: CC-BY-SA-4.0')
+diff --git a/package/inno/_code.iss b/package/inno/_code.iss
+index 099196c..42b8ac8 100644
+--- a/package/inno/_code.iss
++++ b/package/inno/_code.iss
+@@ -2,6 +2,8 @@
+ #if 0
+ [Code]
+ #endif
++// Modified by Market Canopy on 2026-10-24 for Market Canopy Office: uninstall
++// removes only this product's data and registry key, not the whole company's.
+ ////////////////////
+ // Utils          //
+ ////////////////////
+@@ -578,8 +580,8 @@ begin
+ 
+     userPath := ExpandConstant('{localappdata}\{#sIntCompanyName}');
+     if regValue = 'soft' then begin
+-      RegDeleteKeyIncludingSubkeys(GetHKLM(), 'Software\{#sIntCompanyName}');
+-      RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\{#sIntCompanyName}');
++      RegDeleteKeyIncludingSubkeys(GetHKLM(), 'Software\{#sIntCompanyName}\{#sIntProductName}');
++      RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\{#sIntCompanyName}\{#sIntProductName}');
+ 
+       // remove all app and user cashed data except of folders 'recover' and 'sdkjs-plugins'
+       userPath := userPath + '\{#sIntProductName}';
+@@ -602,9 +604,9 @@ begin
+ 
+     end else
+     if regValue = 'full' then begin
+-      DelTree(userPath, True, True, True);
+-      RegDeleteKeyIncludingSubkeys(GetHKLM(), 'Software\{#sIntCompanyName}');
+-      RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\{#sIntCompanyName}');
++      DelTree(userPath + '\{#sIntProductName}', True, True, True);
++      RegDeleteKeyIncludingSubkeys(GetHKLM(), 'Software\{#sIntCompanyName}\{#sIntProductName}');
++      RegDeleteKeyIncludingSubkeys(HKEY_CURRENT_USER, 'Software\{#sIntCompanyName}\{#sIntProductName}');
+     end;
+ 
+     RegDeleteValue(HKEY_CLASSES_ROOT, 'Local Settings\Software\Microsoft\Windows\Shell\MuiCache', ExpandConstant('{app}\{#iconsExe}'));

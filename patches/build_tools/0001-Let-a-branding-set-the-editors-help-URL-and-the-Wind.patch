@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Let a branding set the editors' help URL and the Windows
+ launcher name
+
+DESKTOP_URL_WEBAPPS_HELP replaces ONLYOFFICE's help site (empty keeps
+the bundled help), and DESKTOP_LAUNCHER_NAME names the Windows
+launcher (Market Canopy Office: MarketCanopyOffice.exe). Unset, both
+keep upstream's behaviour.
+---
+ make.py                   | 8 +++++++-
+ scripts/deploy_desktop.py | 5 ++++-
+ 2 files changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/make.py b/make.py
+index a9c6db1..9d3a443 100755
+--- a/make.py
++++ b/make.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python
+ 
++# Modified by Market Canopy on 2026-10-24 for Market Canopy Office: a branding may set the editors' help URL (DESKTOP_URL_WEBAPPS_HELP).
+ import os 
+ import sys
+ __dir__name__ = os.path.dirname(os.path.abspath(__file__))
+@@ -85,7 +86,12 @@ make_common.make()
+ 
+ # desktop urls and update module
+ if config.check_option("module", "desktop"):
+-  config.extend_option("qmake_addon", "URL_WEBAPPS_HELP=https://download.onlyoffice.com/install/desktop/editors/help/v" + base.get_env('PRODUCT_VERSION') + "/apps")
++  # Market Canopy Office (modified 2026-10-24): a branding sets DESKTOP_URL_WEBAPPS_HELP, empty for the bundled help
++  if "DESKTOP_URL_WEBAPPS_HELP" in os.environ:
++    if "" != base.get_env("DESKTOP_URL_WEBAPPS_HELP"):
++      config.extend_option("qmake_addon", "URL_WEBAPPS_HELP=" + base.get_env("DESKTOP_URL_WEBAPPS_HELP"))
++  else:
++    config.extend_option("qmake_addon", "URL_WEBAPPS_HELP=https://download.onlyoffice.com/install/desktop/editors/help/v" + base.get_env('PRODUCT_VERSION') + "/apps")
+ 
+   if "windows" == base.host_platform():
+     config.extend_option("config", "updmodule")
+diff --git a/scripts/deploy_desktop.py b/scripts/deploy_desktop.py
+index 7d791fa..2dd732a 100644
+--- a/scripts/deploy_desktop.py
++++ b/scripts/deploy_desktop.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python
+ 
++# Modified by Market Canopy on 2026-10-24 for Market Canopy Office: a branding may name the Windows launcher (DESKTOP_LAUNCHER_NAME).
+ import config
+ import base
+ import os
+@@ -206,7 +207,9 @@ def make():
+           base.copy_files(base.get_env("QT_DEPLOY") + "/../lib/libqgsttools_p.so*", root_dir)
+ 
+       if (0 == platform.find("win")):
+-        base.copy_file(git_dir + "/desktop-apps/win-linux/extras/projicons/" + apps_postfix + "/projicons.exe", root_dir + "/DesktopEditors.exe")
++        # Market Canopy Office (modified 2026-10-24): a branding names the launcher with DESKTOP_LAUNCHER_NAME
++        launcher_name = base.get_env("DESKTOP_LAUNCHER_NAME") if ("" != base.get_env("DESKTOP_LAUNCHER_NAME")) else "DesktopEditors"
++        base.copy_file(git_dir + "/desktop-apps/win-linux/extras/projicons/" + apps_postfix + "/projicons.exe", root_dir + "/" + launcher_name + ".exe")
+         if not isWindowsXP:
+           base.copy_file(git_dir + "/desktop-apps/win-linux/extras/update-daemon/" + apps_postfix + "/updatesvc.exe", root_dir + "/updatesvc.exe")
+         base.copy_file(git_dir + "/desktop-apps/win-linux/" + apps_postfix + "/DesktopEditors.exe", root_dir + "/editors.exe")

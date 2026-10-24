@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+#
+# Market Canopy Office: the branding smoke suite.
+# Copyright (C) 2026 Market Canopy
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License version 3 as published by
+# the Free Software Foundation, together with the additional terms in the
+# LICENSE file at the root of this repository.
+#
+# This program is distributed WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# AGPL at https://www.gnu.org/licenses/agpl-3.0.html.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Usage:
+#   scripts/smoke-test                    static checks of this checkout
+#   scripts/smoke-test --work <dir>       also checks a patched workspace (the
+#                                         components office-build checked out
+#                                         and patched), and writes the notices
+#                                         into it the way the build does
+#   scripts/smoke-test --report <file>    also writes the results as Markdown
+#
+# Static checks need only Python 3. The identity checks hold the overlay, the
+# patch queue and P02's frozen contract to branding/marketcanopy/settings.json;
+# the notice checks hold every changed upstream file to a modification line and
+# every new file to a Market Canopy license header (ADR 0527 decision 2); the
+# feed checks refuse ONLYOFFICE's update feeds anywhere in the branding.
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BRANDING = os.path.join(ROOT, "branding", "marketcanopy")
+sys.path.insert(0, os.path.join(BRANDING, "build_tools"))
+sys.path.insert(0, os.path.join(ROOT, "build"))
+
+import notices  # noqa: E402
+from officebuild import patches as queue  # noqa: E402
+
+UPSTREAM_FEED = re.compile(r"download\.onlyoffice\.com/install/desktop/editors/(windows|mac)")
+MODIFIED = "Modified by Market Canopy"
+# Files whose format has no comment syntax, or where a comment would change
+# what the file does; the patch's own commit message is their notice.
+NO_COMMENT = (".json", ".pbxproj", ".strings")
+
+
+class Results:
+    def __init__(self):
+        self.rows = []
+
+    def check(self, name, ok, detail=""):
+        self.rows.append((name, bool(ok), detail))
+        print("%s %s%s" % ("ok  " if ok else "FAIL", name, (": " + detail) if detail else ""))
+
+    @property
+    def failed(self):
+        return [row for row in self.rows if not row[1]]
+
+
+def read(path):
+    with open(path, "r", encoding="utf-8", errors="replace") as handle:
+        return handle.read()
+
+
+def sha256(path):
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def defines(text, pattern):
+    """name -> value for lines matching `pattern` (two groups)."""
+    return {match.group(1): match.group(2) for match in re.finditer(pattern, text, re.M)}
+
+
+def parse_patch(path):
+    """[(file, is_new, added_lines)] of one format-patch file."""
+    files = []
+    current = None
+    for line in read(path).splitlines():
+        if line.startswith("diff --git "):
+            current = [line.split(" b/", 1)[1], False, []]
+            files.append(current)
+        elif current is None:
+            continue
+        elif line.startswith("new file mode"):
+            current[1] = True
+        elif line.startswith("+") and not line.startswith("+++ "):
+            current[2].append(line[1:])
+    return files
+
+
+def check_identity(results, settings):
+    identity = settings["identity"]
+    win = identity["windows"]
+    linux = identity["linux"]
+
+    contract_scheme = re.search(
+        r"export const SCHEME = '([^']+)'", read(os.path.join(ROOT, "contracts", "src", "deep-link.ts"))
+    )
+    results.check(
+        "scheme matches the contract",
+        contract_scheme and contract_scheme.group(1) == identity["urlScheme"],
+        identity["urlScheme"],
+    )
+    # desktop-sdk's CCefView::load reads the scheme at fixed offsets (P02).
+    results.check("scheme is 9 characters", len(identity["urlScheme"]) == 9)
+    results.check(
+        "bundle identifier matches the contract",
+        '"const": "%s"' % identity["macos"]["bundleIdentifier"]
+        in read(os.path.join(ROOT, "contracts", "schemas", "common.schema.json")),
+    )
+
+    mk = defines(read(os.path.join(BRANDING, "desktop-apps", "package", "branding.mk")), r"^(\w+)\s*:?=\s*(.*?)\s*$")
+    expected_mk = {
+        "COMPANY_NAME": identity["companyName"],
+        "PRODUCT_NAME": identity["internalProductName"],
+        "COMPANY_NAME_LOW": identity["brandingName"],
+        "SCHEME_HANDLER": identity["urlScheme"],
+        "PACKAGE_NAME": linux["package"],
+        "DESKTOPEDITORS_EXEC": os.path.basename(linux["command"]),
+        "DESKTOPEDITORS_PREFIX": linux["installPrefix"][len("/opt/") :],
+        "PUBLISHER_URL": settings["urls"]["site"],
+        "SUPPORT_URL": settings["urls"]["support"],
+        "SUPPORT_MAIL": settings["urls"]["supportMail"],
+    }
+    wrong = ["%s=%r" % (key, mk.get(key)) for key, value in expected_mk.items() if mk.get(key) != value]
+    results.check("branding.mk agrees with settings.json", not wrong, ", ".join(wrong))
+
+    iss = defines(
+        read(os.path.join(BRANDING, "desktop-apps", "package", "inno", "defines.iss")), r'^#define\s+(\w+)\s+"([^"]*)"'
+    )
+    expected_iss = {
+        "sAppName": identity["productName"],
+        "sIntCompanyName": identity["internalCompanyName"],
+        "sIntProductName": identity["internalProductName"],
+        "APP_REG_UNINST_KEY": win["uninstallAppId"],
+        "APP_USER_MODEL_ID": win["appUserModelId"],
+        "APP_MUTEX_NAME": win["mutexName"],
+        "APPWND_CLASS_NAME": win["windowClass"],
+        "iconsExe": win["executable"],
+        "ASCC_REG_PREFIX": win["progIdPrefix"],
+        # The Start menu folder must be APP_REG_NAME: Windows toast
+        # notifications look the shortcut up there (desktop-apps cnotification).
+        "sCompanyName": identity["productName"],
+    }
+    wrong = ["%s=%r" % (key, iss.get(key)) for key, value in expected_iss.items() if iss.get(key) != value]
+    results.check("inno defines.iss agrees with settings.json", not wrong, ", ".join(wrong))
+    protocol = re.search(
+        r"#define\s+sAppProtocol\s+'([^']+)'",
+        read(os.path.join(BRANDING, "desktop-apps", "package", "inno", "defines.iss")),
+    )
+    results.check("inno protocol is the scheme", protocol and protocol.group(1) == identity["urlScheme"])
+
+    added = "\n".join(line for path in all_patches() for _, _, lines in parse_patch(path) for line in lines)
+    required = {
+        "APP_PROTOCOL": '#define APP_PROTOCOL "%s"' % identity["urlScheme"],
+        "desktop-sdk scheme": 'L"%s"' % identity["urlScheme"],
+        "Windows data folder": '"/%s"' % win["dataFolder"].replace("\\", "/"),
+        "Linux data folder": '"/%s"' % linux["dataFolder"],
+        "Linux desktop entry": '"%s"' % os.path.splitext(linux["desktopEntry"])[0],
+        "AppUserModelID": '"%s"' % win["appUserModelId"],
+        "launcher": '"%s"' % os.path.splitext(win["executable"])[0],
+        "bundle identifier": "PRODUCT_BUNDLE_IDENTIFIER = %s;" % identity["macos"]["bundleIdentifier"],
+        "macOS display name": "<string>%s</string>" % identity["macos"]["bundleName"],
+    }
+    missing = [name for name, text in required.items() if text not in added]
+    results.check("patch queue carries the contract identity", not missing, ", ".join(missing))
+
+
+def all_patches():
+    return [path for files in queue.queue(ROOT).values() for path in files]
+
+
+def check_queue(results):
+    inventory = queue.inventory(ROOT)
+    results.check(
+        "patch queue is within budget", "within" in queue.budget_line(inventory), queue.budget_line(inventory)
+    )
+    marked = {}
+    unlicensed = []
+    for repo, files in queue.queue(ROOT).items():
+        for path in files:
+            for name, is_new, lines in parse_patch(path):
+                text = "\n".join(lines)
+                if is_new:
+                    if "Market Canopy" not in text or "AGPL-3.0-only" not in text:
+                        unlicensed.append(repo + "/" + name)
+                elif not name.endswith(NO_COMMENT):
+                    # One patch of the queue adds the line; later ones may change the file again.
+                    key = repo + "/" + name
+                    marked[key] = marked.get(key, False) or MODIFIED in text
+    unmarked = sorted(name for name, ok in marked.items() if not ok)
+    results.check("every changed upstream file carries a modification line", not unmarked, ", ".join(unmarked))
+    results.check("every new file carries the Market Canopy AGPL header", not unlicensed, ", ".join(unlicensed))
+    stray = [
+        line
+        for path in all_patches()
+        for _, _, lines in parse_patch(path)
+        for line in lines
+        if UPSTREAM_FEED.search(line)
+    ]
+    results.check("no patch adds an ONLYOFFICE update feed", not stray)
+
+
+def check_overlay(results, settings):
+    manifest = json.loads(read(os.path.join(BRANDING, "replace", "MANIFEST.json")))
+    results.check(
+        "replace/MANIFEST.json is path -> sha256",
+        all(isinstance(value, str) and len(value) == 64 for value in manifest.values()),
+    )
+    bad = [
+        path
+        for path, digest in manifest.items()
+        if not os.path.isfile(os.path.join(BRANDING, "replace", path))
+        or sha256(os.path.join(BRANDING, "replace", path)) != digest
+    ]
+    results.check("replacement files match their digests", not bad, ", ".join(bad[:5]))
+    listed = set(manifest)
+    on_disk = set()
+    for current, _, names in os.walk(os.path.join(BRANDING, "replace")):
+        for name in names:
+            relative = os.path.relpath(os.path.join(current, name), os.path.join(BRANDING, "replace")).replace(
+                os.sep, "/"
+            )
+            if relative != "MANIFEST.json":
+                on_disk.add(relative)
+    results.check(
+        "every replacement file is in the manifest", on_disk == listed, ", ".join(sorted(on_disk ^ listed)[:5])
+    )
+
+    feeds = settings["updates"]
+    staged = [
+        value for flavor in ("staging", "production") for key, value in feeds[flavor].items() if not key.startswith("$")
+    ]
+    results.check(
+        "settings.json feeds are not upstream's",
+        not any(value in feeds["upstreamDefaults"] or "onlyoffice.com" in value for value in staged),
+    )
+    offenders = []
+    for current, _, names in os.walk(BRANDING):
+        for name in names:
+            path = os.path.join(current, name)
+            if (
+                path.endswith(("settings.json",))
+                or "/replace/" in path
+                or name.endswith((".png", ".ico", ".icns", ".rtf"))
+            ):
+                continue
+            if UPSTREAM_FEED.search(read(path)):
+                offenders.append(os.path.relpath(path, ROOT))
+    results.check("no branding file names an ONLYOFFICE update feed", not offenders, ", ".join(offenders))
+
+
+def check_notices(results):
+    build = {
+        "version": "0.0.0-mc.0",
+        "number": "0",
+        "flavor": "staging",
+        "upstreamTag": "v0",
+        "sourceCommit": "0" * 40,
+        "modified": {"first": "2026-10-24", "last": "2026-10-24"},
+    }
+    notice, texts = notices.resolve(BRANDING, build)
+    origin = "Market Canopy Office is a modified version of ONLYOFFICE Desktop Editors, the original software developed by Ascensio System SIA."
+    results.check("notice carries the origin statement", notice["origin"] == origin)
+    results.check(
+        "notice links the source of the build", notice["links"]["source"]["url"].endswith(build["sourceCommit"])
+    )
+    results.check("bundled AGPL text is the repository LICENSE", texts["agpl"] == read(os.path.join(ROOT, "LICENSE")))
+    template = notices.editor_template(notice, texts)
+    results.check("editor notice holds no template delimiters", "<%" not in template and "{{" not in template)
+    results.check(
+        "license texts are keyboard reachable", template.count('tabindex="0"') == len(texts) and "<summary" in template
+    )
+
+
+def check_work(results, work, settings):
+    import make  # the branding hook; its WORKSPACE is <work> once staged there
+
+    upstream = make.read_key_values(os.path.join(ROOT, "UPSTREAM"))
+    for repo in sorted(queue.queue(ROOT)):
+        folder = os.path.join(work, repo)
+        if not os.path.isdir(folder):
+            results.check("%s is checked out in the workspace" % repo, False, folder)
+            continue
+        pinned = upstream.get("commit." + repo, "")
+        count = os.popen('git -C "%s" rev-list --count %s..HEAD' % (folder, pinned)).read().strip()
+        results.check(
+            "%s carries its %d patch(es)" % (repo, len(queue.queue(ROOT)[repo])),
+            count == str(len(queue.queue(ROOT)[repo])),
+            "%s commits over the pin" % count,
+        )
+    written = notices.write(work, BRANDING, make.build_fields(ROOT, upstream, "staging"))
+    results.check("notices write into the workspace", all(os.path.isfile(os.path.join(work, path)) for path in written))
+    about = os.path.join(work, "web-apps", "apps", "common", "main", "lib", "view", "About.js")
+    if os.path.isfile(about):
+        text = read(about)
+        results.check(
+            "editors' About loads the notice", "MarketCanopyNotice.template" in text and "PUBLISHER_PHONE" not in text
+        )
+    start = os.path.join(work, "desktop-apps", "common", "loginpage", "src", "routes", "about", "index.jsx")
+    if os.path.isfile(start):
+        results.check("start page About shows the notice", "<MarketCanopyNotice />" in read(start))
+    for relative in json.loads(read(os.path.join(BRANDING, "replace", "MANIFEST.json"))):
+        if not os.path.exists(os.path.join(work, relative)) and not relative.startswith(
+            ("desktop-apps/win-linux/extras/projicons/res/icons/",)
+        ):
+            # A replacement whose upstream file is gone means upstream moved it.
+            results.check("replacement target exists upstream", False, relative)
+    sdk = os.path.join(work, "desktop-sdk", "ChromiumBasedEditors", "lib", "src", "applicationmanager.cpp")
+    if os.path.isfile(sdk):
+        results.check("desktop-sdk returns the scheme", 'L"%s"' % settings["identity"]["urlScheme"] in read(sdk))
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--work", help="a workspace office-build checked out and patched")
+    parser.add_argument("--report", help="write the results as Markdown")
+    args = parser.parse_args()
+
+    settings = json.loads(read(os.path.join(BRANDING, "settings.json")))
+    results = Results()
+    check_identity(results, settings)
+    check_queue(results)
+    check_overlay(results, settings)
+    check_notices(results)
+    if args.work:
+        check_work(results, os.path.abspath(args.work), settings)
+
+    if args.report:
+        with open(args.report, "w", encoding="utf-8") as handle:
+            handle.write("| Check | Result | Detail |\n|---|---|---|\n")
+            for name, ok, detail in results.rows:
+                handle.write("| %s | %s | %s |\n" % (name, "ok" if ok else "FAIL", detail.replace("|", "\\|")))
+    print("smoke-test: %d checks, %d failed" % (len(results.rows), len(results.failed)))
+    return 1 if results.failed else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

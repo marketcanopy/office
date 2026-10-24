@@ -1,0 +1,299 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Market Canopy Office identity on macOS
+
+Bundle identifier com.marketcanopy.office and product name for the
+arm64 and x86_64 targets, display name, the mc-office URL scheme,
+copyright, permission texts, help and sign-up destinations, About
+links, and the Sparkle feed and public key as build settings the
+release passes (OFFICE_SPARKLE_FEED_URL, OFFICE_SPARKLE_PUBLIC_KEY),
+so no build can update from ONLYOFFICE's feed or trust its key. The
+fastlane lane no longer turns on the Enterprise add-on mode.
+---
+ macos/ONLYOFFICE.xcodeproj/project.pbxproj    | 16 ++++++++--------
+ .../Controllers/About/ASCAboutController.m    |  7 ++++---
+ macos/ONLYOFFICE/Code/Utils/ASCConstants.h    |  3 ++-
+ macos/ONLYOFFICE/Code/Utils/ASCConstants.m    |  7 ++++---
+ .../Resources/ONLYOFFICE-arm/Info.plist       | 19 +++++++++++--------
+ .../Resources/ONLYOFFICE-x86_64/Info.plist    | 19 +++++++++++--------
+ macos/fastlane/Fastfile                       |  9 +++++----
+ 7 files changed, 45 insertions(+), 35 deletions(-)
+
+diff --git a/macos/ONLYOFFICE.xcodeproj/project.pbxproj b/macos/ONLYOFFICE.xcodeproj/project.pbxproj
+index a3b6bfa..f21efa6 100644
+--- a/macos/ONLYOFFICE.xcodeproj/project.pbxproj
++++ b/macos/ONLYOFFICE.xcodeproj/project.pbxproj
+@@ -3435,8 +3435,8 @@
+ 					"$(inherited)",
+ 					"-headerpad_max_install_names",
+ 				);
+-				PRODUCT_BUNDLE_IDENTIFIER = asc.onlyoffice.ONLYOFFICE;
+-				PRODUCT_NAME = ONLYOFFICE;
++				PRODUCT_BUNDLE_IDENTIFIER = com.marketcanopy.office;
++				PRODUCT_NAME = MarketCanopyOffice;
+ 				PROVISIONING_PROFILE = "";
+ 				PROVISIONING_PROFILE_SPECIFIER = "";
+ 			};
+@@ -3483,8 +3483,8 @@
+ 					"$(inherited)",
+ 					"-headerpad_max_install_names",
+ 				);
+-				PRODUCT_BUNDLE_IDENTIFIER = asc.onlyoffice.ONLYOFFICE;
+-				PRODUCT_NAME = ONLYOFFICE;
++				PRODUCT_BUNDLE_IDENTIFIER = com.marketcanopy.office;
++				PRODUCT_NAME = MarketCanopyOffice;
+ 				PROVISIONING_PROFILE = "";
+ 				PROVISIONING_PROFILE_SPECIFIER = "";
+ 			};
+@@ -3613,8 +3613,8 @@
+ 					"$(inherited)",
+ 					"-headerpad_max_install_names",
+ 				);
+-				PRODUCT_BUNDLE_IDENTIFIER = asc.onlyoffice.ONLYOFFICE;
+-				PRODUCT_NAME = ONLYOFFICE;
++				PRODUCT_BUNDLE_IDENTIFIER = com.marketcanopy.office;
++				PRODUCT_NAME = MarketCanopyOffice;
+ 				PROVISIONING_PROFILE = "";
+ 				PROVISIONING_PROFILE_SPECIFIER = "";
+ 			};
+@@ -3661,8 +3661,8 @@
+ 					"$(inherited)",
+ 					"-headerpad_max_install_names",
+ 				);
+-				PRODUCT_BUNDLE_IDENTIFIER = asc.onlyoffice.ONLYOFFICE;
+-				PRODUCT_NAME = ONLYOFFICE;
++				PRODUCT_BUNDLE_IDENTIFIER = com.marketcanopy.office;
++				PRODUCT_NAME = MarketCanopyOffice;
+ 				PROVISIONING_PROFILE = "";
+ 				PROVISIONING_PROFILE_SPECIFIER = "";
+ 			};
+diff --git a/macos/ONLYOFFICE/Code/Controllers/About/ASCAboutController.m b/macos/ONLYOFFICE/Code/Controllers/About/ASCAboutController.m
+index c4e9d75..2f1150a 100644
+--- a/macos/ONLYOFFICE/Code/Controllers/About/ASCAboutController.m
++++ b/macos/ONLYOFFICE/Code/Controllers/About/ASCAboutController.m
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: product name, site and license links.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -48,8 +49,8 @@
+ #import "ASCSharedSettings.h"
+ #import "ASCLicenseController.h"
+ 
+-static NSString * const kOfficialWebsiteURL = @"https://www.onlyoffice.com";
+-static NSString * const kBslLicenseURL = @"https://docspace.onlyoffice.com/s/b_rVPpqtF-pqKBr";
++static NSString * const kOfficialWebsiteURL = @"https://marketcanopy.com";
++static NSString * const kBslLicenseURL = @"https://www.gnu.org/licenses/agpl-3.0.html";
+ 
+ @interface ASCAboutController () {
+     BOOL isCommercialVersion;
+@@ -78,7 +79,7 @@ static NSString * const kBslLicenseURL = @"https://docspace.onlyoffice.com/s/b_r
+     NSDictionary * infoDictionary = [[NSBundle mainBundle] infoDictionary];
+     NSDictionary * localizedInfoDictionary = [[NSBundle mainBundle] localizedInfoDictionary];
+     
+-    NSString * locProductName = [NSString stringWithFormat:@"%@ %@", [ASCHelper appName], @"Desktop"];
++    NSString * locProductName = [ASCHelper appName];
+     NSString * locCopyright     = localizedInfoDictionary[@"NSHumanReadableCopyright"];
+ 
+     locCopyright = locCopyright ? locCopyright : infoDictionary[@"NSHumanReadableCopyright"];
+diff --git a/macos/ONLYOFFICE/Code/Utils/ASCConstants.h b/macos/ONLYOFFICE/Code/Utils/ASCConstants.h
+index 53893b4..d75b7cb 100644
+--- a/macos/ONLYOFFICE/Code/Utils/ASCConstants.h
++++ b/macos/ONLYOFFICE/Code/Utils/ASCConstants.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: URL scheme.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -77,7 +78,7 @@ static NSString * const uiThemeWhite                      = @"theme-white";
+ static NSString * const uiThemeNight                      = @"theme-night";
+ 
+ // Custom schemes
+-static NSString * const kSchemeApp                          = @"oo-office";
++static NSString * const kSchemeApp                          = @"mc-office";
+ 
+ // Analitics
+ static NSString * const ASCAnalyticsCategoryApplication     = @"Application";
+diff --git a/macos/ONLYOFFICE/Code/Utils/ASCConstants.m b/macos/ONLYOFFICE/Code/Utils/ASCConstants.m
+index 1e9a7a0..dc2152c 100644
+--- a/macos/ONLYOFFICE/Code/Utils/ASCConstants.m
++++ b/macos/ONLYOFFICE/Code/Utils/ASCConstants.m
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: help and sign-up destinations.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -112,9 +113,9 @@
+     }
+ 
+     NSDictionary * appInfo = @{
+-                               kRegHelpUrl: @"https://onlyoffice.com/desktopeditors.aspx",
+-                               kHelpUrl: @"http://helpcenter.onlyoffice.com/%@ONLYOFFICE-Editors/index.aspx",
+-                               kRegistrationPortalUrl: @"https://onlyoffice.com/registration.aspx?desktop=true"
++                               kRegHelpUrl: @"https://marketcanopy.com/help",
++                               kHelpUrl: @"https://marketcanopy.com/help",
++                               kRegistrationPortalUrl: @"https://marketcanopy.com/?source=office"
+                                };
+ 
+     return appInfo[key];
+diff --git a/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist b/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
+index 9f2c08f..f97a9c6 100644
+--- a/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
++++ b/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
+@@ -1,5 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<!-- Modified by Market Canopy on 2026-10-24 for Market Canopy Office: display name, URL scheme, copyright, permission texts, Sparkle feed and key. -->
+ <plist version="1.0">
+ <dict>
+ 	<key>CFBundleDevelopmentRegion</key>
+@@ -735,6 +736,8 @@
+ 	<string>6.0</string>
+ 	<key>CFBundleName</key>
+ 	<string>$(PRODUCT_NAME)</string>
++	<key>CFBundleDisplayName</key>
++	<string>Market Canopy Office</string>
+ 	<key>CFBundlePackageType</key>
+ 	<string>APPL</string>
+ 	<key>CFBundleShortVersionString</key>
+@@ -748,7 +751,7 @@
+ 			<string>Editor</string>
+ 			<key>CFBundleURLSchemes</key>
+ 			<array>
+-				<string>oo-office</string>
++				<string>mc-office</string>
+ 			</array>
+ 		</dict>
+ 	</array>
+@@ -766,23 +769,23 @@
+ 		<true/>
+ 	</dict>
+ 	<key>NSBluetoothAlwaysUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSBluetoothPeripheralUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSCameraUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSHumanReadableCopyright</key>
+-	<string>Copyright © 2026 Ascensio System SIA. All rights reserved.</string>
++	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy, 2026.</string>
+ 	<key>NSMainStoryboardFile</key>
+ 	<string>Main</string>
+ 	<key>NSMicrophoneUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSPrincipalClass</key>
+ 	<string>NSApplication</string>
+ 	<key>SUFeedURL</key>
+-	<string>https://download.onlyoffice.com/install/desktop/editors/mac/arm/onlyoffice.xml</string>
++	<string>$(OFFICE_SPARKLE_FEED_URL)</string>
+ 	<key>SUPublicEDKey</key>
+-	<string>N2LfKoNN6LkD5qNMjt+lEh6LYrQMEFNCEXQ3Kk6nTlM=</string>
++	<string>$(OFFICE_SPARKLE_PUBLIC_KEY)</string>
+ 	<key>SUScheduledCheckInterval</key>
+ 	<integer>86400</integer>
+ 	<key>UIDesignRequiresCompatibility</key>
+diff --git a/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist b/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
+index fbf4e80..4d8993f 100644
+--- a/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
++++ b/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
+@@ -1,5 +1,6 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
++<!-- Modified by Market Canopy on 2026-10-24 for Market Canopy Office: display name, URL scheme, copyright, permission texts, Sparkle feed and key. -->
+ <plist version="1.0">
+ <dict>
+ 	<key>CFBundleDevelopmentRegion</key>
+@@ -735,6 +736,8 @@
+ 	<string>6.0</string>
+ 	<key>CFBundleName</key>
+ 	<string>$(PRODUCT_NAME)</string>
++	<key>CFBundleDisplayName</key>
++	<string>Market Canopy Office</string>
+ 	<key>CFBundlePackageType</key>
+ 	<string>APPL</string>
+ 	<key>CFBundleShortVersionString</key>
+@@ -748,7 +751,7 @@
+ 			<string>Editor</string>
+ 			<key>CFBundleURLSchemes</key>
+ 			<array>
+-				<string>oo-office</string>
++				<string>mc-office</string>
+ 			</array>
+ 		</dict>
+ 	</array>
+@@ -766,23 +769,23 @@
+ 		<true/>
+ 	</dict>
+ 	<key>NSBluetoothAlwaysUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSBluetoothPeripheralUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSCameraUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSHumanReadableCopyright</key>
+-	<string>Copyright © 2026 Ascensio System SIA. All rights reserved.</string>
++	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy, 2026.</string>
+ 	<key>NSMainStoryboardFile</key>
+ 	<string>Main</string>
+ 	<key>NSMicrophoneUsageDescription</key>
+-	<string>Once ONLYOFFICE Desktop Editors has permission, document tabs will be able to ask you for access.</string>
++	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
+ 	<key>NSPrincipalClass</key>
+ 	<string>NSApplication</string>
+ 	<key>SUFeedURL</key>
+-	<string>https://download.onlyoffice.com/install/desktop/editors/mac/x86_64/onlyoffice.xml</string>
++	<string>$(OFFICE_SPARKLE_FEED_URL)</string>
+ 	<key>SUPublicEDKey</key>
+-	<string>N2LfKoNN6LkD5qNMjt+lEh6LYrQMEFNCEXQ3Kk6nTlM=</string>
++	<string>$(OFFICE_SPARKLE_PUBLIC_KEY)</string>
+ 	<key>SUScheduledCheckInterval</key>
+ 	<integer>86400</integer>
+ </dict>
+diff --git a/macos/fastlane/Fastfile b/macos/fastlane/Fastfile
+index df1db31..9f061ba 100644
+--- a/macos/fastlane/Fastfile
++++ b/macos/fastlane/Fastfile
+@@ -26,7 +26,8 @@ platform :mac do
+   lane :common_release do |options|
+     build = "build"
+     scheme = options[:scheme]
+-    app_name = "ONLYOFFICE"
++    # Modified by Market Canopy on 2026-10-24 for Market Canopy Office: app name, no add-on mode, Sparkle feed and key.
++    app_name = "MarketCanopyOffice"
+     app = "#{build}/#{app_name}.app"
+     git_suffix = options[:git_suffix]
+     edition = options[:edition]
+@@ -54,8 +55,6 @@ platform :mac do
+     preprocessor_defs = ["$(inherited)"]
+     if edition != "Enterprise"
+       sh("mkdir -p ../Vendor/ONLYOFFICE/license && cp -fv ../../package/common/license/opensource/LICENSE.html ../Vendor/ONLYOFFICE/license/LICENSE.html")
+-      desc 'Define USE_ADDON_MODE macro for non-Enterprise editions'
+-      preprocessor_defs << "USE_ADDON_MODE" unless scheme == "ONLYOFFICE-v8"
+     else
+       sh("mkdir -p ../Vendor/ONLYOFFICE/license && cp -fv ../../package/common/license/commercial/LICENSE.html ../Vendor/ONLYOFFICE/license/EULA.html")
+       set_info_plist_value(
+@@ -72,7 +71,9 @@ platform :mac do
+     end
+ 
+     desc 'Pass URLs'
+-    xcargs = "URL_WEBAPPS_HELP=https://download.onlyoffice.com/install/desktop/editors/help/v7.2.0-1/apps"
++    xcargs = "URL_WEBAPPS_HELP=#{ENV['DESKTOP_URL_WEBAPPS_HELP']}"
++    sparkle_feed = ENV[scheme == "ONLYOFFICE-arm" ? "OFFICE_SPARKLE_FEED_ARM" : "OFFICE_SPARKLE_FEED_X86_64"]
++    xcargs += " OFFICE_SPARKLE_FEED_URL=#{sparkle_feed} OFFICE_SPARKLE_PUBLIC_KEY=#{ENV['OFFICE_SPARKLE_PUBLIC_KEY']}"
+ 
+     url_appcast_main = ENV["DESKTOP_URL_UPDATES_MAIN_CHANNEL"]
+     unless url_appcast_main.to_s.empty?

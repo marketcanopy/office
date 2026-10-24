@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "truncated",
+  "description": "Office rewrites by delete and create, so a reader can see a partial file",
+  "subject": "recents",
+  "input": {
+    "text": "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><recents><file path=\"/home/u/a.docx\" type=\"65\" da"
+  },
+  "expect": {
+    "state": "unknown",
+    "reason": "root"
+  }
+}

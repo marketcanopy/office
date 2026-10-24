@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "stream-bad-tool-name-repeated",
+  "description": "Later tool call deltas carry index and arguments only",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"tool_calls\":[{\"index\":0,\"id\":\"call_1\",\"type\":\"function\",\"function\":{\"name\":\"a\",\"arguments\":\"\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call_1\",\"function\":{\"name\":\"a\",\"arguments\":\"{}\"}}]},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"tool_calls\"}]}\n\ndata: [DONE]\n\n",
+  "expect": {
+    "ok": false,
+    "violation": "tool call id or name repeated",
+    "event": 1
+  }
+}

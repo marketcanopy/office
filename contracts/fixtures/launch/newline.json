@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "newline",
+  "description": "A newline in a path",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/a\nb.docx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

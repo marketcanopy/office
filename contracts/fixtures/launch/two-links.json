@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "two-links",
+  "description": "At most one deep link per launch",
+  "subject": "launch-args",
+  "input": [
+    "mc-office://open|n|Quarterly%20plan|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001",
+    "mc-office://open|n|Quarterly%20plan|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 1
+  }
+}

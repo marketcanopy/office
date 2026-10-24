@@ -1,0 +1,17 @@
+{
+  "fixture": 1,
+  "name": "unlocked",
+  "description": "Neither lock: the write goes ahead atomically",
+  "subject": "lock-state",
+  "input": {
+    "osLock": false,
+    "lockFile": false,
+    "writable": true
+  },
+  "expect": {
+    "state": "unlocked",
+    "write": {
+      "allowed": true
+    }
+  }
+}

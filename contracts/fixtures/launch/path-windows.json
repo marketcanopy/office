@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "path-windows",
+  "description": "An absolute Windows path",
+  "subject": "launch-args",
+  "input": [
+    "C:\\Users\\blee\\Documents\\Budget.xlsx"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

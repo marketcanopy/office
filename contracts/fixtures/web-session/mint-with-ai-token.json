@@ -1,0 +1,38 @@
+{
+  "fixture": 1,
+  "name": "mint-with-ai-token",
+  "description": "An office-ai token is refused by every non-gateway route",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/web-session",
+      "headers": {
+        "X-Client-App": "com.marketcanopy.office",
+        "X-Client-Platform": "linux",
+        "X-Client-Version": "10.0.0.3",
+        "X-Device-Id": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11",
+        "Authorization": "Bearer <office-ai token>"
+      },
+      "body": {}
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "success": false,
+        "error": {
+          "code": "WRONG_AUDIENCE",
+          "message": "That token is not for this route."
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "path": "/v1/office/web-session",
+          "requestId": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "WRONG_AUDIENCE"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "fixture": 1,
+  "name": "rate-limited",
+  "description": "Too many requests; retry after the header",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Translate to French: Hello"
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "max_tokens": 512,
+        "temperature": 0.2
+      }
+    },
+    "response": {
+      "status": 429,
+      "body": {
+        "error": {
+          "message": "Try again shortly.",
+          "type": "rate_limit_error",
+          "code": "RATE_LIMITED",
+          "param": null,
+          "request_id": "req_example"
+        }
+      },
+      "headers": {
+        "Retry-After": "5"
+      }
+    }
+  },
+  "expect": {
+    "outcome": "RATE_LIMITED"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "auth-callback",
+  "description": "The standalone sign-in callback",
+  "subject": "deep-link",
+  "input": "mc-office://auth/callback?code=ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE&state=ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE",
+  "expect": {
+    "ok": true,
+    "kind": "auth_callback",
+    "code": "ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE",
+    "state": "ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE"
+  }
+}

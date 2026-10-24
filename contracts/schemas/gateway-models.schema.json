@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/gateway-models.schema.json",
+  "title": "GET <ai.baseUrl>/models (8.3)",
+  "type": "object",
+  "properties": {
+    "object": {
+      "const": "list"
+    },
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/modelAlias"
+          },
+          "object": {
+            "const": "model"
+          },
+          "created": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "owned_by": {
+            "const": "marketcanopy"
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "created",
+          "owned_by"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "object",
+    "data"
+  ],
+  "additionalProperties": false
+}

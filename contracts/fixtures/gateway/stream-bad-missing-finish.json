@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "stream-bad-missing-finish",
+  "description": "Every choice ends with finish_reason before [DONE]",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hi\"},\"finish_reason\":null}]}\n\ndata: [DONE]\n\n",
+  "expect": {
+    "ok": false,
+    "violation": "choice without finish_reason",
+    "event": 1
+  }
+}

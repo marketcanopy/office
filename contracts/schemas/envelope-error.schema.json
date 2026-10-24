@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/envelope-error.schema.json",
+  "title": "API error envelope",
+  "type": "object",
+  "properties": {
+    "success": {
+      "const": false
+    },
+    "error": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "$ref": "error-code.schema.json"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "details": {}
+      },
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "timestamp": {
+          "$ref": "common.schema.json#/$defs/instant"
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "requestId": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "timestamp",
+        "path",
+        "requestId"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "success",
+    "error",
+    "meta"
+  ],
+  "additionalProperties": false
+}

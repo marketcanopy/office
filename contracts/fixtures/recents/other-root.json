@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "other-root",
+  "description": "A root other than recents",
+  "subject": "recents",
+  "input": {
+    "text": "<?xml version=\"1.0\"?><files><file path=\"/a.docx\" /></files>"
+  },
+  "expect": {
+    "state": "unknown",
+    "reason": "root"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "auth-error",
+  "description": "A sign-in that ended in an error",
+  "subject": "deep-link",
+  "input": "mc-office://auth/callback?error=ACCESS_DENIED&state=ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE",
+  "expect": {
+    "ok": true,
+    "kind": "auth_error",
+    "error": "ACCESS_DENIED",
+    "state": "ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE"
+  }
+}

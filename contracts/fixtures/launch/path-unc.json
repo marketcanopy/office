@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "path-unc",
+  "description": "A UNC path",
+  "subject": "launch-args",
+  "input": [
+    "\\\\fileserver\\team\\Deck.pptx"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

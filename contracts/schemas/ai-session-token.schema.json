@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/ai-session-token.schema.json",
+  "title": "POST /v1/office/ai-session data (8.2)",
+  "type": "object",
+  "properties": {
+    "accessToken": {
+      "$ref": "common.schema.json#/$defs/jwt"
+    },
+    "expiresAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    },
+    "organizationId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    }
+  },
+  "required": [
+    "accessToken",
+    "expiresAt",
+    "organizationId"
+  ],
+  "additionalProperties": false
+}

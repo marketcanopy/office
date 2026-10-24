@@ -1,0 +1,19 @@
+{
+  "fixture": 1,
+  "name": "lock-file-linux",
+  "description": "The lock file Office 10.0.0-169 wrote on Linux x64 (captured)",
+  "subject": "lock-file",
+  "input": {
+    "file": "linux-x64-10.0.0-169.lock",
+    "path": "/home/oouser/docs/Quarterly plan.docx"
+  },
+  "expect": {
+    "lockFilePath": "/home/oouser/docs/.~lock.Quarterly plan.docx#",
+    "content": {
+      "user": "oouser",
+      "host": "vm",
+      "date": "24.10.2026 21:30",
+      "appDataDir": "/home/oouser/.local/share/ONLYOFFICE"
+    }
+  }
+}

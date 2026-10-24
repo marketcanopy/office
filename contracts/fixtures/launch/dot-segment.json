@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "dot-segment",
+  "description": "A path with a .. segment",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/docs/../secret/Budget.xlsx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "lock-file-garbage",
+  "description": "Unrecognized content is shown as unknown, never trusted",
+  "subject": "lock-file",
+  "input": {
+    "text": "hello",
+    "path": "/home/u/a.docx"
+  },
+  "expect": {
+    "lockFilePath": "/home/u/.~lock.a.docx#",
+    "content": null
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "fixture": 1,
+  "name": "installation-entry",
+  "description": "The installation entry",
+  "subject": "document",
+  "input": {
+    "schema": "credential-installation",
+    "value": {
+      "version": 1,
+      "installationId": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

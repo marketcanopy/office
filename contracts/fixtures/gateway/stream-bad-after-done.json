@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "stream-bad-after-done",
+  "description": "Nothing follows [DONE]",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"Hi\"},\"finish_reason\":null}]}\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]}\n\ndata: [DONE]\n\ndata: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"x\"},\"finish_reason\":null}]}\n\n",
+  "expect": {
+    "ok": false,
+    "violation": "events after [DONE]",
+    "event": 2
+  }
+}

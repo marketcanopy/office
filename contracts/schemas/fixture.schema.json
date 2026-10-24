@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/fixture.schema.json",
+  "title": "A contract fixture",
+  "type": "object",
+  "properties": {
+    "fixture": {
+      "const": 1
+    },
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "subject": {
+      "enum": [
+        "launch-args",
+        "deep-link",
+        "credential-read",
+        "exchange",
+        "document",
+        "sse",
+        "lock-state",
+        "lock-file",
+        "recents",
+        "client-version"
+      ]
+    },
+    "input": {},
+    "expect": {}
+  },
+  "required": [
+    "fixture",
+    "name",
+    "description",
+    "subject",
+    "input",
+    "expect"
+  ],
+  "additionalProperties": false
+}

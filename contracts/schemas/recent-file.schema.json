@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/recent-file.schema.json",
+  "title": "One entry of the On this computer strip (11)",
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "enum": [
+        "document",
+        "spreadsheet",
+        "presentation",
+        "pdf",
+        "other"
+      ]
+    },
+    "date": {
+      "type": "string",
+      "pattern": "^(\\d{2}\\.\\d{2}\\.\\d{4} \\d{2}:\\d{2})?$"
+    },
+    "pinned": {
+      "type": "boolean"
+    },
+    "encrypted": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "path",
+    "kind",
+    "date",
+    "pinned",
+    "encrypted"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,32 @@
+{
+  "fixture": 1,
+  "name": "linux-dmg",
+  "description": "A kind that does not fit the OS",
+  "subject": "document",
+  "input": {
+    "schema": "install-manifest",
+    "value": {
+      "schemaVersion": 1,
+      "channel": "stable",
+      "version": "10.0.0-mc.3",
+      "publishedAt": "2026-10-24T21:40:00.000Z",
+      "minimumDesktopVersion": "0.1.190",
+      "targets": [
+        {
+          "os": "linux",
+          "arch": "x64",
+          "url": "https://downloads.marketcanopy.com/office/stable/marketcanopy-office_10.0.0-mc.3_amd64.deb",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+          "size": 280000000,
+          "kind": "dmg",
+          "publisher": "",
+          "sourceArchiveUrl": "https://github.com/marketcanopy/office/releases/download/v10.0.0-mc.3/marketcanopy-office-10.0.0-mc.3-source.tar.gz",
+          "sourceArchiveSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

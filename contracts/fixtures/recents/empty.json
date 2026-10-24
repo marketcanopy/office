@@ -1,0 +1,13 @@
+{
+  "fixture": 1,
+  "name": "empty",
+  "description": "No entries yet",
+  "subject": "recents",
+  "input": {
+    "text": "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><recents />"
+  },
+  "expect": {
+    "state": "ok",
+    "files": []
+  }
+}

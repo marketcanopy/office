@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "native-signed-out",
+  "description": "getMarketCanopyAiSession() state signed_out",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "signed_out"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

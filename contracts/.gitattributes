@@ -1,0 +1,2 @@
+# Keep exact bytes so CONTRACT.sha256 matches on every OS.
+* -text

@@ -1,0 +1,18 @@
+{
+  "fixture": 1,
+  "name": "os-lock-only",
+  "description": "An OS lock without a lock file is still locked",
+  "subject": "lock-state",
+  "input": {
+    "osLock": true,
+    "lockFile": false,
+    "writable": true
+  },
+  "expect": {
+    "state": "locked",
+    "write": {
+      "allowed": false,
+      "error": "DOCUMENT_OPEN_IN_OFFICE"
+    }
+  }
+}

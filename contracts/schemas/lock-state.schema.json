@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/lock-state.schema.json",
+  "title": "Local file lock state (10)",
+  "enum": [
+    "unlocked",
+    "locked",
+    "lock_file_only",
+    "read_only"
+  ]
+}

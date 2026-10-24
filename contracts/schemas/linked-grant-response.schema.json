@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/linked-grant-response.schema.json",
+  "title": "POST /v1/auth/native/linked-grants data (6.2)",
+  "type": "object",
+  "properties": {
+    "deviceSessionId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    },
+    "clientApp": {
+      "$ref": "common.schema.json#/$defs/officeClientApp"
+    },
+    "installationId": {
+      "$ref": "common.schema.json#/$defs/uuidV4"
+    },
+    "userId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    },
+    "refreshToken": {
+      "$ref": "common.schema.json#/$defs/refreshToken"
+    },
+    "refreshTokenExpiresAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    },
+    "created": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "deviceSessionId",
+    "clientApp",
+    "installationId",
+    "userId",
+    "refreshToken",
+    "refreshTokenExpiresAt",
+    "created"
+  ],
+  "additionalProperties": false
+}

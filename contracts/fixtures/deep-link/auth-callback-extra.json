@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "auth-callback-extra",
+  "description": "No other callback parameter",
+  "subject": "deep-link",
+  "input": "mc-office://auth/callback?code=ZXhhbXBsZS1jb2RlLW5vdC1yZWFsLTAwMDAwMDAwMDE&state=ZXhhbXBsZS1zdGF0ZS1ub3QtcmVhbC0wMDAwMDAwMDE&x=1",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "fixture": 1,
+  "name": "action-link",
+  "description": "Plugin-store and action links are disabled",
+  "subject": "deep-link",
+  "input": "mc-office://action|install-plugin|{9DC93CDB-B576-4F0C-B55E-FCC9C48DD777}",
+  "expect": {
+    "ok": false,
+    "error": "INVALID_LINK"
+  }
+}

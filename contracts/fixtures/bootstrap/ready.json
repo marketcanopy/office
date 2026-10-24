@@ -1,0 +1,93 @@
+{
+  "fixture": 1,
+  "name": "ready",
+  "description": "Signed in, docs and AI on",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "GET",
+      "path": "/v1/office/bootstrap",
+      "headers": {
+        "X-Client-App": "com.marketcanopy.office",
+        "X-Client-Platform": "linux",
+        "X-Client-Version": "10.0.0.3",
+        "X-Device-Id": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11",
+        "Authorization": "Bearer <office access token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001"
+      }
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "success": true,
+        "data": {
+          "contractVersion": "1",
+          "user": {
+            "id": "66f0c0ffee0000000000a001",
+            "email": "person@example.com",
+            "displayName": "Example Person"
+          },
+          "organizations": [
+            {
+              "id": "66f0c0ffee0000000000b001",
+              "name": "Example Co"
+            },
+            {
+              "id": "66f0c0ffee0000000000b002",
+              "name": "Example Brand"
+            }
+          ],
+          "activeOrganizationId": "66f0c0ffee0000000000b001",
+          "office": {
+            "minimumVersion": "10.0.0-mc.1",
+            "latestVersion": "10.0.0-mc.3",
+            "updateRequired": false
+          },
+          "docs": {
+            "enabled": true,
+            "appOrigin": "https://app.marketcanopy.com",
+            "connectPath": "/office/connect",
+            "documentsPath": "/office/documents"
+          },
+          "ai": {
+            "enabled": true,
+            "disabledReason": null,
+            "baseUrl": "https://api.marketcanopy.com/v1/office/ai",
+            "models": [
+              {
+                "id": "mc-standard",
+                "name": "Standard",
+                "capabilities": [
+                  "chat",
+                  "tools"
+                ]
+              },
+              {
+                "id": "mc-reasoning",
+                "name": "Reasoning",
+                "capabilities": [
+                  "chat",
+                  "tools",
+                  "reasoning"
+                ]
+              }
+            ],
+            "defaultModel": "mc-standard",
+            "limits": {
+              "maxRequestBytes": 1048576,
+              "maxOutputTokens": 8192
+            }
+          }
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "requestId": "req_example"
+        }
+      },
+      "schema": "bootstrap"
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

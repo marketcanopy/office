@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/bootstrap.schema.json",
+  "title": "GET /v1/office/bootstrap data (8.1)",
+  "type": "object",
+  "properties": {
+    "contractVersion": {
+      "const": "1"
+    },
+    "user": {
+      "$ref": "common.schema.json#/$defs/user"
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "$ref": "common.schema.json#/$defs/objectId"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "activeOrganizationId": {
+      "oneOf": [
+        {
+          "$ref": "common.schema.json#/$defs/objectId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "office": {
+      "type": "object",
+      "properties": {
+        "minimumVersion": {
+          "$ref": "common.schema.json#/$defs/releaseVersion"
+        },
+        "latestVersion": {
+          "$ref": "common.schema.json#/$defs/releaseVersion"
+        },
+        "updateRequired": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "minimumVersion",
+        "latestVersion",
+        "updateRequired"
+      ],
+      "additionalProperties": false
+    },
+    "docs": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "appOrigin": {
+          "$ref": "common.schema.json#/$defs/appOrigin"
+        },
+        "connectPath": {
+          "const": "/office/connect"
+        },
+        "documentsPath": {
+          "const": "/office/documents"
+        }
+      },
+      "required": [
+        "enabled",
+        "appOrigin",
+        "connectPath",
+        "documentsPath"
+      ],
+      "additionalProperties": false
+    },
+    "ai": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "disabledReason": {
+          "enum": [
+            null,
+            "AI_NOT_ENTITLED",
+            "QUOTA_EXCEEDED"
+          ]
+        },
+        "baseUrl": {
+          "type": "string",
+          "pattern": "^https://[a-z0-9.-]+/v1/office/ai$"
+        },
+        "models": {
+          "type": "array",
+          "items": {
+            "$ref": "common.schema.json#/$defs/model"
+          }
+        },
+        "defaultModel": {
+          "oneOf": [
+            {
+              "$ref": "common.schema.json#/$defs/modelAlias"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "maxRequestBytes": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxOutputTokens": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "required": [
+            "maxRequestBytes",
+            "maxOutputTokens"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "enabled",
+        "disabledReason",
+        "baseUrl",
+        "models",
+        "defaultModel",
+        "limits"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "enabled": {
+                "const": true
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "disabledReason": {
+                "const": null
+              },
+              "models": {
+                "minItems": 1
+              },
+              "defaultModel": {
+                "$ref": "common.schema.json#/$defs/modelAlias"
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "required": [
+    "contractVersion",
+    "user",
+    "organizations",
+    "activeOrganizationId",
+    "office",
+    "docs",
+    "ai"
+  ],
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "office": {
+            "properties": {
+              "updateRequired": {
+                "const": true
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "docs": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          },
+          "ai": {
+            "properties": {
+              "enabled": {
+                "const": false
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

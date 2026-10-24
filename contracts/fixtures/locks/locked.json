@@ -1,0 +1,18 @@
+{
+  "fixture": 1,
+  "name": "locked",
+  "description": "Office has the file open",
+  "subject": "lock-state",
+  "input": {
+    "osLock": true,
+    "lockFile": true,
+    "writable": true
+  },
+  "expect": {
+    "state": "locked",
+    "write": {
+      "allowed": false,
+      "error": "DOCUMENT_OPEN_IN_OFFICE"
+    }
+  }
+}

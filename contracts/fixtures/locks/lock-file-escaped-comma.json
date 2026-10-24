@@ -1,0 +1,19 @@
+{
+  "fixture": 1,
+  "name": "lock-file-escaped-comma",
+  "description": "Commas inside fields are written as &#39;",
+  "subject": "lock-file",
+  "input": {
+    "text": ",Lee&#39; Brandon,DESKTOP-1,24.10.2026 21:30,C:\\Users\\blee\\AppData\\Local\\MarketCanopy\\Office;",
+    "path": "C:\\Users\\blee\\Docs\\Budget.xlsx"
+  },
+  "expect": {
+    "lockFilePath": "C:\\Users\\blee\\Docs\\.~lock.Budget.xlsx#",
+    "content": {
+      "user": "Lee, Brandon",
+      "host": "DESKTOP-1",
+      "date": "24.10.2026 21:30",
+      "appDataDir": "C:\\Users\\blee\\AppData\\Local\\MarketCanopy\\Office"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "fixture": 1,
+  "name": "api-key",
+  "description": "A Market Canopy API key is refused",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <api key>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Translate to French: Hello"
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "max_tokens": 512,
+        "temperature": 0.2
+      }
+    },
+    "response": {
+      "status": 403,
+      "body": {
+        "error": {
+          "message": "That token is not for AI.",
+          "type": "permission_error",
+          "code": "WRONG_AUDIENCE",
+          "param": null,
+          "request_id": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "WRONG_AUDIENCE"
+  }
+}

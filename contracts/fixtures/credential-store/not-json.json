@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "not-json",
+  "description": "Not JSON",
+  "subject": "credential-read",
+  "input": {
+    "raw": "refresh=dsr_x",
+    "apiOrigin": "https://api.marketcanopy.com"
+  },
+  "expect": {
+    "state": "absent",
+    "reason": "unreadable"
+  }
+}

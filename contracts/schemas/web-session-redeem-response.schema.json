@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/web-session-redeem-response.schema.json",
+  "title": "POST /v1/office/web-session/redeem data (7.2)",
+  "type": "object",
+  "properties": {
+    "userId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    },
+    "organizationId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deviceSessionId": {
+      "$ref": "common.schema.json#/$defs/objectId"
+    },
+    "sessionExpiresAt": {
+      "$ref": "common.schema.json#/$defs/instant"
+    }
+  },
+  "required": [
+    "userId",
+    "organizationId",
+    "displayName",
+    "deviceSessionId",
+    "sessionExpiresAt"
+  ],
+  "additionalProperties": false
+}

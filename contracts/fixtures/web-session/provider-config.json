@@ -1,0 +1,34 @@
+{
+  "fixture": 1,
+  "name": "provider-config",
+  "description": "The branding overlay's provider declaration",
+  "subject": "document",
+  "input": {
+    "schema": "provider-config",
+    "value": [
+      {
+        "provider": "marketcanopy",
+        "name": "Market Canopy",
+        "check": {
+          "url": "/office/connect/check"
+        },
+        "editorPage": "/office/documents/",
+        "entryPage": "/office/connect",
+        "order": 0,
+        "icons": {
+          "light": {
+            "normal": "./icons/light.svg",
+            "big": "./icons/light-big.svg"
+          },
+          "dark": {
+            "normal": "./icons/dark.svg",
+            "big": "./icons/dark-big.svg"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": true
+  }
+}

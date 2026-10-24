@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "open-encoded-pipes",
+  "description": "A browser may percent-encode the pipes",
+  "subject": "deep-link",
+  "input": "mc-office://open%7Cn%7CBudget%7Chttps://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001",
+  "expect": {
+    "ok": true,
+    "kind": "open",
+    "name": "Budget",
+    "appOrigin": "https://app.marketcanopy.com",
+    "documentId": "66f0c0ffee0000000000c001",
+    "organizationId": "66f0c0ffee0000000000b001"
+  }
+}

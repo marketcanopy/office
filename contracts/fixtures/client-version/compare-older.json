@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "compare-older",
+  "description": "Numeric comparison, part by part",
+  "subject": "client-version",
+  "input": {
+    "compare": [
+      "10.0.0-mc.3",
+      "10.0.0-mc.10"
+    ]
+  },
+  "expect": {
+    "result": -1
+  }
+}

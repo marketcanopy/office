@@ -1,0 +1,47 @@
+{
+  "fixture": 1,
+  "name": "first-call",
+  "description": "The first call creates Office's device session",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/auth/native/linked-grants",
+      "headers": {
+        "X-Client-App": "com.marketcanopy.desktop",
+        "X-Client-Platform": "windows",
+        "X-Client-Version": "0.1.190",
+        "X-Device-Id": "0d5e8f9a-1b2c-4d3e-8f40-5a6b7c8d9e0f",
+        "Authorization": "Bearer <desktop device-session access token>"
+      },
+      "schema": "linked-grant-request",
+      "body": {
+        "clientApp": "com.marketcanopy.office",
+        "installationId": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11"
+      }
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "success": true,
+        "data": {
+          "deviceSessionId": "66f0c0ffee0000000000d001",
+          "clientApp": "com.marketcanopy.office",
+          "installationId": "4f7d2c1e-8a8b-4c39-9d7e-2b1f5a0c9e11",
+          "userId": "66f0c0ffee0000000000a001",
+          "refreshToken": "dsr_EXAMPLE-not-a-real-refresh-token-0001",
+          "refreshTokenExpiresAt": "2027-01-22T21:40:00.000Z",
+          "created": true
+        },
+        "meta": {
+          "timestamp": "2026-10-24T21:40:00.000Z",
+          "requestId": "req_example"
+        }
+      },
+      "schema": "linked-grant-response"
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

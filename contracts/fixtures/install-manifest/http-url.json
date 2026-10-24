@@ -1,0 +1,32 @@
+{
+  "fixture": 1,
+  "name": "http-url",
+  "description": "Every URL is https",
+  "subject": "document",
+  "input": {
+    "schema": "install-manifest",
+    "value": {
+      "schemaVersion": 1,
+      "channel": "stable",
+      "version": "10.0.0-mc.3",
+      "publishedAt": "2026-10-24T21:40:00.000Z",
+      "minimumDesktopVersion": "0.1.190",
+      "targets": [
+        {
+          "os": "windows",
+          "arch": "x64",
+          "url": "http://downloads.marketcanopy.com/x.exe",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000001",
+          "size": 250000000,
+          "kind": "exe",
+          "publisher": "CN=Market Canopy, Inc.",
+          "sourceArchiveUrl": "https://github.com/marketcanopy/office/releases/download/v10.0.0-mc.3/marketcanopy-office-10.0.0-mc.3-source.tar.gz",
+          "sourceArchiveSha256": "0000000000000000000000000000000000000000000000000000000000000001"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

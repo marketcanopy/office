@@ -1,0 +1,53 @@
+{
+  "fixture": 1,
+  "name": "ai-on-without-models",
+  "description": "Enabled AI lists at least one model",
+  "subject": "document",
+  "input": {
+    "schema": "bootstrap",
+    "value": {
+      "contractVersion": "1",
+      "user": {
+        "id": "66f0c0ffee0000000000a001",
+        "email": "person@example.com",
+        "displayName": "Example Person"
+      },
+      "organizations": [
+        {
+          "id": "66f0c0ffee0000000000b001",
+          "name": "Example Co"
+        },
+        {
+          "id": "66f0c0ffee0000000000b002",
+          "name": "Example Brand"
+        }
+      ],
+      "activeOrganizationId": "66f0c0ffee0000000000b001",
+      "office": {
+        "minimumVersion": "10.0.0-mc.1",
+        "latestVersion": "10.0.0-mc.3",
+        "updateRequired": false
+      },
+      "docs": {
+        "enabled": true,
+        "appOrigin": "https://app.marketcanopy.com",
+        "connectPath": "/office/connect",
+        "documentsPath": "/office/documents"
+      },
+      "ai": {
+        "enabled": true,
+        "disabledReason": null,
+        "baseUrl": "https://api.marketcanopy.com/v1/office/ai",
+        "models": [],
+        "defaultModel": "mc-standard",
+        "limits": {
+          "maxRequestBytes": 1048576,
+          "maxOutputTokens": 8192
+        }
+      }
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

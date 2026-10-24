@@ -1,0 +1,18 @@
+{
+  "fixture": 1,
+  "name": "read-only",
+  "description": "The person cannot write the file",
+  "subject": "lock-state",
+  "input": {
+    "osLock": false,
+    "lockFile": false,
+    "writable": false
+  },
+  "expect": {
+    "state": "read_only",
+    "write": {
+      "allowed": false,
+      "error": "PATH_NOT_WRITABLE"
+    }
+  }
+}

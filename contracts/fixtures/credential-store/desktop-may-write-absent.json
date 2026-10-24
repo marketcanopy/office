@@ -1,0 +1,16 @@
+{
+  "fixture": 1,
+  "name": "desktop-may-write-absent",
+  "description": "The desktop app provisions when the entry is absent",
+  "subject": "credential-read",
+  "input": {
+    "raw": null,
+    "apiOrigin": "https://api.marketcanopy.com",
+    "signedInUserId": "66f0c0ffee0000000000a001"
+  },
+  "expect": {
+    "state": "absent",
+    "reason": "missing",
+    "desktopMayWrite": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "separator-character",
+  "description": "U+0001 would split the argument when upstream forwards it",
+  "subject": "launch-args",
+  "input": [
+    "/home/u/a\u0001b.docx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

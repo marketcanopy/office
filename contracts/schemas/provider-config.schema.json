@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/provider-config.schema.json",
+  "title": "common/loginpage/providers/marketcanopy/config.json (7.3)",
+  "type": "array",
+  "minItems": 1,
+  "maxItems": 1,
+  "items": {
+    "type": "object",
+    "properties": {
+      "provider": {
+        "const": "marketcanopy"
+      },
+      "name": {
+        "const": "Market Canopy"
+      },
+      "check": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "pattern": "^/"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "additionalProperties": false
+      },
+      "editorPage": {
+        "type": "string",
+        "pattern": "^/"
+      },
+      "entryPage": {
+        "type": "string",
+        "pattern": "^/"
+      },
+      "order": {
+        "const": 0
+      },
+      "icons": {
+        "type": "object",
+        "properties": {
+          "light": {
+            "type": "object",
+            "properties": {
+              "normal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "big": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "normal"
+            ],
+            "additionalProperties": false
+          },
+          "dark": {
+            "type": "object",
+            "properties": {
+              "normal": {
+                "type": "string",
+                "minLength": 1
+              },
+              "big": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "normal"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "light",
+          "dark"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "provider",
+      "name",
+      "check",
+      "editorPage",
+      "entryPage",
+      "order",
+      "icons"
+    ],
+    "additionalProperties": false
+  }
+}

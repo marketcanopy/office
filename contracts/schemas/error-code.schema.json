@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/error-code.schema.json",
+  "title": "Office contract error code",
+  "enum": [
+    "UNAUTHORIZED",
+    "GRANT_REVOKED",
+    "ACCOUNT_CHANGED",
+    "CODE_EXPIRED",
+    "CODE_REPLAYED",
+    "WRONG_AUDIENCE",
+    "NOT_A_MEMBER",
+    "CLIENT_UPGRADE_REQUIRED",
+    "AI_NOT_ENTITLED",
+    "QUOTA_EXCEEDED",
+    "RATE_LIMITED",
+    "MODEL_NOT_ALLOWED",
+    "REQUEST_TOO_LARGE",
+    "PROVIDER_UNAVAILABLE",
+    "VALIDATION_ERROR",
+    "INVALID_CLIENT_HEADERS",
+    "DOCUMENT_OPEN_IN_OFFICE",
+    "PATH_OUTSIDE_GRANT",
+    "PATH_NOT_WRITABLE",
+    "VERSION_CONFLICT",
+    "NETWORK_UNAVAILABLE",
+    "CREDENTIAL_IN_LINK",
+    "INVALID_LINK",
+    "INVALID_ARGUMENT"
+  ]
+}

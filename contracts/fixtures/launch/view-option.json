@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "view-option",
+  "description": "--view is not forwarded to a running instance, so it is refused",
+  "subject": "launch-args",
+  "input": [
+    "--view=/home/u/docs/Quarterly plan.docx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

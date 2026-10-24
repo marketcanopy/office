@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "release-large",
+  "description": "Every part up to 6 digits",
+  "subject": "client-version",
+  "input": {
+    "release": "10.12.345-mc.17"
+  },
+  "expect": {
+    "header": "10.12.345.17"
+  }
+}

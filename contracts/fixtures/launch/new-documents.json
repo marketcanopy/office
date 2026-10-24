@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "new-documents",
+  "description": "The three new-document options",
+  "subject": "launch-args",
+  "input": [
+    "--new:word",
+    "--new:cell",
+    "--new:slide"
+  ],
+  "expect": {
+    "ok": true
+  }
+}

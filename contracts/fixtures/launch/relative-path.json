@@ -1,0 +1,14 @@
+{
+  "fixture": 1,
+  "name": "relative-path",
+  "description": "A relative path",
+  "subject": "launch-args",
+  "input": [
+    "docs/Budget.xlsx"
+  ],
+  "expect": {
+    "ok": false,
+    "error": "INVALID_ARGUMENT",
+    "index": 0
+  }
+}

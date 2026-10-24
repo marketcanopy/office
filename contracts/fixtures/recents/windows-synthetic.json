@@ -1,0 +1,28 @@
+{
+  "fixture": 1,
+  "name": "windows-synthetic",
+  "description": "Windows paths, a pinned and an encrypted entry (synthetic, from the writer's source)",
+  "subject": "recents",
+  "input": {
+    "text": "﻿<?xml version=\"1.0\" encoding=\"utf-8\"?><recents><file path=\"C:\\Users\\blee\\Documents\\Deck.pptx\" type=\"129\" date=\"24.10.2026 09:12\" url=\"\" parent=\"C:\\Users\\blee\\Documents\" pin=\"1\" /><file path=\"C:\\Users\\blee\\Documents\\Secret.docx\" type=\"65\" date=\"23.10.2026 17:00\" url=\"\" parent=\"C:\\Users\\blee\\Documents\" crypted=\"1\" /></recents>"
+  },
+  "expect": {
+    "state": "ok",
+    "files": [
+      {
+        "path": "C:\\Users\\blee\\Documents\\Deck.pptx",
+        "kind": "presentation",
+        "date": "24.10.2026 09:12",
+        "pinned": true,
+        "encrypted": false
+      },
+      {
+        "path": "C:\\Users\\blee\\Documents\\Secret.docx",
+        "kind": "document",
+        "date": "23.10.2026 17:00",
+        "pinned": false,
+        "encrypted": true
+      }
+    ]
+  }
+}

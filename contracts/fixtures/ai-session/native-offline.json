@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "native-offline",
+  "description": "getMarketCanopyAiSession() state offline",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "offline"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

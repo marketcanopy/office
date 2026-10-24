@@ -1,0 +1,16 @@
+{
+  "fixture": 1,
+  "name": "native-signed-out-with-token",
+  "description": "A non-ready state never carries a token",
+  "subject": "document",
+  "input": {
+    "schema": "ai-session",
+    "value": {
+      "state": "signed_out",
+      "accessToken": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJvZmZpY2UtYWkiLCJleGFtcGxlIjp0cnVlfQ.ZXhhbXBsZS1zaWduYXR1cmUtbm90LXJlYWw"
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

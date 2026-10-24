@@ -1,0 +1,28 @@
+{
+  "fixture": 1,
+  "name": "linux-x64-10.0.0-169",
+  "description": "The recents.xml Office 10.0.0-169 wrote on Linux x64 (captured)",
+  "subject": "recents",
+  "input": {
+    "file": "linux-x64-10.0.0-169.xml"
+  },
+  "expect": {
+    "state": "ok",
+    "files": [
+      {
+        "path": "/home/oouser/docs/Budget & forecast.xlsx",
+        "kind": "spreadsheet",
+        "date": "24.10.2026 21:31",
+        "pinned": false,
+        "encrypted": false
+      },
+      {
+        "path": "/home/oouser/docs/Quarterly plan.docx",
+        "kind": "document",
+        "date": "24.10.2026 21:30",
+        "pinned": false,
+        "encrypted": false
+      }
+    ]
+  }
+}

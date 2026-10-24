@@ -1,0 +1,12 @@
+{
+  "fixture": 1,
+  "name": "stream-cancelled",
+  "description": "The client closed the connection: the body ends with neither [DONE] nor an error, and is not a complete answer",
+  "subject": "sse",
+  "input": "data: {\"id\":\"chatcmpl-example\",\"object\":\"chat.completion.chunk\",\"created\":1761341000,\"model\":\"mc-standard\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"The doc\"},\"finish_reason\":null}]}\n\n",
+  "expect": {
+    "ok": false,
+    "violation": "stream ended without [DONE] or error",
+    "event": 1
+  }
+}

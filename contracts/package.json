@@ -1,0 +1,28 @@
+{
+  "name": "@marketcanopy/office-contracts",
+  "version": "1.0.0",
+  "description": "Market Canopy Office integration contract: schemas, fixtures and a TypeScript reference implementation",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "hash": "node src/hash-cli.ts",
+    "check": "npm run typecheck && npm test && node src/hash-cli.ts --check"
+  },
+  "dependencies": {
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}

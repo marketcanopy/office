@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contracts.marketcanopy.com/office/v1/refresh-response.schema.json",
+  "title": "POST /v1/auth/refresh data (6.3, existing)",
+  "type": "object",
+  "properties": {
+    "accessToken": {
+      "$ref": "common.schema.json#/$defs/jwt"
+    },
+    "refreshToken": {
+      "$ref": "common.schema.json#/$defs/refreshToken"
+    },
+    "expiresIn": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 900
+    }
+  },
+  "required": [
+    "accessToken",
+    "refreshToken",
+    "expiresIn"
+  ],
+  "additionalProperties": true
+}

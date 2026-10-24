@@ -1,2 +1,6 @@
 # The patch queue is applied byte for byte (git am --keep-cr): never convert line endings.
 patches/** -text
+# The overlay is copied into upstream checkouts and replace/ is checked against
+# MANIFEST.json digests, so a Windows checkout (core.autocrlf=true) must not
+# rewrite it either.
+branding/** -text

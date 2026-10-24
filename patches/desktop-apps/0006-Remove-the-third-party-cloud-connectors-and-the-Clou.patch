@@ -1,13 +1,15 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Market Canopy <office@marketcanopy.invalid>
 Date: Sat, 24 Oct 2026 00:00:00 +0000
-Subject: [PATCH] Remove the third-party cloud connectors
+Subject: [PATCH] Remove the third-party cloud connectors and the Clouds menu
+ item
 
-Market Canopy Office offers one cloud, Market Canopy's own. The Box and
-Dropbox connectors signed in through ONLYOFFICE's hosted apps, and the
-others pointed at self-hosted servers Market Canopy does not run, so
-every upstream provider is deleted. The folder keeps a README so the
-build steps that copy it still find it.
+Market Canopy Office offers one cloud, Market Canopy's own, and connects
+to it by itself. The Box and Dropbox connectors signed in through
+ONLYOFFICE's hosted apps, and the others pointed at self-hosted servers
+Market Canopy does not run, so every upstream provider is deleted and the
+start page no longer shows the Clouds menu item. The folder keeps a
+README so the build steps that copy it still find it.
 
 Modified by Market Canopy on 2026-10-24 for Market Canopy Office.
 ---
@@ -62,7 +64,8 @@ Modified by Market Canopy on 2026-10-24 for Market Canopy Office.
  .../providers/seafile/assets/listicon.svg     |  1 -
  .../seafile/assets/listicon_dark.svg          |  1 -
  .../loginpage/providers/seafile/config.json   | 21 -------------------
- 51 files changed, 17 insertions(+), 273 deletions(-)
+ common/loginpage/src/shell/Sidebar.jsx        |  3 ++-
+ 52 files changed, 19 insertions(+), 274 deletions(-)
  create mode 100644 common/loginpage/providers/README.md
  delete mode 100644 common/loginpage/providers/box/assets/buttonlogo.svg
  delete mode 100644 common/loginpage/providers/box/assets/buttonlogo_dark.svg
@@ -741,3 +744,24 @@ index 1abbbaf..0000000
 -        }
 -    }
 -}
+diff --git a/common/loginpage/src/shell/Sidebar.jsx b/common/loginpage/src/shell/Sidebar.jsx
+index 60f51ab..40bf021 100644
+--- a/common/loginpage/src/shell/Sidebar.jsx
++++ b/common/loginpage/src/shell/Sidebar.jsx
+@@ -8,6 +8,8 @@ import { MenuItem } from "./MenuItem.jsx";
+ import { command } from "@/sdk/bridge.js";
+ import { aichat, closeSidePanel, openFullAIPanel } from "@/stores/aichat.js";
+ import "./Sidebar.styles.css";
++// Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Clouds menu
++// item; Office connects to Market Canopy by itself.
+ // import { sendPluginVisibility } from "@/services/ai-panel.js";
+ 
+ export default function Sidebar() {
+@@ -62,7 +64,6 @@ export default function Sidebar() {
+       <MenuItem href="/" icon="#home" label={t("actHome")} end />
+       <MenuItem href="/open" icon="#folder" label={t("actOpenLocal")} />
+       <MenuItem action="templates" href="/templates" icon="#templates" label={t("actTemplates")} />
+-      <MenuItem action="clouds" href="/clouds" icon="#cloud" label={t("actClouds")} />
+       <Show when={appliedUseAi()}>
+         <MenuItem href="/aitools" onClick={clickAiTools} icon="#aitools" label={t("actAiTools", "AI Tools")} />
+       </Show>

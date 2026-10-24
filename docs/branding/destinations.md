@@ -15,7 +15,7 @@ help and feedback addresses (web-apps `Gruntfile.js` placeholders).
 | Plugin store, `<scheme>://action\|...`, `<scheme>://command/...` | desktop-apps, macOS `AppDelegate.mm` | Disabled by desktop-apps `0003` (P02 contract section 3.2). |
 | `templates.onlyoffice.com/?desktop=true` | desktop-apps `cascapplicationmanagerwrapper.cpp` (opening a template) | Kept: ONLYOFFICE's public template gallery, used only when a person opens Templates. `urls.templates` is empty until Market Canopy has a gallery. |
 | `templates-embed.onlyoffice.com` | start page `routes/templates/index.jsx` | Kept, as above. |
-| Dropbox and Box sign-in apps at `onlyoffice.com/app`, and the other cloud connectors | start page `providers/*/config.json` | Removed (desktop-apps `0006`, owner decision 2026-10-24): every upstream connector is deleted; Market Canopy's own provider is the only cloud. |
+| Dropbox and Box sign-in apps at `onlyoffice.com/app`, and the other cloud connectors | start page `providers/*/config.json` | Removed (desktop-apps `0006`, owner decision 2026-10-24): every upstream connector is deleted and the start page has no Clouds menu item; Office connects to Market Canopy by itself. |
 | `helpcenter.onlyoffice.com/.../InsertFieldCodes.aspx` | document editor `HeaderFooterTab.js` | Kept: a help link in the field codes dialog. |
 | `api.onlyoffice.com/docs/plugin-and-macros/...` | `MacrosDialog.js` | Kept: developer documentation for macros, nominative use. |
 | `onlyoffice.com/blog/2025/10/docs-9-1-released` | document and presentation editors' `Toolbar.js` | Kept: a "what's new" link of upstream features. |

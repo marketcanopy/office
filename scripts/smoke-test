@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 #
 # Market Canopy Office: the branding smoke suite.
-# Copyright (C) 2026 Market Canopy
+# Copyright (C) 2026 Market Canopy LLC
 #
 # This program is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Affero General Public License version 3 as published by
@@ -128,6 +128,7 @@ def check_identity(results, settings):
         "PUBLISHER_URL": settings["urls"]["site"],
         "SUPPORT_URL": settings["urls"]["support"],
         "SUPPORT_MAIL": settings["urls"]["supportMail"],
+        "PUBLISHER_NAME": identity["copyrightHolder"],
     }
     wrong = ["%s=%r" % (key, mk.get(key)) for key, value in expected_mk.items() if mk.get(key) != value]
     results.check("branding.mk agrees with settings.json", not wrong, ", ".join(wrong))
@@ -148,6 +149,7 @@ def check_identity(results, settings):
         # The Start menu folder must be APP_REG_NAME: Windows toast
         # notifications look the shortcut up there (desktop-apps cnotification).
         "sCompanyName": identity["productName"],
+        "sAppPublisher": identity["copyrightHolder"],
     }
     wrong = ["%s=%r" % (key, iss.get(key)) for key, value in expected_iss.items() if iss.get(key) != value]
     results.check("inno defines.iss agrees with settings.json", not wrong, ", ".join(wrong))
@@ -269,6 +271,12 @@ def check_notices(results):
     notice, texts = notices.resolve(BRANDING, build)
     origin = "Market Canopy Office is a modified version of ONLYOFFICE Desktop Editors, the original software developed by Ascensio System SIA."
     results.check("notice carries the origin statement", notice["origin"] == origin)
+    holder = json.loads(read(os.path.join(BRANDING, "settings.json")))["identity"]["copyrightHolder"]
+    results.check(
+        "notice names the Market Canopy trademark",
+        "Market Canopy\u2122 is an unregistered trademark of %s." % holder in notice["trademarks"]
+        and any(holder in line for line in notice["copyright"]),
+    )
     results.check(
         "notice links the source of the build", notice["links"]["source"]["url"].endswith(build["sourceCommit"])
     )

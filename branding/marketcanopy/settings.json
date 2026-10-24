@@ -6,7 +6,7 @@
     "internalCompanyName": "MarketCanopy",
     "internalProductName": "Office",
     "brandingName": "marketcanopy",
-    "copyrightHolder": "Market Canopy",
+    "copyrightHolder": "Market Canopy LLC",
     "urlScheme": "mc-office",
     "windows": {
       "executable": "MarketCanopyOffice.exe",
@@ -43,7 +43,7 @@
     "site": "https://marketcanopy.com",
     "signup": "https://marketcanopy.com/?source=office",
     "support": "https://marketcanopy.com/help",
-    "supportMail": "office-support@marketcanopy.invalid",
+    "supportMail": "info@marketcanopy.com",
     "help": "",
     "releaseNotes": "https://github.com/marketcanopy/office/releases",
     "download": "https://marketcanopy.com/download",

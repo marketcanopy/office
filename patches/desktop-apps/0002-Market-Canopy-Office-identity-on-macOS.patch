@@ -144,7 +144,7 @@ index 1e9a7a0..dc2152c 100644
  
      return appInfo[key];
 diff --git a/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist b/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
-index 9f2c08f..f97a9c6 100644
+index 9f2c08f..be4926d 100644
 --- a/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
 +++ b/macos/ONLYOFFICE/Resources/ONLYOFFICE-arm/Info.plist
 @@ -1,5 +1,6 @@
@@ -186,7 +186,7 @@ index 9f2c08f..f97a9c6 100644
 +	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
  	<key>NSHumanReadableCopyright</key>
 -	<string>Copyright © 2026 Ascensio System SIA. All rights reserved.</string>
-+	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy, 2026.</string>
++	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy LLC, 2026.</string>
  	<key>NSMainStoryboardFile</key>
  	<string>Main</string>
  	<key>NSMicrophoneUsageDescription</key>
@@ -204,7 +204,7 @@ index 9f2c08f..f97a9c6 100644
  	<integer>86400</integer>
  	<key>UIDesignRequiresCompatibility</key>
 diff --git a/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist b/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
-index fbf4e80..4d8993f 100644
+index fbf4e80..ed3601e 100644
 --- a/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
 +++ b/macos/ONLYOFFICE/Resources/ONLYOFFICE-x86_64/Info.plist
 @@ -1,5 +1,6 @@
@@ -246,7 +246,7 @@ index fbf4e80..4d8993f 100644
 +	<string>Once Market Canopy Office has permission, document tabs will be able to ask you for access.</string>
  	<key>NSHumanReadableCopyright</key>
 -	<string>Copyright © 2026 Ascensio System SIA. All rights reserved.</string>
-+	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy, 2026.</string>
++	<string>Copyright © 2009-2026 Ascensio System SIA. Modified by Market Canopy LLC, 2026.</string>
  	<key>NSMainStoryboardFile</key>
  	<string>Main</string>
  	<key>NSMicrophoneUsageDescription</key>

@@ -20,13 +20,13 @@ writes the data files the component imports.
 
 diff --git a/common/loginpage/src/routes/about/MarketCanopyNotice.jsx b/common/loginpage/src/routes/about/MarketCanopyNotice.jsx
 new file mode 100644
-index 0000000..110ca5d
+index 0000000..7f5a42d
 --- /dev/null
 +++ b/common/loginpage/src/routes/about/MarketCanopyNotice.jsx
 @@ -0,0 +1,74 @@
 +/*
 + * Market Canopy Office: the Appropriate Legal Notices in the start page's About.
-+ * Copyright (C) 2026 Market Canopy
++ * Copyright (C) 2026 Market Canopy LLC
 + *
 + * This program is free software: you can redistribute it and/or modify it
 + * under the terms of the GNU Affero General Public License version 3 as
@@ -124,13 +124,13 @@ index e7ffded..77ed9f3 100644
          </div>
 diff --git a/common/loginpage/src/routes/about/marketcanopy-notice.css b/common/loginpage/src/routes/about/marketcanopy-notice.css
 new file mode 100644
-index 0000000..789afb2
+index 0000000..e753d34
 --- /dev/null
 +++ b/common/loginpage/src/routes/about/marketcanopy-notice.css
 @@ -0,0 +1,53 @@
 +/*
 + * Market Canopy Office: styles of the About notices.
-+ * Copyright (C) 2026 Market Canopy
++ * Copyright (C) 2026 Market Canopy LLC
 + * SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the
 + * LICENSE file of https://github.com/marketcanopy/office)
 + */
@@ -182,14 +182,14 @@ index 0000000..789afb2
 +  color: var(--text-secondary);
 +}
 diff --git a/win-linux/src/defines.h b/win-linux/src/defines.h
-index 0644b81..d5df782 100644
+index 0644b81..0c11907 100644
 --- a/win-linux/src/defines.h
 +++ b/win-linux/src/defines.h
 @@ -44,6 +44,7 @@
  
  #define APP_NAME "DesktopEditors"
  #define APP_TITLE "Market Canopy Office"
-+#define ABOUT_PAGE_APP_NAME APP_TITLE
++#define ABOUT_PAGE_APP_NAME "Market Canopy" "\xE2\x84\xA2" " Office"
  #ifdef __linux
  # define APP_DATA_PATH "/marketcanopy/office"
  # define REG_GROUP_KEY "marketcanopy"

@@ -33,7 +33,7 @@ index 56a404f..08a8b00 100644
 +DEFINES += APP_USER_MODEL_ID=\\\"MarketCanopy.Office\\\"
  DEFINES += COPYRIGHT_YEAR=$${CURRENT_YEAR}
 diff --git a/win-linux/extras/projicons/src/version.h b/win-linux/extras/projicons/src/version.h
-index 2c9d79c..46345e1 100644
+index 2c9d79c..9196bf3 100644
 --- a/win-linux/extras/projicons/src/version.h
 +++ b/win-linux/extras/projicons/src/version.h
 @@ -1,5 +1,6 @@
@@ -54,8 +54,8 @@ index 2c9d79c..46345e1 100644
 -#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
 +#define VER_FILEDESCRIPTION_STR     "Market Canopy Office\0"
 +#define VER_PRODUCTNAME_STR         "Market Canopy Office\0"
-+#define VER_COMPANYNAME_STR         "Market Canopy\0"
-+#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYNAME_STR         "Market Canopy LLC\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy LLC 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
 +#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
  
  #define VER_INTERNALNAME_STR        "AppIcons\0"
@@ -81,7 +81,7 @@ index ecdbd34..83ed3b0 100644
  # define APP_HELPER       L"/editors_helper.exe"
  # define DAEMON_NAME      L"/updatesvc.exe"
 diff --git a/win-linux/extras/update-daemon/src/version.h b/win-linux/extras/update-daemon/src/version.h
-index ac20d1e..d56a0e9 100644
+index ac20d1e..ec6b3d2 100644
 --- a/win-linux/extras/update-daemon/src/version.h
 +++ b/win-linux/extras/update-daemon/src/version.h
 @@ -1,5 +1,6 @@
@@ -102,8 +102,8 @@ index ac20d1e..d56a0e9 100644
 -#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
 +#define VER_FILEDESCRIPTION_STR     "Market Canopy Office Update Service\0"
 +#define VER_PRODUCTNAME_STR         "Market Canopy Office Update Service\0"
-+#define VER_COMPANYNAME_STR         "Market Canopy\0"
-+#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYNAME_STR         "Market Canopy LLC\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy LLC 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
 +#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
  
  #define VER_INTERNALNAME_STR        "AppIcons\0"
@@ -261,7 +261,7 @@ index 62c6e32..0e77b72 100644
  
          SHELLEXECUTEINFO shExInfo = {0};
 diff --git a/win-linux/src/version.h b/win-linux/src/version.h
-index 5760968..8c90551 100644
+index 5760968..2d7a232 100644
 --- a/win-linux/src/version.h
 +++ b/win-linux/src/version.h
 @@ -1,5 +1,6 @@
@@ -278,8 +278,8 @@ index 5760968..8c90551 100644
 -#define VER_COMPANYNAME_STR         "Ascensio System SIA\0"
 -#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA " TO_STR(COPYRIGHT_YEAR) ". All rights reserved.\0"
 -#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
-+#define VER_COMPANYNAME_STR         "Market Canopy\0"
-+#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYNAME_STR         "Market Canopy LLC\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy LLC 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
 +#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
  #define ABOUT_COPYRIGHT_STR         VER_LEGALCOPYRIGHT_STR
 -#define VER_FILEDESCRIPTION_STR     "ONLYOFFICE Desktop Editors\0"

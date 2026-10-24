@@ -1,5 +1,5 @@
 # Market Canopy Office: Linux packaging names.
-# Copyright (C) 2026 Market Canopy
+# Copyright (C) 2026 Market Canopy LLC
 #
 # Read by desktop-apps package/Makefile (ONLYOFFICE, Copyright (C) Ascensio
 # System SIA) through `-include $(BRANDING_DIR)/branding.mk`; build_tools passes
@@ -17,13 +17,11 @@ PRODUCT_NAME_SHORT = Office
 COMPANY_NAME_LOW = marketcanopy
 PRODUCT_NAME_LOW = office
 
-PUBLISHER_NAME = Market Canopy
+PUBLISHER_NAME = Market Canopy LLC
 PUBLISHER_URL = https://marketcanopy.com
 SUPPORT_URL = https://marketcanopy.com/help
-# Debian's Maintainer field needs an address and Market Canopy has not
-# published a support mailbox for Office yet (owner item in evidence/P03.md).
-# The reserved .invalid domain keeps the placeholder from reaching anyone.
-SUPPORT_MAIL = office-support@marketcanopy.invalid
+# Debian's Maintainer field and the RPM packager address.
+SUPPORT_MAIL = info@marketcanopy.com
 SCHEME_HANDLER = mc-office
 
 PACKAGE_NAME := marketcanopy-office

@@ -1,4 +1,4 @@
-# Market Canopy Office
+# Market Canopy™ Office
 
 Market Canopy Office is a modified version of ONLYOFFICE Desktop Editors, the
 original software developed by Ascensio System SIA. This repository holds the

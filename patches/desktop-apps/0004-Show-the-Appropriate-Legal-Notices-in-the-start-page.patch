@@ -1,0 +1,195 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Show the Appropriate Legal Notices in the start page's About
+
+Market Canopy Office is a modified ONLYOFFICE Desktop Editors. The About
+dialog of the start page names the original developer, the modification
+dates, the build, the license, the warranty disclaimer and the source of
+this build, and holds the license texts, so they show with no network
+(ONLYOFFICE additional terms 1 to 3). The branding's build_tools hook
+writes the data files the component imports.
+---
+ .../src/routes/about/MarketCanopyNotice.jsx   | 74 +++++++++++++++++++
+ common/loginpage/src/routes/about/index.jsx   |  4 +
+ .../src/routes/about/marketcanopy-notice.css  | 53 +++++++++++++
+ win-linux/src/defines.h                       |  1 +
+ 4 files changed, 132 insertions(+)
+ create mode 100644 common/loginpage/src/routes/about/MarketCanopyNotice.jsx
+ create mode 100644 common/loginpage/src/routes/about/marketcanopy-notice.css
+
+diff --git a/common/loginpage/src/routes/about/MarketCanopyNotice.jsx b/common/loginpage/src/routes/about/MarketCanopyNotice.jsx
+new file mode 100644
+index 0000000..110ca5d
+--- /dev/null
++++ b/common/loginpage/src/routes/about/MarketCanopyNotice.jsx
+@@ -0,0 +1,74 @@
++/*
++ * Market Canopy Office: the Appropriate Legal Notices in the start page's About.
++ * Copyright (C) 2026 Market Canopy
++ *
++ * This program is free software: you can redistribute it and/or modify it
++ * under the terms of the GNU Affero General Public License version 3 as
++ * published by the Free Software Foundation, together with the additional
++ * terms in the LICENSE file of https://github.com/marketcanopy/office.
++ *
++ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * AGPL at https://www.gnu.org/licenses/agpl-3.0.html.
++ *
++ * SPDX-License-Identifier: AGPL-3.0-only
++ */
++
++// The branding's build_tools/make.py writes these four files from
++// branding/marketcanopy/notices. They are bundled, so the notices and the
++// license texts show with no network (ADR 0527 decision 2).
++import notice from "@/data/marketcanopy-notice.json";
++import agplText from "@/data/marketcanopy-license-agpl.txt?raw";
++import thirdPartyText from "@/data/marketcanopy-license-3dparty.txt?raw";
++import ccText from "@/data/marketcanopy-license-cc.txt?raw";
++import { For } from "solid-js";
++import "./marketcanopy-notice.css";
++
++const TEXTS = [
++  { label: notice.labels.agpl, text: agplText },
++  { label: notice.labels.thirdParty, text: thirdPartyText },
++  { label: notice.labels.cc, text: ccText },
++];
++
++export default function MarketCanopyNotice() {
++  return (
++    <section class="mc-notice" aria-label={notice.product}>
++      <p class="about-field">{notice.origin}</p>
++      <p class="about-field">{notice.modification}</p>
++      <p class="about-field">
++        {notice.lines.modified}<br />
++        {notice.lines.based}<br />
++        {notice.lines.build}
++      </p>
++      <p class="about-field">
++        <For each={notice.copyright}>{(line) => <>{line}<br /></>}</For>
++      </p>
++      <p class="about-field">{notice.license}</p>
++      <p class="about-field">{notice.warranty}</p>
++      <p class="about-field">{notice.trademarks}</p>
++      <p class="about-field">{notice.nonCode}</p>
++      <p class="about-field mc-notice-links">
++        <For each={Object.values(notice.links)}>
++          {(link) => (
++            <a class="about-link" href={link.url} target="_blank" rel="noreferrer">
++              {link.label}
++            </a>
++          )}
++        </For>
++      </p>
++      <details class="mc-notice-texts">
++        <summary class="about-link">{notice.labels.texts}</summary>
++        <For each={TEXTS}>
++          {(item) => (
++            <>
++              <h3 class="mc-notice-heading">{item.label}</h3>
++              <pre class="mc-notice-text" tabindex="0" role="document" aria-label={item.label}>
++                {item.text}
++              </pre>
++            </>
++          )}
++        </For>
++      </details>
++    </section>
++  );
++}
+diff --git a/common/loginpage/src/routes/about/index.jsx b/common/loginpage/src/routes/about/index.jsx
+index e7ffded..77ed9f3 100644
+--- a/common/loginpage/src/routes/about/index.jsx
++++ b/common/loginpage/src/routes/about/index.jsx
+@@ -1,8 +1,11 @@
++// Modified by Market Canopy on 2026-10-24 for Market Canopy Office: About shows
++// the Appropriate Legal Notices (MarketCanopyNotice.jsx).
+ import { Show, createMemo } from "solid-js";
+ import { t } from "@/services/l10n.js";
+ import { aboutOpen, closeAbout, versionInfo, updatesOn, updateStatus, execUpdateAction, addonInfo } from "@/services/about.js";
+ import { Dialog, Button } from "@/components";
+ import "./about.css";
++import MarketCanopyNotice from "./MarketCanopyNotice.jsx";
+ import { command } from "@/sdk/bridge";
+ 
+ function parseLicenseInfo(html) {
+@@ -141,6 +144,7 @@ export default function About() {
+                   </Show>
+                 </div>
+               </div>
++              <MarketCanopyNotice />
+             </div>
+           </Show>
+         </div>
+diff --git a/common/loginpage/src/routes/about/marketcanopy-notice.css b/common/loginpage/src/routes/about/marketcanopy-notice.css
+new file mode 100644
+index 0000000..789afb2
+--- /dev/null
++++ b/common/loginpage/src/routes/about/marketcanopy-notice.css
+@@ -0,0 +1,53 @@
++/*
++ * Market Canopy Office: styles of the About notices.
++ * Copyright (C) 2026 Market Canopy
++ * SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the
++ * LICENSE file of https://github.com/marketcanopy/office)
++ */
++
++.mc-notice {
++  max-height: 40vh;
++  overflow-y: auto;
++  margin-top: 12px;
++  padding-top: 12px;
++  border-top: 1px solid var(--border-divider);
++
++  p.about-field {
++    margin: 0 0 8px;
++    font-size: 12px;
++    line-height: 18px;
++  }
++}
++
++.mc-notice-links {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 4px 16px;
++}
++
++.mc-notice-texts summary {
++  cursor: pointer;
++}
++
++.mc-notice-texts summary:focus-visible,
++.mc-notice-text:focus-visible {
++  outline: 2px solid var(--text-link, #2080e5);
++  outline-offset: 2px;
++}
++
++.mc-notice-heading {
++  font-size: 12px;
++  font-weight: 700;
++  margin: 12px 0 4px;
++  color: var(--text-normal);
++}
++
++.mc-notice-text {
++  max-height: 200px;
++  overflow: auto;
++  white-space: pre-wrap;
++  font-size: 11px;
++  line-height: 15px;
++  margin: 0;
++  color: var(--text-secondary);
++}
+diff --git a/win-linux/src/defines.h b/win-linux/src/defines.h
+index 0644b81..d5df782 100644
+--- a/win-linux/src/defines.h
++++ b/win-linux/src/defines.h
+@@ -44,6 +44,7 @@
+ 
+ #define APP_NAME "DesktopEditors"
+ #define APP_TITLE "Market Canopy Office"
++#define ABOUT_PAGE_APP_NAME APP_TITLE
+ #ifdef __linux
+ # define APP_DATA_PATH "/marketcanopy/office"
+ # define REG_GROUP_KEY "marketcanopy"

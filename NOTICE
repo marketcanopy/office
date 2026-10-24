@@ -1,0 +1,27 @@
+Market Canopy Office
+
+Market Canopy Office is a modified version of ONLYOFFICE Desktop Editors, the
+original software developed by Ascensio System SIA.
+
+Copyright (C) Ascensio System SIA 2009-2026: ONLYOFFICE Desktop Editors and its
+components, at the release tag and commits recorded in UPSTREAM.
+Modifications copyright (C) Market Canopy 2026: the files of this repository
+and the changes in patches/, first made on 2026-10-24. Each changed upstream
+file carries a line saying what Market Canopy changed and when.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License version 3 as published by
+the Free Software Foundation, together with the additional terms in LICENSE.
+It is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+Non-code elements of the original program (illustrations, icon sets,
+technical writing) are licensed under the Creative Commons Attribution-
+ShareAlike 4.0 International License. Third-party components and their
+licenses are listed in
+branding/marketcanopy/desktop-apps/package/common/license/3dparty/3DPARTYLICENSE.
+
+ONLYOFFICE is a trademark of Ascensio System SIA. Market Canopy Office is not
+affiliated with, sponsored or endorsed by Ascensio System SIA, and the license
+grants no right to its trademarks. The Market Canopy name and artwork are not
+licensed under the AGPL or CC BY-SA.

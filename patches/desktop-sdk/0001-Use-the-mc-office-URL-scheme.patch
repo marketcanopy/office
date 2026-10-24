@@ -1,0 +1,54 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Use the mc-office URL scheme
+
+Market Canopy Office registers mc-office instead of oo-office, so it
+never claims ONLYOFFICE Desktop Editors' links. The name keeps
+oo-office's nine characters because CCefView::load strips the scheme
+with fixed offsets (P02 contract section 2).
+---
+ ChromiumBasedEditors/lib/src/additional/manager.h   | 3 ++-
+ ChromiumBasedEditors/lib/src/applicationmanager.cpp | 3 ++-
+ 2 files changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/ChromiumBasedEditors/lib/src/additional/manager.h b/ChromiumBasedEditors/lib/src/additional/manager.h
+index 036b31e..6a0e3e1 100644
+--- a/ChromiumBasedEditors/lib/src/additional/manager.h
++++ b/ChromiumBasedEditors/lib/src/additional/manager.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: mc-office URL scheme (9 characters, as CCefView::load expects).
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -79,7 +80,7 @@ public:
+ 	virtual void Local_Save_Start() {}
+ 	virtual bool Local_Save_End(bool bIsNeedSaveDialog, int nId, CefRefPtr<CefBrowser> browser) { return false; }
+ 
+-	virtual std::wstring GetExternalSchemeName() { return L"oo-office"; }
++	virtual std::wstring GetExternalSchemeName() { return L"mc-office"; }
+ };
+ 
+ CApplicationManagerAdditionalBase* Create_ApplicationManagerAdditional(CAscApplicationManager* pManager);
+diff --git a/ChromiumBasedEditors/lib/src/applicationmanager.cpp b/ChromiumBasedEditors/lib/src/applicationmanager.cpp
+index 865c52c..4ac6abe 100644
+--- a/ChromiumBasedEditors/lib/src/applicationmanager.cpp
++++ b/ChromiumBasedEditors/lib/src/applicationmanager.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: mc-office URL scheme (9 characters, as CCefView::load expects).
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -1645,7 +1646,7 @@ std::wstring CAscApplicationManager::GetExternalSchemeName()
+ {
+ 	if (m_pInternal->m_pAdditional)
+ 		return m_pInternal->m_pAdditional->GetExternalSchemeName();
+-	return L"oo-office";
++	return L"mc-office";
+ }
+ 
+ std::string CAscApplicationManager::GetErrorPageAddon(const ErrorPageType& type)

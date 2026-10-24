@@ -1,0 +1,353 @@
+#!/usr/bin/env python3
+#
+# Market Canopy Office: move the build to another ONLYOFFICE release tag.
+# Copyright (C) 2026 Market Canopy
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License version 3 as published by
+# the Free Software Foundation, together with the additional terms in the
+# LICENSE file at the root of this repository.
+#
+# This program is distributed WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+# AGPL at https://www.gnu.org/licenses/agpl-3.0.html.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# Usage:
+#   scripts/sync-upstream --to <tag> [--report <file>] [--work-dir <dir>]
+#   scripts/sync-upstream --to <tag> --resolve-only
+#
+# For the tag (vX.Y.Z.N) it:
+#   1. resolves every component in UPSTREAM to the commit the tag names (a
+#      component without the tag, such as onlyoffice.github.io, resolves to its
+#      default branch, as build_tools' own checkout does; the report says so);
+#   2. checks out each patched component at its old and new commits and applies
+#      the patch queue to the new one with `git am --3way`;
+#   3. when the whole queue applies, rewrites UPSTREAM and refreshes every patch
+#      with `git format-patch` against the new commit, so offsets are current;
+#   4. lists the overlay files copied from upstream whose upstream original
+#      changed between the two commits, and replacement targets that moved;
+#   5. runs scripts/smoke-test on the result, with the patched workspace.
+#
+# It only edits this working tree and writes the report; committing, pushing
+# and the pull request are the sync workflow's (office-sync.yml in the release
+# repository). It exits non-zero when a patch conflicts or a smoke check fails,
+# and then leaves UPSTREAM and patches/ unchanged. --resolve-only rewrites
+# UPSTREAM for the tag and touches nothing else.
+
+import argparse
+import datetime
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BRANDING = os.path.join(ROOT, "branding", "marketcanopy")
+ONLYOFFICE = "https://github.com/ONLYOFFICE/"
+TAG = re.compile(r"^v(\d+\.\d+\.\d+)\.\d+$")
+IDENTITY = {
+    "GIT_AUTHOR_NAME": "Market Canopy Office sync",
+    "GIT_AUTHOR_EMAIL": "office-build@marketcanopy.invalid",
+    "GIT_COMMITTER_NAME": "Market Canopy Office sync",
+    "GIT_COMMITTER_EMAIL": "office-build@marketcanopy.invalid",
+}
+
+
+def log(message):
+    print("[sync-upstream] " + message, flush=True)
+
+
+def run(args, cwd=None, check=True):
+    result = subprocess.run(
+        args, cwd=cwd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=dict(os.environ, **IDENTITY)
+    )
+    if check and result.returncode != 0:
+        raise SystemExit("sync-upstream: %s failed: %s" % (" ".join(args), result.stderr.strip()))
+    return result
+
+
+def read_upstream():
+    """(lines, values) of UPSTREAM; lines keep the comments for the rewrite."""
+    with open(os.path.join(ROOT, "UPSTREAM"), "r", encoding="utf-8") as handle:
+        lines = handle.read().splitlines()
+    values = {}
+    for line in lines:
+        body = line.split("#", 1)[0].strip()
+        if "=" in body:
+            key, value = body.split("=", 1)
+            values[key.strip()] = value.strip()
+    return lines, values
+
+
+def write_upstream(lines, values):
+    out = []
+    for line in lines:
+        body = line.split("#", 1)[0].strip()
+        if "=" in body:
+            key = body.split("=", 1)[0].strip()
+            out.append("%s=%s" % (key, values[key]))
+        else:
+            out.append(line)
+    with open(os.path.join(ROOT, "UPSTREAM"), "w", encoding="utf-8") as handle:
+        handle.write("\n".join(out) + "\n")
+
+
+def resolve(repo, tag):
+    """(commit, how) for `repo` at `tag`."""
+    refs = run(
+        ["git", "ls-remote", ONLYOFFICE + repo + ".git", "refs/tags/" + tag, "refs/tags/" + tag + "^{}"]
+    ).stdout.split()
+    pairs = dict(zip(refs[1::2], refs[0::2]))
+    commit = pairs.get("refs/tags/" + tag + "^{}") or pairs.get("refs/tags/" + tag)
+    if commit:
+        return commit, "tag"
+    head = run(["git", "ls-remote", ONLYOFFICE + repo + ".git", "HEAD"]).stdout.split()
+    if not head:
+        raise SystemExit("sync-upstream: %s has neither %s nor a default branch" % (repo, tag))
+    return head[0], "no tag: default branch"
+
+
+def patch_files(repo):
+    folder = os.path.join(ROOT, "patches", repo)
+    if not os.path.isdir(folder):
+        return []
+    return sorted(os.path.join(folder, name) for name in os.listdir(folder) if name.endswith(".patch"))
+
+
+def checkout(work, repo, old, new):
+    folder = os.path.join(work, repo)
+    if not os.path.isdir(os.path.join(folder, ".git")):
+        os.makedirs(folder, exist_ok=True)
+        run(["git", "init", "--quiet"], folder)
+        run(["git", "remote", "add", "origin", ONLYOFFICE + repo + ".git"], folder)
+    if os.path.isdir(os.path.join(folder, ".git", "rebase-apply")):
+        run(["git", "am", "--abort"], folder, check=False)
+    # Both commits, so --3way finds the blobs the patches were written against.
+    run(["git", "fetch", "--quiet", "--depth", "1", "--no-tags", "origin", old, new], folder)
+    run(["git", "-c", "advice.detachedHead=false", "checkout", "--quiet", "-f", new], folder)
+    return folder
+
+
+def apply_queue(folder, files):
+    """None when the queue applies, else (patch, [conflicting files])."""
+    for path in files:
+        result = run(["git", "am", "--3way", "--keep-cr", "--committer-date-is-author-date", path], folder, check=False)
+        if result.returncode != 0:
+            conflicts = run(["git", "diff", "--name-only", "--diff-filter=U"], folder, check=False).stdout.split()
+            if not conflicts:
+                conflicts = re.findall(r"(?:error|CONFLICT)[^\n]*?([\w./-]+\.\w+)", result.stdout + result.stderr)
+            run(["git", "am", "--abort"], folder, check=False)
+            return os.path.basename(path), sorted(set(conflicts)) or [
+                (result.stderr or result.stdout).strip().splitlines()[-1]
+            ]
+    return None
+
+
+def changed_upstream(folder, old, new, path):
+    """'same', 'changed', 'removed' or 'absent' for `path` between two commits."""
+
+    def blob(commit):
+        result = run(["git", "rev-parse", "--verify", "--quiet", "%s:%s" % (commit, path)], folder, check=False)
+        return result.stdout.strip() if result.returncode == 0 else None
+
+    before, after = blob(old), blob(new)
+    if before is None:
+        return "absent" if after is None else "added upstream"
+    if after is None:
+        return "removed"
+    return "same" if before == after else "changed"
+
+
+def overlay_copies():
+    """(repo, path) of overlay files that copy an upstream file of the same path,
+    plus build_tools/make.py, whose behavior the branding hook relies on."""
+    pairs = [("build_tools", "make.py")]
+    for repo in ("desktop-apps", "build_tools", "web-apps"):
+        base = os.path.join(BRANDING, repo)
+        for current, _, names in os.walk(base):
+            for name in names:
+                pairs.append((repo, os.path.relpath(os.path.join(current, name), base).replace(os.sep, "/")))
+    return sorted(set(pairs))
+
+
+def replacement_targets():
+    import json
+
+    with open(os.path.join(BRANDING, "replace", "MANIFEST.json"), "r", encoding="utf-8") as handle:
+        manifest = json.load(handle)
+    for relative in sorted(manifest):
+        repo, _, path = relative.partition("/")
+        yield repo, path
+
+
+def main():
+    try:
+        return sync()
+    except SystemExit as error:
+        if isinstance(error.code, str) and REPORT_PATH:
+            with open(REPORT_PATH, "w", encoding="utf-8") as handle:
+                handle.write("# Upstream sync failed\n\n%s\n" % error.code)
+        raise
+
+
+REPORT_PATH = None
+
+
+def sync():
+    global REPORT_PATH
+    parser = argparse.ArgumentParser(description="Move the build to another ONLYOFFICE release tag.")
+    parser.add_argument("--to", required=True, help="the ONLYOFFICE tag, vX.Y.Z.N")
+    parser.add_argument("--report", help="Markdown report to write (the sync pull request's body)")
+    parser.add_argument("--work-dir", help="where the components are checked out (default: a temporary folder)")
+    parser.add_argument("--resolve-only", action="store_true", help="rewrite UPSTREAM for the tag and stop")
+    args = parser.parse_args()
+    REPORT_PATH = args.report
+
+    match = TAG.match(args.to)
+    if not match:
+        raise SystemExit("sync-upstream: %r is not an ONLYOFFICE release tag (vX.Y.Z.N)" % args.to)
+    lines, old = read_upstream()
+    new = dict(old, tag=args.to, version=match.group(1))
+    how = {}
+    for key in sorted(old):
+        if key.startswith("commit."):
+            repo = key[len("commit.") :]
+            new[key], how[repo] = resolve(repo, args.to)
+            log("%s %s -> %s (%s)" % (repo, old[key][:12], new[key][:12], how[repo]))
+    if args.resolve_only:
+        write_upstream(lines, new)
+        log("wrote UPSTREAM for %s" % args.to)
+        return 0
+
+    work = args.work_dir or tempfile.mkdtemp(prefix="office-sync-")
+    os.makedirs(work, exist_ok=True)
+    sys.path.insert(0, os.path.join(ROOT, "build"))
+    from officebuild import patches as queue
+
+    budget_before = queue.budget_line(queue.inventory(ROOT))
+    conflicts = {}
+    applied = {}
+    drift = []
+    folders = {}
+    repos = sorted(set(queue.queue(ROOT)) | {"build_tools", "desktop-apps", "web-apps"})
+    for repo in repos:
+        old_commit, new_commit = old["commit." + repo], new["commit." + repo]
+        folder = checkout(work, repo, old_commit, new_commit)
+        folders[repo] = folder
+        files = patch_files(repo)
+        if files:
+            failure = apply_queue(folder, files)
+            if failure:
+                conflicts[repo] = failure
+                log("%s: %s does not apply: %s" % (repo, failure[0], ", ".join(failure[1])))
+            else:
+                applied[repo] = len(files)
+                log("%s: %d patch(es) apply" % (repo, len(files)))
+    for repo, path in overlay_copies():
+        if repo in folders:
+            state = changed_upstream(folders[repo], old["commit." + repo], new["commit." + repo], path)
+            if state in ("changed", "removed"):
+                drift.append(("overlay copy", repo + "/" + path, state))
+    for repo, path in replacement_targets():
+        if repo in folders:
+            state = changed_upstream(folders[repo], old["commit." + repo], new["commit." + repo], path)
+            if state in ("changed", "removed"):
+                drift.append(("replacement", repo + "/" + path, state))
+
+    smoke_rows = ""
+    status = 0
+    if conflicts:
+        status = 1
+    else:
+        write_upstream(lines, new)
+        for repo in applied:
+            for path in patch_files(repo):
+                os.remove(path)
+            run(
+                [
+                    "git",
+                    "format-patch",
+                    "--quiet",
+                    "--zero-commit",
+                    "--no-signature",
+                    "--no-numbered",
+                    "-o",
+                    os.path.join(ROOT, "patches", repo),
+                    new["commit." + repo] + "..HEAD",
+                ],
+                folders[repo],
+            )
+        smoke_report = os.path.join(work, "smoke.md")
+        smoke = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "scripts", "smoke-test"), "--work", work, "--report", smoke_report],
+            text=True,
+        )
+        with open(smoke_report, "r", encoding="utf-8") as handle:
+            smoke_rows = handle.read()
+        if smoke.returncode != 0:
+            status = 1
+    budget_after = queue.budget_line(queue.inventory(ROOT))
+
+    if args.report:
+        out = ["# Upstream sync %s -> %s" % (old["tag"], args.to), ""]
+        out.append(
+            "Run %s by `scripts/sync-upstream --to %s`. Result: **%s**."
+            % (
+                datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+                args.to,
+                "the patch queue does not apply"
+                if conflicts
+                else ("ready for review" if status == 0 else "smoke checks failed"),
+            )
+        )
+        out += ["", "## Components", "", "| Component | From | To | Resolved by |", "|---|---|---|---|"]
+        for repo in sorted(how):
+            out.append(
+                "| %s | `%s` | `%s` | %s |" % (repo, old["commit." + repo][:12], new["commit." + repo][:12], how[repo])
+            )
+        out += ["", "## Patch queue", "", "| Component | Result |", "|---|---|"]
+        for repo in sorted(set(applied) | set(conflicts)):
+            if repo in conflicts:
+                out.append(
+                    "| %s | `%s` conflicts in %s |"
+                    % (repo, conflicts[repo][0], ", ".join("`%s`" % name for name in conflicts[repo][1]))
+                )
+            else:
+                out.append(
+                    "| %s | %d patch(es) apply%s |"
+                    % (
+                        repo,
+                        applied[repo],
+                        "; not refreshed, since another component conflicts" if conflicts else " and were refreshed",
+                    )
+                )
+        out += ["", "Before: " + budget_before, "", "After: " + budget_after, ""]
+        out += ["## Upstream changes under the overlay", ""]
+        if drift:
+            out += [
+                "Review each: the overlay copies or replaces a file upstream changed.",
+                "",
+                "| Kind | File | Upstream |",
+                "|---|---|---|",
+            ]
+            out += ["| %s | `%s` | %s |" % row for row in drift]
+        else:
+            out.append("None: no file the overlay copies or replaces changed upstream.")
+        out += ["", "## Smoke suite", ""]
+        out.append(
+            smoke_rows or "Not run: the patch queue does not apply, so UPSTREAM and patches/ were left unchanged."
+        )
+        with open(args.report, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(out) + "\n")
+        log("wrote " + args.report)
+    if not args.work_dir:
+        shutil.rmtree(work, ignore_errors=True)
+    return status
+
+
+if __name__ == "__main__":
+    sys.exit(main())

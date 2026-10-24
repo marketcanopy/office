@@ -1,0 +1,75 @@
+{
+  "$comment": "Build-time settings of the Market Canopy branding (ADR 0529 decision 2, first layer). Identity values are the ones P02's contract section 2 fixes; scripts/smoke-test checks that the overlay and the patches agree with this file. The update feeds are staging placeholders until P12 publishes the real ones.",
+  "identity": {
+    "productName": "Market Canopy Office",
+    "companyName": "Market Canopy",
+    "internalCompanyName": "MarketCanopy",
+    "internalProductName": "Office",
+    "brandingName": "marketcanopy",
+    "copyrightHolder": "Market Canopy",
+    "urlScheme": "mc-office",
+    "windows": {
+      "executable": "MarketCanopyOffice.exe",
+      "registryKey": "Software\\MarketCanopy\\Office",
+      "uninstallAppId": "Market Canopy Office",
+      "dataFolder": "MarketCanopy\\Office",
+      "appUserModelId": "MarketCanopy.Office",
+      "progIdPrefix": "MarketCanopy.Office",
+      "mutexName": "MarketCanopyOffice",
+      "windowClass": "MarketCanopyOfficeWindowClass"
+    },
+    "macos": {
+      "bundleIdentifier": "com.marketcanopy.office",
+      "bundleName": "Market Canopy Office"
+    },
+    "linux": {
+      "package": "marketcanopy-office",
+      "command": "/usr/bin/marketcanopy-office",
+      "desktopEntry": "marketcanopy-office.desktop",
+      "installPrefix": "/opt/marketcanopy/office",
+      "dataFolder": "marketcanopy/office",
+      "settingsGroup": "marketcanopy",
+      "wmClass": "Market Canopy Office"
+    },
+    "singleInstancePorts": {
+      "$comment": "Upstream uses 12010, 12011, 12012 and 13012 on localhost; ours differ so both apps run side by side.",
+      "app": 12110,
+      "service": 12111,
+      "instanceService": 12112,
+      "instanceApp": 13112
+    }
+  },
+  "urls": {
+    "site": "https://marketcanopy.com",
+    "signup": "https://marketcanopy.com/?source=office",
+    "support": "https://marketcanopy.com/help",
+    "supportMail": "office-support@marketcanopy.invalid",
+    "help": "",
+    "releaseNotes": "https://github.com/marketcanopy/office/releases",
+    "download": "https://marketcanopy.com/download",
+    "source": "https://github.com/marketcanopy/office",
+    "templates": "",
+    "pluginStore": ""
+  },
+  "updates": {
+    "staging": {
+      "windowsAppcast": "https://staging.invalid/office/beta/windows/appcast.json",
+      "windowsAppcastDev": "https://staging.invalid/office/beta/windows/appcastdev.json",
+      "macosArmFeed": "https://staging.invalid/office/beta/macos/arm64/appcast.xml",
+      "macosX64Feed": "https://staging.invalid/office/beta/macos/x64/appcast.xml"
+    },
+    "production": {
+      "$comment": "P12 fills these with the office/<channel>/ paths on the desktop app's Azure Storage site. Empty means the hook refuses a production build.",
+      "windowsAppcast": "",
+      "windowsAppcastDev": "",
+      "macosArmFeed": "",
+      "macosX64Feed": ""
+    },
+    "upstreamDefaults": [
+      "https://download.onlyoffice.com/install/desktop/editors/windows/onlyoffice/appcast.json",
+      "https://download.onlyoffice.com/install/desktop/editors/windows/onlyoffice/appcastdev.json",
+      "https://download.onlyoffice.com/install/desktop/editors/mac/arm/onlyoffice.xml",
+      "https://download.onlyoffice.com/install/desktop/editors/mac/x86_64/onlyoffice.xml"
+    ]
+  }
+}

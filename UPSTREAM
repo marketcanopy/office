@@ -1,0 +1,18 @@
+# Upstream pin: ONLYOFFICE Desktop Editors 10.0.0 (build_tools --branch tags/v10.0.0.176).
+# One release tag for every component (ADR 0529 decision 3). scripts/sync-upstream rewrites
+# this file; commit.<repo> is what the build checks out, so a moved tag cannot change a build.
+# onlyoffice.github.io has no release tags: its commit is pinned here (P01 finding SOURCE-3).
+tag=v10.0.0.176
+version=10.0.0
+commit.build_tools=8cccb383182f45f5171a7c6d62f49ebf37aab400
+commit.core=76af764fcb777291098c73728044249b6893af6a
+commit.sdkjs=c1a29cc83824661d799711be14ef12b6125302f3
+commit.sdkjs-forms=0148c8ed3f799136431be49d4d83b4064fbafd01
+commit.web-apps=493e500c56ec96ccaa0452ab092cbce23b6dcc2e
+commit.desktop-sdk=a75c35326aad475a5a4ec904baa9a5d518bcc162
+commit.desktop-apps=3fd628f986f5ae42853fefa3dbbb10c3992bf71c
+commit.dictionaries=d3223bbb777883db66ac3cd249f71c6ebdc992c7
+commit.core-fonts=7030c6681fb5bbed560675cb42422f91df15d5c9
+commit.document-templates=0a52fb76fa53fddf7d70da28878537cde3d29421
+commit.oforms.onlyoffice.com=b3d5dfc163380a748fe8fd17422542da450f5146
+commit.onlyoffice.github.io=f3263c055c25875874004463b46c2e6a7000a9fd

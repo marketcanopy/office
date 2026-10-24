@@ -1,0 +1,143 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Ignore scheme action and command links; no Enterprise add-on
+ license
+
+mc-office://action|... (plugin store installs, panel selection) and
+mc-office://command/... links are dropped on every OS (P02 contract
+section 3.2), so a web page cannot install a plugin or run an app
+command. The Enterprise add-on is built out (build_tools defaults
+disable_addon_mode; macOS fastlane no longer defines USE_ADDON_MODE),
+and About no longer shows its commercial license.
+---
+ macos/ONLYOFFICE/AppDelegate.mm               | 37 ++++---------------
+ .../src/cascapplicationmanagerwrapper.cpp     | 20 ++--------
+ win-linux/src/windows/cmainwindow.cpp         |  3 +-
+ 3 files changed, 13 insertions(+), 47 deletions(-)
+
+diff --git a/macos/ONLYOFFICE/AppDelegate.mm b/macos/ONLYOFFICE/AppDelegate.mm
+index 89d4411..fbad228 100644
+--- a/macos/ONLYOFFICE/AppDelegate.mm
++++ b/macos/ONLYOFFICE/AppDelegate.mm
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme action and command links ignored.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -260,36 +261,12 @@
+         if ([obj.scheme isEqualToString:kSchemeApp]) {
+             NSString * strLink = [obj.absoluteString stringByRemovingPercentEncoding];
+             
+-            NSString * actionSelectPanel = [NSString stringWithFormat:@"%@://%@|", kSchemeApp, @"action|panel"];
+-            NSString * actionInstallPlugin = [NSString stringWithFormat:@"%@://%@|", kSchemeApp, @"action|install-plugin"];
+-            NSString * appCommand = [NSString stringWithFormat:@"%@://%@|", kSchemeApp, @"command/"];
+-            if ( [strLink hasPrefix:actionSelectPanel] ) {
+-                NSString * panelName = [strLink substringFromIndex:actionSelectPanel.length];
+-                
+-                if ( panelName.length ) {
+-                    NSEditorApi::CAscExecCommandJS * pCommand = new NSEditorApi::CAscExecCommandJS;
+-                    pCommand->put_Command(L"panel:select");
+-                    pCommand->put_Param([panelName stdwstring]);
+-
+-                    NSEditorApi::CAscMenuEvent* pEvent = new NSEditorApi::CAscMenuEvent(ASC_MENU_EVENT_TYPE_CEF_EXECUTE_COMMAND_JS);
+-                    pEvent->m_pData = pCommand;
+-
+-                    CAscApplicationManager * appManager = [NSAscApplicationWorker getAppManager];
+-                    appManager->SetEventToAllMainWindows(pEvent);
+-                }
+-            } else
+-            if ( [strLink hasPrefix:actionInstallPlugin] ) {
+-                NSString * pluginName = [strLink substringFromIndex:actionInstallPlugin.length];
+-
+-                CAscApplicationManager * appManager = [NSAscApplicationWorker getAppManager];
+-                appManager->InstallPluginFromStore([pluginName stdwstring]);
+-            } else
+-            if ( [strLink hasPrefix:appCommand] ) {
+-                NSString * cmd = [strLink substringFromIndex:appCommand.length];
+-
+-                CAscApplicationManager * appManager = [NSAscApplicationWorker getAppManager];
+-                appManager->CallCommand([cmd stdwstring]);
+-            } else {
++            // Market Canopy Office: <scheme>://action|... (plugin store installs, panel
++            // selection) and <scheme>://command/... links are ignored; a web page must
++            // not drive the app.
++            NSString * actionPrefix = [NSString stringWithFormat:@"%@://action", kSchemeApp];
++            NSString * commandPrefix = [NSString stringWithFormat:@"%@://command/", kSchemeApp];
++            if ( ![strLink hasPrefix:actionPrefix] && ![strLink hasPrefix:commandPrefix] ) {
+                 [openLinks addObject:obj];
+             }
+         }
+diff --git a/win-linux/src/cascapplicationmanagerwrapper.cpp b/win-linux/src/cascapplicationmanagerwrapper.cpp
+index 9f27182..e463d05 100644
+--- a/win-linux/src/cascapplicationmanagerwrapper.cpp
++++ b/win-linux/src/cascapplicationmanagerwrapper.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: scheme action and command links ignored.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -1132,7 +1133,6 @@ void CAscApplicationManagerWrapper::handleInputCmd(const std::vector<wstring>& v
+     }
+     std::wstring app_action = app_scheme + L"//action";
+     std::wstring app_action_open = app_scheme + L"//open";
+-    std::wstring app_action_plugin = app_scheme + L"//action|install-plugin";
+     std::wstring app_command = app_scheme + L"//command/";
+     std::vector<std::wstring> vec_window_actions;
+ 
+@@ -1168,20 +1168,8 @@ void CAscApplicationManagerWrapper::handleInputCmd(const std::vector<wstring>& v
+ //                in_new_window = true;
+         } else
+         if ( arg.rfind(app_action, 0) == 0 ) {
+-            // correct url from browsers
+-            std::wstring argScheme = arg;
+-            Utils::replaceAll(argScheme, L"%7C", L"|");
+-            if (argScheme[argScheme.length() - 1] == '/')
+-                argScheme.pop_back();
+-
+-            if ( argScheme.rfind(app_action_plugin, 0) == 0 ) {
+-                std::wstring _plugin_name = argScheme.substr(app_action_plugin.size() + 1);
+-                if ( !_plugin_name.empty() ) {
+-                    _app.InstallPluginFromStore(_plugin_name);
+-                }
+-            } else {
+-                vec_window_actions.push_back(argScheme);
+-            }
++            // Market Canopy Office: <scheme>://action|... links (plugin store installs,
++            // panel selection) are ignored; a web page must not drive the app.
+ 
+             continue;
+         } else
+@@ -1192,7 +1180,7 @@ void CAscApplicationManagerWrapper::handleInputCmd(const std::vector<wstring>& v
+             open_opts.name = QString::fromStdWString(get_file_name_from_open_deeplink(deep_link));
+         } else
+         if ( arg.rfind(app_command, 0) == 0 ) {
+-            vec_window_actions.push_back(arg);
++            // Market Canopy Office: <scheme>://command/... links are ignored.
+             continue;
+         } else {
+             open_opts.wurl = arg;
+diff --git a/win-linux/src/windows/cmainwindow.cpp b/win-linux/src/windows/cmainwindow.cpp
+index 935e2e3..c0a90b7 100644
+--- a/win-linux/src/windows/cmainwindow.cpp
++++ b/win-linux/src/windows/cmainwindow.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Enterprise add-on license in About.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -1185,7 +1186,7 @@ void CMainWindow::onDocumentReady(int uid)
+         jsn["name"]         = AI_TOOLS_CAPTION;
+         jsn["version"]      = VER_FILEVERSION_STR;
+         jsn["integrated"]   = true;
+-        jsn["license"]      = QJsonObject({{"title","Commercial"},{"url", URL_BSL_LICENSE}});
++        // Market Canopy Office ships no Enterprise add-on, so no commercial license is shown.
+ 
+         AscAppManager::sendCommandTo(SEND_TO_ALL_START_PAGE, "addon:status", Utils::stringifyJson(jsn));
+ #endif

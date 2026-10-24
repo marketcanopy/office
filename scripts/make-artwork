@@ -1,0 +1,565 @@
+#!/usr/bin/env python3
+#
+# Market Canopy Office: generate every icon and logo the build replaces.
+# Copyright (C) 2026 Market Canopy
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License version 3 as published by
+# the Free Software Foundation, together with the additional terms in the
+# LICENSE file at the root of this repository. It is distributed WITHOUT ANY
+# WARRANTY. SPDX-License-Identifier: AGPL-3.0-only
+#
+# The artwork this script reads and writes is Market Canopy's (see NOTICE); the
+# AGPL covers the script, not the logos.
+#
+# Reads branding/marketcanopy/artwork/source (copied from platform-dashboard,
+# provenance in SOURCES.json) and writes:
+#   branding/marketcanopy/replace/<component>/<upstream path>   files that
+#       replace an upstream file of the same path (the hook copies them);
+#   branding/marketcanopy/desktop-apps/...                     files the
+#       packaging reads from the branding folder (Linux icons, installer art);
+#   branding/marketcanopy/replace/MANIFEST.json                every replace/
+#       file with its sha256 and source;
+#   branding/marketcanopy/artwork/MAPPING.md                   output -> source.
+#
+# Usage: scripts/make-artwork [--check]
+#   --check  regenerate into a temporary folder and fail if any committed
+#            output differs (needs the same Pillow major version).
+
+import base64
+import hashlib
+import io
+import json
+import os
+import shutil
+import sys
+import tempfile
+
+try:
+    from PIL import Image, ImageDraw
+except ImportError:
+    sys.exit("make-artwork needs Pillow (python3 -m pip install Pillow)")
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BRANDING = os.path.join(ROOT, "branding", "marketcanopy")
+SOURCE = os.path.join(BRANDING, "artwork", "source")
+
+# Extensions whose upstream file-type icon becomes a Market Canopy document
+# icon. Extensions not listed (csv, tsv, txt, md, html, xml, epub, fb2, djvu,
+# xps, oxps, odg, Visio, forms) keep upstream's icon, which carries no
+# ONLYOFFICE logo and stays under CC BY-SA 4.0 unmodified.
+DOCUMENT_FAMILIES = {
+    "word": [
+        "doc",
+        "docm",
+        "docx",
+        "dot",
+        "dotm",
+        "dotx",
+        "fodt",
+        "hwp",
+        "hwpx",
+        "odt",
+        "ott",
+        "pages",
+        "rtf",
+        "stw",
+        "sxw",
+        "wps",
+        "wpt",
+    ],
+    "excel": ["fods", "numbers", "ods", "ots", "sxc", "xls", "xlsb", "xlsm", "xlsx", "xlt", "xltm", "xltx"],
+    "powerpoint": [
+        "dps",
+        "dpt",
+        "fodp",
+        "key",
+        "odp",
+        "otp",
+        "pot",
+        "potm",
+        "potx",
+        "pps",
+        "ppsm",
+        "ppsx",
+        "ppt",
+        "pptm",
+        "pptx",
+        "sxi",
+    ],
+    "pdf": ["pdf"],
+}
+# Upstream's macOS file-format icons that exist at the pinned tag.
+MAC_FILE_FORMATS = {
+    "csv",
+    "djvu",
+    "doc",
+    "docx",
+    "docxf",
+    "dotx",
+    "dps",
+    "dpt",
+    "epub",
+    "fb2",
+    "fods",
+    "fodt",
+    "htm",
+    "html",
+    "hwp",
+    "hwpx",
+    "key",
+    "mht",
+    "numbers",
+    "odg",
+    "odp",
+    "ods",
+    "odt",
+    "oform",
+    "otp",
+    "ots",
+    "ott",
+    "oxps",
+    "pages",
+    "pdf",
+    "pot",
+    "potx",
+    "pps",
+    "ppsx",
+    "ppt",
+    "pptm",
+    "pptx",
+    "rtf",
+    "stw",
+    "sxc",
+    "sxi",
+    "sxw",
+    "txt",
+    "vsdx",
+    "wps",
+    "wpt",
+    "xls",
+    "xlsb",
+    "xlsm",
+    "xlsx",
+    "xlt",
+    "xltx",
+    "xml",
+    "xps",
+}
+APP_ICO_SIZES = [16, 20, 24, 28, 30, 32, 36, 40, 48, 56, 60, 64, 72, 80, 96, 256]
+FILE_ICO_SIZES = [16, 32, 48, 256]
+MENU_ICO_SIZES = [16, 20, 24, 28, 32, 36, 40, 48, 56, 64, 72, 80]
+
+DARK_TEXT = "#333333"
+LIGHT_BG = (255, 255, 255, 255)
+DARK_BG = (31, 31, 31, 255)
+
+
+class Artwork:
+    def __init__(self, out_root):
+        self.out_root = out_root
+        self.mapping = []  # (output, source, how)
+        icns = Image.open(os.path.join(SOURCE, "icon.icns"))
+        icns.size = (1024, 1024)
+        icns.load()
+        self.app = icns.convert("RGBA")
+        logo = Image.open(os.path.join(SOURCE, "logo.png")).convert("RGBA")
+        # logo.png is the mark above the "Market Canopy" wordmark. The two are
+        # cut apart along the transparent band between them.
+        alpha = logo.getchannel("A")
+        rows = [alpha.crop((0, y, logo.width, y + 1)).getbbox() is not None for y in range(logo.height)]
+        gap = next(y for y in range(1, logo.height) if rows[y - 1] and not rows[y])
+        self.mark = logo.crop((0, 0, logo.width, gap)).crop(alpha.crop((0, 0, logo.width, gap)).getbbox())
+        text = logo.crop((0, gap, logo.width, logo.height))
+        self.wordmark = text.crop(text.getchannel("A").getbbox())
+        self.wordmark_white = recolor_dark(self.wordmark, (255, 255, 255))
+        self.documents = {
+            name: Image.open(os.path.join(SOURCE, "documents", name + ".png")).convert("RGBA")
+            for name in DOCUMENT_FAMILIES
+        }
+
+    # -- writing -------------------------------------------------------------
+
+    def path(self, relative):
+        full = os.path.join(self.out_root, relative)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        return full
+
+    def record(self, relative, source, how):
+        self.mapping.append((relative, source, how))
+
+    def png(self, relative, image, source, how):
+        image.save(self.path(relative), format="PNG", optimize=True)
+        self.record(relative, source, how)
+
+    def ico(self, relative, image, sizes, source, how):
+        square = fit(image, 256, 256)
+        square.save(self.path(relative), format="ICO", sizes=[(s, s) for s in sizes])
+        self.record(relative, source, how + "; ICO " + ",".join(str(s) for s in sizes))
+
+    def copy(self, relative, source_relative, how):
+        shutil.copyfile(os.path.join(SOURCE, source_relative), self.path(relative))
+        self.record(relative, source_relative, how)
+
+    def svg(self, relative, width, height, image, source, how, scale=4, extra=""):
+        raster = fit(image, width * scale, height * scale, align="start")
+        data = io.BytesIO()
+        raster.save(data, format="PNG", optimize=True)
+        encoded = base64.b64encode(data.getvalue()).decode("ascii")
+        # xlink:href, not href: Qt's SVG Tiny renderer draws the title bar and
+        # splash logos and understands only the xlink form.
+        body = (
+            '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" '
+            'width="%d" height="%d" viewBox="0 0 %d %d">\n'
+            "  <!-- Market Canopy artwork (scripts/make-artwork); not licensed under the AGPL or CC BY-SA. -->\n"
+            '%s  <image x="0" y="0" width="%d" height="%d" xlink:href="data:image/png;base64,%s"/>\n'
+            "</svg>\n"
+        ) % (width, height, width, height, extra, width, height, encoded)
+        with open(self.path(relative), "w", encoding="utf-8") as handle:
+            handle.write(body)
+        self.record(relative, source, how)
+
+    # -- compositions --------------------------------------------------------
+
+    def lockup(self, white_text):
+        """The mark beside the wordmark, as the title bar and About logos need."""
+        height = 400
+        mark = scale_to_height(self.mark, height)
+        word = scale_to_height(self.wordmark_white if white_text else self.wordmark, int(height * 0.62))
+        gap = int(height * 0.18)
+        canvas = Image.new("RGBA", (mark.width + gap + word.width, height), (0, 0, 0, 0))
+        canvas.alpha_composite(mark, (0, 0))
+        canvas.alpha_composite(word, (mark.width + gap, (height - word.height) // 2))
+        return canvas
+
+    def uninstall(self):
+        base = fit(self.app, 256, 256)
+        draw = ImageDraw.Draw(base)
+        draw.ellipse((136, 136, 252, 252), fill=(214, 48, 49, 255))
+        draw.line((166, 166, 222, 222), fill=(255, 255, 255, 255), width=18)
+        draw.line((222, 166, 166, 222), fill=(255, 255, 255, 255), width=18)
+        return base
+
+    def tile(self, background, size, mark_ratio):
+        canvas = Image.new("RGBA", (size, size), background)
+        inner = int(size * mark_ratio)
+        canvas.alpha_composite(fit(self.app, inner, inner), ((size - inner) // 2, (size - inner) // 2))
+        return canvas
+
+    def wizard(self, background, width, height):
+        canvas = Image.new("RGBA", (width, height), background)
+        inner = int(width * 0.7)
+        mark = fit(self.mark, inner, inner)
+        canvas.alpha_composite(mark, ((width - inner) // 2, int(height * 0.3) - inner // 2))
+        return canvas
+
+    # -- outputs -------------------------------------------------------------
+
+    def generate(self):
+        app_src = "icon.icns (1024 px)"
+        logo_src = "logo.png"
+        da = "replace/desktop-apps/"
+        wa = "replace/web-apps/apps/common/"
+
+        # Windows and Linux application
+        self.ico(da + "win-linux/res/icons/desktopeditors.ico", self.app, APP_ICO_SIZES, app_src, "application icon")
+        self.ico(
+            "desktop-apps/win-linux/extras/projicons/res/icons/desktopeditors.ico",
+            self.app,
+            APP_ICO_SIZES,
+            app_src,
+            "installer icon (inno common.iss SetupIconFile, relative to the branding folder)",
+        )
+        self.png(da + "win-linux/res/icons/app-icon_64.png", fit(self.app, 64, 64), app_src, "64 px")
+        for name, white in (("logo_light", False), ("logo_dark", True)):
+            image = self.lockup(white)
+            how = "mark beside wordmark, %s text" % ("white" if white else "dark")
+            self.svg(da + "win-linux/res/icons/%s.svg" % name, 85, 20, image, logo_src, how)
+            for suffix, (w, h) in (("", (85, 20)), ("@1.25x", (106, 25)), ("@1.5x", (128, 30)), ("@1.75x", (149, 35))):
+                self.png(
+                    da + "win-linux/res/icons/%s%s.png" % (name, suffix),
+                    fit(image, w, h, align="start"),
+                    logo_src,
+                    how + ", %dx%d" % (w, h),
+                )
+        self.svg(
+            da + "win-linux/res/icons/logo.svg", 85, 20, self.lockup(True), logo_src, "mark beside wordmark, white text"
+        )
+        splash_text = (
+            '  <rect x="0.5" y="0.5" width="499" height="249" fill="#ffffff" stroke="#acacac"/>\n'
+            '  <text x="250" y="118" font-family="Open Sans, Segoe UI, Arial, sans-serif" font-size="24" '
+            'fill="%s">Market Canopy Office</text>\n'
+            '  <text x="250" y="148" font-family="Open Sans, Segoe UI, Arial, sans-serif" font-size="13" '
+            'fill="#666666">marketcanopy.com</text>\n'
+        ) % DARK_TEXT
+        splash = Image.new("RGBA", (220, 250), (0, 0, 0, 0))
+        splash.alpha_composite(fit(self.mark, 190, 190), (24, 30))
+        self.svg(
+            da + "win-linux/res/icons/splash.svg",
+            500,
+            250,
+            splash,
+            logo_src,
+            "splash: white card, mark, product name and site as SVG text",
+            extra=splash_text,
+        )
+
+        # Windows icon resource (projicons)
+        self.ico(
+            da + "win-linux/extras/projicons/res/icons/desktopeditors.ico",
+            self.app,
+            APP_ICO_SIZES,
+            app_src,
+            "launcher icon",
+        )
+        self.ico(
+            da + "win-linux/extras/projicons/res/icons/uninstall.ico",
+            self.uninstall(),
+            APP_ICO_SIZES,
+            app_src,
+            "application icon with a red remove badge",
+        )
+        self.ico(
+            da + "win-linux/extras/projicons/res/icons/menu.ico",
+            self.tile(DARK_BG, 256, 0.82),
+            MENU_ICO_SIZES,
+            app_src,
+            "application icon on a dark tile",
+        )
+        for tile_name, family in (("word", "word"), ("cell", "excel"), ("slide", "powerpoint")):
+            self.ico(
+                da + "win-linux/extras/projicons/res/icons/%s.ico" % tile_name,
+                self.documents[family],
+                APP_ICO_SIZES,
+                "documents/%s.png" % family,
+                "new-document jump list icon",
+            )
+        for family, extensions in DOCUMENT_FAMILIES.items():
+            for extension in extensions:
+                self.ico(
+                    da + "win-linux/extras/projicons/res/icons/%s.ico" % extension,
+                    self.documents[family],
+                    FILE_ICO_SIZES,
+                    "documents/%s.png" % family,
+                    "file type icon",
+                )
+
+        # macOS
+        appicon = da + "macos/ONLYOFFICE/Images.xcassets/AppIcon.appiconset/"
+        for name, size in (
+            ("16x16", 16),
+            ("32x32", 32),
+            ("32x32-1", 32),
+            ("64x64", 64),
+            ("128x128", 128),
+            ("256x256", 256),
+            ("256x256-1", 256),
+            ("512x512", 512),
+            ("512x512-1", 512),
+            ("1024x1024", 1024),
+        ):
+            self.png(appicon + name + ".png", fit(self.app, size, size), app_src, "%d px" % size)
+        about = da + "macos/ONLYOFFICE/Images.xcassets/About/icon-about_normal.imageset/"
+        for theme in ("dark", "light"):
+            self.png(about + "icon-about_%s.png" % theme, fit(self.app, 64, 64), app_src, "64 px")
+            self.png(about + "icon-about_%s@2x.png" % theme, fit(self.app, 128, 128), app_src, "128 px")
+        tabs = da + "macos/ONLYOFFICE/Images.xcassets/Tabs/"
+        for folder, name, white in (
+            ("logo-tab-light.imageset", "logo_white", True),
+            ("logo-tab-dark.imageset", "logo", False),
+        ):
+            image = self.lockup(white)
+            how = "mark beside wordmark, %s text" % ("white" if white else "dark")
+            self.png(tabs + folder + "/%s.png" % name, fit(image, 86, 20, align="start"), logo_src, how + ", 86x20")
+            self.png(
+                tabs + folder + "/%s_2x.png" % name, fit(image, 172, 40, align="start"), logo_src, how + ", 172x40"
+            )
+        self.png(
+            da + "macos/ONLYOFFICE/Images.xcassets/TouchBar/touchbar-tab-startpage.imageset/start_logo3.png",
+            fit(self.mark, 44, 44),
+            logo_src,
+            "mark, 44 px",
+        )
+        for family, extensions in DOCUMENT_FAMILIES.items():
+            for extension in extensions:
+                if extension in MAC_FILE_FORMATS:
+                    self.copy(
+                        da + "macos/ONLYOFFICE/Resources/file-formats/file-%s.icns" % extension,
+                        "documents/%s.icns" % family,
+                        "file type icon, copied unchanged",
+                    )
+
+        # Start page
+        self.svg(
+            da + "common/loginpage/res/img/idx-logo.svg",
+            52,
+            45,
+            fit(self.app, 52 * 4, 45 * 4),
+            app_src,
+            "About dialog mark",
+        )
+
+        # Editors (web-apps)
+        self.svg(
+            wa + "main/resources/img/about/logo_s.svg", 245, 45, self.lockup(False), logo_src, "About logo, dark text"
+        )
+        self.svg(
+            wa + "main/resources/img/about/logo-white_s.svg",
+            245,
+            45,
+            self.lockup(True),
+            logo_src,
+            "About logo, white text",
+        )
+        self.svg(
+            wa + "main/resources/img/header/header-logo_s.svg",
+            85,
+            20,
+            self.lockup(True),
+            logo_src,
+            "header logo, white text",
+        )
+        self.svg(
+            wa + "main/resources/img/header/dark-logo_s.svg",
+            85,
+            20,
+            self.lockup(False),
+            logo_src,
+            "header logo, dark text",
+        )
+        self.svg(wa + "embed/resources/img/logo.svg", 85, 20, self.lockup(False), logo_src, "embedded viewer logo")
+        self.svg(wa + "forms/resources/img/logo.svg", 100, 24, self.lockup(False), logo_src, "forms logo")
+
+        # Packaging, read from the branding folder
+        for size in (16, 24, 32, 48, 64, 128, 256):
+            self.png(
+                "desktop-apps/package/common/linux/icons/%dx%d.png" % (size, size),
+                fit(self.app, size, size),
+                app_src,
+                "Linux hicolor icon",
+            )
+        for theme, background in (("Light", LIGHT_BG), ("Dark", DARK_BG)):
+            for w, h in ((164, 314), (202, 386), (240, 459), (290, 556), (315, 604), (366, 700), (416, 797)):
+                self.png(
+                    "desktop-apps/package/inno/res/WizImage-%s-%dx%d.png" % (theme, w, h),
+                    self.wizard(background, w, h).convert("RGB"),
+                    logo_src,
+                    "installer side image",
+                )
+            for size in (58, 71, 85, 103, 112, 129, 147):
+                self.png(
+                    "desktop-apps/package/inno/res/WizSmallImage-%s-%dx%d.png" % (theme, size, size),
+                    self.tile(background, size, 0.8).convert("RGB"),
+                    app_src,
+                    "installer corner image",
+                )
+
+
+def fit(image, width, height, align="center"):
+    """Scale image to fit width x height, keeping its aspect ratio, on a transparent canvas."""
+    ratio = min(width / image.width, height / image.height)
+    size = (max(1, round(image.width * ratio)), max(1, round(image.height * ratio)))
+    scaled = image.resize(size, Image.LANCZOS)
+    canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+    x = 0 if align == "start" else (width - size[0]) // 2
+    canvas.alpha_composite(scaled, (x, (height - size[1]) // 2))
+    return canvas
+
+
+def scale_to_height(image, height):
+    return image.resize((max(1, round(image.width * height / image.height)), height), Image.LANCZOS)
+
+
+def recolor_dark(image, color):
+    """Turn the navy letters of the wordmark into color, keeping the blue ones."""
+    out = image.copy()
+    pixels = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = pixels[x, y]
+            if a and (r * 299 + g * 587 + b * 114) // 1000 < 90:
+                pixels[x, y] = color + (a,)
+    return out
+
+
+def sha256(path):
+    with open(path, "rb") as handle:
+        return hashlib.sha256(handle.read()).hexdigest()
+
+
+def write_manifest(out_root, mapping):
+    """replace/MANIFEST.json in the format office-build reads (path -> sha256,
+    build/officebuild/patches.py). Where each file comes from is MAPPING.md."""
+    replace_root = os.path.join(out_root, "replace")
+    made = {relative[len("replace/") :] for relative, _, _ in mapping if relative.startswith("replace/")}
+    files = {}
+    for root, _, names in os.walk(replace_root):
+        for name in names:
+            full = os.path.join(root, name)
+            relative = os.path.relpath(full, replace_root).replace(os.sep, "/")
+            if relative == "MANIFEST.json":
+                continue
+            if relative not in made:
+                sys.exit(
+                    "make-artwork: replace/%s is not made by this script; every replacement is generated" % relative
+                )
+            files[relative] = sha256(full)
+    with open(os.path.join(replace_root, "MANIFEST.json"), "w", encoding="utf-8") as handle:
+        json.dump(dict(sorted(files.items())), handle, indent=2)
+        handle.write("\n")
+
+
+def write_mapping(out_root, mapping):
+    lines = [
+        "# Artwork mapping",
+        "",
+        "Generated by `scripts/make-artwork`; do not edit. Every output is made from Market Canopy artwork copied",
+        "from platform-dashboard (`artwork/source/SOURCES.json` records the commit and path of each source).",
+        "No ONLYOFFICE logo is shipped: every upstream image that carries one is in this table. Upstream icons",
+        "not listed here carry no ONLYOFFICE logo and are shipped unmodified under CC BY-SA 4.0.",
+        "",
+        "| Output (relative to `branding/marketcanopy/`) | Source (`artwork/source/`) | How |",
+        "|---|---|---|",
+    ]
+    for relative, source, how in sorted(mapping):
+        lines.append("| `%s` | `%s` | %s |" % (relative, source, how))
+    with open(os.path.join(out_root, "artwork", "MAPPING.md"), "w", encoding="utf-8") as handle:
+        handle.write("\n".join(lines) + "\n")
+
+
+def generated_paths(mapping):
+    return sorted({relative for relative, _, _ in mapping} | {"replace/MANIFEST.json", "artwork/MAPPING.md"})
+
+
+def main():
+    check = "--check" in sys.argv[1:]
+    if not check:
+        artwork = Artwork(BRANDING)
+        artwork.generate()
+        write_manifest(BRANDING, artwork.mapping)
+        write_mapping(BRANDING, artwork.mapping)
+        print("make-artwork: wrote %d files" % len(artwork.mapping))
+        return
+    with tempfile.TemporaryDirectory() as scratch:
+        shutil.copytree(BRANDING, os.path.join(scratch, "b"))
+        out = os.path.join(scratch, "b")
+        artwork = Artwork(out)
+        artwork.generate()
+        write_manifest(out, artwork.mapping)
+        write_mapping(out, artwork.mapping)
+        stale = [
+            p
+            for p in generated_paths(artwork.mapping)
+            if not os.path.isfile(os.path.join(BRANDING, p))
+            or sha256(os.path.join(BRANDING, p)) != sha256(os.path.join(out, p))
+        ]
+    if stale:
+        print("make-artwork --check: %d output(s) differ from a fresh run:" % len(stale))
+        for path in stale:
+            print("  " + path)
+        sys.exit(1)
+    print("make-artwork --check: outputs match")
+
+
+if __name__ == "__main__":
+    main()

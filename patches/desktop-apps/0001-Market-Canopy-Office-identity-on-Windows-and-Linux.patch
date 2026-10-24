@@ -1,0 +1,296 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sat, 24 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Market Canopy Office identity on Windows and Linux
+
+Product, company and copyright strings, data folders, registry keys,
+window class, mutex, application user model id, the mc-office URL
+scheme, Market Canopy URLs and single-instance ports that do not
+collide with ONLYOFFICE Desktop Editors (P02 contract section 2).
+The Windows launcher becomes MarketCanopyOffice.exe.
+---
+ win-linux/extras/projicons/ProjIcons.pro      |  3 +-
+ win-linux/extras/projicons/src/version.h      | 11 ++--
+ .../update-daemon/src/classes/csvcmanager.cpp |  3 +-
+ win-linux/extras/update-daemon/src/version.h  | 11 ++--
+ .../cascapplicationmanagerwrapper_private.h   |  3 +-
+ win-linux/src/components/cnotification.cpp    |  3 +-
+ win-linux/src/defines.h                       | 50 ++++++++++---------
+ win-linux/src/platform_win/association.cpp    |  3 +-
+ win-linux/src/version.h                       | 13 ++---
+ 9 files changed, 55 insertions(+), 45 deletions(-)
+
+diff --git a/win-linux/extras/projicons/ProjIcons.pro b/win-linux/extras/projicons/ProjIcons.pro
+index 56a404f..08a8b00 100644
+--- a/win-linux/extras/projicons/ProjIcons.pro
++++ b/win-linux/extras/projicons/ProjIcons.pro
+@@ -3,5 +3,6 @@ DESTDIR = $$PWD
+ include(common.pri)
+ 
+ DEFINES += APP_ICON_PATH=\"./res/icons/desktopeditors.ico\"
+-DEFINES += APP_USER_MODEL_ID=\\\"ASC.Documents.5\\\"
++# Modified by Market Canopy on 2026-10-24 for Market Canopy Office: application user model id.
++DEFINES += APP_USER_MODEL_ID=\\\"MarketCanopy.Office\\\"
+ DEFINES += COPYRIGHT_YEAR=$${CURRENT_YEAR}
+diff --git a/win-linux/extras/projicons/src/version.h b/win-linux/extras/projicons/src/version.h
+index 2c9d79c..46345e1 100644
+--- a/win-linux/extras/projicons/src/version.h
++++ b/win-linux/extras/projicons/src/version.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: company, product and copyright strings.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -68,11 +69,11 @@
+ #define VER_LANG_ID                 0x0409
+ #define VER_CHARSET_ID              1252
+ 
+-#define VER_FILEDESCRIPTION_STR     "ONLYOFFICE Editors\0"
+-#define VER_PRODUCTNAME_STR         "ONLYOFFICE Editors\0"
+-#define VER_COMPANYNAME_STR         "Ascensio System SIA\0"
+-#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA " TO_STR(COPYRIGHT_YEAR) ". All rights reserved.\0"
+-#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
++#define VER_FILEDESCRIPTION_STR     "Market Canopy Office\0"
++#define VER_PRODUCTNAME_STR         "Market Canopy Office\0"
++#define VER_COMPANYNAME_STR         "Market Canopy\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
+ 
+ #define VER_INTERNALNAME_STR        "AppIcons\0"
+ #define VER_LEGALTRADEMARKS1_STR    "All rights reserved\0"
+diff --git a/win-linux/extras/update-daemon/src/classes/csvcmanager.cpp b/win-linux/extras/update-daemon/src/classes/csvcmanager.cpp
+index ecdbd34..83ed3b0 100644
+--- a/win-linux/extras/update-daemon/src/classes/csvcmanager.cpp
++++ b/win-linux/extras/update-daemon/src/classes/csvcmanager.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: Windows launcher name.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -54,7 +55,7 @@
+ # include <Windows.h>
+ # include <WinInet.h>
+ # include <shlwapi.h>
+-# define APP_LAUNCH_NAME  L"/DesktopEditors.exe"
++# define APP_LAUNCH_NAME  L"/MarketCanopyOffice.exe"
+ # define APP_LAUNCH_NAME2 L"/editors.exe"
+ # define APP_HELPER       L"/editors_helper.exe"
+ # define DAEMON_NAME      L"/updatesvc.exe"
+diff --git a/win-linux/extras/update-daemon/src/version.h b/win-linux/extras/update-daemon/src/version.h
+index ac20d1e..d56a0e9 100644
+--- a/win-linux/extras/update-daemon/src/version.h
++++ b/win-linux/extras/update-daemon/src/version.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: company, product and copyright strings.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -68,11 +69,11 @@
+ #define VER_LANG_ID                 0x0409
+ #define VER_CHARSET_ID              1252
+ 
+-#define VER_FILEDESCRIPTION_STR     "ONLYOFFICE Update Service\0"
+-#define VER_PRODUCTNAME_STR         "ONLYOFFICE Update Service\0"
+-#define VER_COMPANYNAME_STR         "Ascensio System SIA\0"
+-#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA " TO_STR(COPYRIGHT_YEAR) ". All rights reserved.\0"
+-#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
++#define VER_FILEDESCRIPTION_STR     "Market Canopy Office Update Service\0"
++#define VER_PRODUCTNAME_STR         "Market Canopy Office Update Service\0"
++#define VER_COMPANYNAME_STR         "Market Canopy\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
+ 
+ #define VER_INTERNALNAME_STR        "AppIcons\0"
+ #define VER_LEGALTRADEMARKS1_STR    "All rights reserved\0"
+diff --git a/win-linux/src/cascapplicationmanagerwrapper_private.h b/win-linux/src/cascapplicationmanagerwrapper_private.h
+index 1d9bca8..03e6887 100644
+--- a/win-linux/src/cascapplicationmanagerwrapper_private.h
++++ b/win-linux/src/cascapplicationmanagerwrapper_private.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: Windows launcher name.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -51,7 +52,7 @@
+ #include <QApplication>
+ #include <QJsonParseError>
+ #ifdef _WIN32
+-# define APP_LAUNCH_NAME "\\DesktopEditors.exe"
++# define APP_LAUNCH_NAME "\\" APP_LAUNCHER_NAME ".exe"
+ # define RESTART_BATCH "/apprestart.bat"
+ #else
+ # include "platform_linux/xcbutils.h"
+diff --git a/win-linux/src/components/cnotification.cpp b/win-linux/src/components/cnotification.cpp
+index 28d321f..e16e315 100644
+--- a/win-linux/src/components/cnotification.cpp
++++ b/win-linux/src/components/cnotification.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: Windows launcher name.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -37,7 +38,7 @@
+ # include <QCoreApplication>
+ # include <QDir>
+ # include "utils.h"
+-# define APP_LAUNCH_NAME "\\" REG_APP_NAME ".exe"
++# define APP_LAUNCH_NAME "\\" APP_LAUNCHER_NAME ".exe"
+ # define APP_SHORTCUT_NAME "\\" APP_REG_NAME ".lnk"
+ #else
+ # include <libnotify/notify.h>
+diff --git a/win-linux/src/defines.h b/win-linux/src/defines.h
+index 5a1fcf0..0644b81 100644
+--- a/win-linux/src/defines.h
++++ b/win-linux/src/defines.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: product identity, data folders, URL scheme, URLs and single-instance ports.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -42,35 +43,36 @@
+ #define reCmdLang           "--(keep)?lang[:|=](\\w{2,5})"
+ 
+ #define APP_NAME "DesktopEditors"
+-#define APP_TITLE "ONLYOFFICE"
++#define APP_TITLE "Market Canopy Office"
+ #ifdef __linux
+-# define APP_DATA_PATH "/onlyoffice/desktopeditors"
+-# define REG_GROUP_KEY "onlyoffice"
+-# define APP_MUTEX_NAME "asc:editors"
+-# define DESKTOP_FILE_NAME "onlyoffice-desktopeditors"
++# define APP_DATA_PATH "/marketcanopy/office"
++# define REG_GROUP_KEY "marketcanopy"
++# define APP_MUTEX_NAME "marketcanopy:office"
++# define DESKTOP_FILE_NAME "marketcanopy-office"
+ #else
+-# define APP_DATA_PATH "/ONLYOFFICE/DesktopEditors"
+-# define APP_REG_NAME  "ONLYOFFICE"
+-# define REG_GROUP_KEY "ONLYOFFICE"
+-# define REG_UNINST_KEY "ONLYOFFICE Desktop Editors"
+-# define APP_MUTEX_NAME "TEAMLAB"
++# define APP_DATA_PATH "/MarketCanopy/Office"
++# define APP_REG_NAME  "Market Canopy Office"
++# define REG_GROUP_KEY "MarketCanopy"
++# define REG_UNINST_KEY "Market Canopy Office"
++# define APP_MUTEX_NAME "MarketCanopyOffice"
++# define APP_LAUNCHER_NAME "MarketCanopyOffice"
+ #endif
+ 
+-#define WINDOW_NAME "ONLYOFFICE"
++#define WINDOW_NAME "Market Canopy Office"
+ #define WINDOW_TITLE WINDOW_NAME
+-#define WINDOW_CLASS_NAME L"DocEditorsWindowClass"
++#define WINDOW_CLASS_NAME L"MarketCanopyOfficeWindowClass"
+ #define WINDOW_EDITOR_CLASS_NAME L"SingleWindowClass"
+-#define REG_APP_NAME "DesktopEditors"
++#define REG_APP_NAME "Office"
+ #define APP_DEFAULT_LOCALE "en-US"
+ #define APP_DEFAULT_SYSTEM_LOCALE 1
+-#define APP_USER_MODEL_ID "ASC.Documents.5"
+-#define APP_SIMPLE_WINDOW_TITLE "ONLYOFFICE Editor"
+-#define APP_PROTOCOL "oo-office"
++#define APP_USER_MODEL_ID "MarketCanopy.Office"
++#define APP_SIMPLE_WINDOW_TITLE "Market Canopy Office"
++#define APP_PROTOCOL "mc-office"
+ #define FILE_PREFIX "onlyoffice_"
+ #define HTML_SCHEME "onlyoffice://plugin/"
+ 
+-#define URL_SITE                "http://www.onlyoffice.com"
+-#define URL_SIGNUP              "https://onlyoffice.com/registration.aspx?desktop=true"
++#define URL_SITE                "https://marketcanopy.com"
++#define URL_SIGNUP              "https://marketcanopy.com/?source=office"
+ 
+ #define GET_REGISTRY_USER(variable) \
+     QSettings variable(QSettings::NativeFormat, QSettings::UserScope, REG_GROUP_KEY, REG_APP_NAME);
+@@ -84,8 +86,8 @@
+ #define ACTIONPANEL_ACTIVATE    ACTIONPANEL_CONNECT + 1
+ 
+ #define URL_AGPL "https://www.gnu.org/licenses/agpl-3.0.en.html"
+-#define DOWNLOAD_PAGE "https://www.onlyoffice.com/en/download-desktop.aspx"
+-#define RELEASE_NOTES "https://github.com/ONLYOFFICE/DesktopEditors/blob/master/CHANGELOG.md"
++#define DOWNLOAD_PAGE "https://marketcanopy.com/download"
++#define RELEASE_NOTES "https://github.com/marketcanopy/office/releases"
+ 
+ // Enterprise addon (Business Source License)
+ #define URL_BSL_LICENSE         "https://docspace.onlyoffice.com/s/b_rVPpqtF-pqKBr"
+@@ -112,10 +114,10 @@ typedef unsigned char BYTE;
+ # define VK_TAB 0x09
+ #endif
+ 
+-#define APP_PORT   12010
+-#define SVC_PORT   12011
+-#define INSTANCE_SVC_PORT 12012
+-#define INSTANCE_APP_PORT 13012
++#define APP_PORT   12110
++#define SVC_PORT   12111
++#define INSTANCE_SVC_PORT 12112
++#define INSTANCE_APP_PORT 13112
+ 
+ #define WARNING_LAUNCH_WITH_ADMIN_RIGHTS "App can't working correctly under admin rights."
+ 
+diff --git a/win-linux/src/platform_win/association.cpp b/win-linux/src/platform_win/association.cpp
+index 62c6e32..0e77b72 100644
+--- a/win-linux/src/platform_win/association.cpp
++++ b/win-linux/src/platform_win/association.cpp
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: Windows launcher name.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -327,7 +328,7 @@ void Association::AssociationPrivate::associate(const std::vector<std::wstring>
+         args.append(L"\"");
+ 
+         QString appPath = qApp->applicationDirPath();
+-        appPath += "/" + QString(REG_APP_NAME);
++        appPath += "/" + QString(APP_LAUNCHER_NAME);
+         std::wstring path = appPath.toStdWString();
+ 
+         SHELLEXECUTEINFO shExInfo = {0};
+diff --git a/win-linux/src/version.h b/win-linux/src/version.h
+index 5760968..8c90551 100644
+--- a/win-linux/src/version.h
++++ b/win-linux/src/version.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: company, product and copyright strings.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -64,16 +65,16 @@
+ # define VER_PRODUCTVERSION_STR     VER_STRING_SHORT
+ #endif
+ 
+-#define VER_COMPANYNAME_STR         "Ascensio System SIA\0"
+-#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA " TO_STR(COPYRIGHT_YEAR) ". All rights reserved.\0"
+-#define VER_COMPANYDOMAIN_STR       "www.onlyoffice.com\0"
++#define VER_COMPANYNAME_STR         "Market Canopy\0"
++#define VER_LEGALCOPYRIGHT_STR      "© Ascensio System SIA 2009-" TO_STR(COPYRIGHT_YEAR) ". Modifications © Market Canopy 2026-" TO_STR(COPYRIGHT_YEAR) ".\0"
++#define VER_COMPANYDOMAIN_STR       "marketcanopy.com\0"
+ #define ABOUT_COPYRIGHT_STR         VER_LEGALCOPYRIGHT_STR
+-#define VER_FILEDESCRIPTION_STR     "ONLYOFFICE Desktop Editors\0"
+-#define VER_INTERNALNAME_STR        "Desktop Editors\0"
++#define VER_FILEDESCRIPTION_STR     "Market Canopy Office\0"
++#define VER_INTERNALNAME_STR        "Office\0"
+ #define VER_LEGALTRADEMARKS1_STR    "All Rights Reserved\0"
+ #define VER_LEGALTRADEMARKS2_STR    VER_LEGALTRADEMARKS1_STR
+ #define VER_ORIGINALFILENAME_STR    "documenteditor.exe\0"
+-#define VER_PRODUCTNAME_STR         "ONLYOFFICE\0"
++#define VER_PRODUCTNAME_STR         "Market Canopy Office\0"
+ 
+ #define VER_LANG_AND_CHARSET        "040904E4"
+ #define VER_LANG_ID                 0x0409

@@ -15,6 +15,11 @@ changes. The settings page shows the Market Canopy connection instead of
 the provider form; the Wallet description shows only when the Wallet is
 shown. Saved MCP settings keep only URL servers.
 
+The settings page has no Web search tab: upstream's web search needs
+each person's own Exa key, outside Market Canopy's metering, and
+Canopy already searches the web. The bootstrap removes a key an
+upstream build saved.
+
 Native code no longer runs processes for the agent: run_script is not
 registered, and the renderer's _createProcess, which started stdio MCP
 servers, refuses every call. file_opener's description stops pointing at
@@ -32,10 +37,10 @@ the third-party providers.
  .../lib/tools/functions/internal/funcs.h      |  3 +-
  .../plugins/ai-agent/src/lib/types.ts         |  4 +-
  .../plugins/ai-agent/src/main.tsx             |  3 +
- .../ai-agent/src/pages/settings/index.tsx     |  7 +--
+ .../ai-agent/src/pages/settings/index.tsx     | 14 +----
  .../ai-agent/src/providers/registry.ts        | 57 +++++--------------
  .../ai-agent/src/store/useServersStore.ts     |  6 +-
- 10 files changed, 41 insertions(+), 54 deletions(-)
+ 10 files changed, 41 insertions(+), 61 deletions(-)
 
 diff --git a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
 index 7698e91..a6935d3 100644
@@ -170,15 +175,15 @@ index 23a7b26..f43b790 100644
  import { createRoot } from "react-dom/client";
  import App from "./App.tsx";
 diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
-index 8519404..bb90ad7 100644
+index 8519404..1ed4023 100644
 --- a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
 +++ b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
 @@ -1,3 +1,4 @@
-+// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the Connection tab shows the managed Market Canopy provider only (ADR 0525).
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the Connection tab shows the managed Market Canopy provider only, and there is no web search tab (ADR 0525).
  import React from "react";
  import { useTranslation } from "react-i18next";
  import { RadioButton } from "@/components/radio-button";
-@@ -5,8 +6,8 @@ import { Tabs } from "@/components/tabs";
+@@ -5,11 +6,10 @@ import { Tabs } from "@/components/tabs";
  import config from "@/config.json";
  import { useDirection } from "@/hooks/useDirection";
  import { cn } from "@/lib/utils";
@@ -187,8 +192,11 @@ index 8519404..bb90ad7 100644
 -import { Providers } from "./sub-components/providers";
  import { Servers } from "./sub-components/servers";
  import { Wallet } from "./sub-components/wallet";
- import { WebSearch } from "./sub-components/web-search";
-@@ -69,9 +70,7 @@ const Settings = () => {
+-import { WebSearch } from "./sub-components/web-search";
+ 
+ const showWallet = config.showWallet;
+ 
+@@ -69,9 +69,7 @@ const Settings = () => {
                      isRTL ? "text-end" : ""
                    )}
                  >
@@ -199,6 +207,19 @@ index 8519404..bb90ad7 100644
                  </p>
                </div>
                {isWallet ? (
+@@ -105,12 +103,6 @@ const Settings = () => {
+               content: <Servers />,
+               disabled: !providers.length,
+             },
+-            {
+-              value: "web-search",
+-              label: t("WebSearch"),
+-              content: <WebSearch />,
+-              disabled: !providers.length,
+-            },
+           ]}
+         />
+       </div>
 diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts b/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
 index 7860e94..f8c8453 100644
 --- a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts

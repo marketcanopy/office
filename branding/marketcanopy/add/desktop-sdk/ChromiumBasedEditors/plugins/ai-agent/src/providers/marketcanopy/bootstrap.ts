@@ -19,7 +19,8 @@
 // one, removes every stored provider key (a profile from an upstream build
 // keeps them in "providers", "current-provider" and in each saved thread),
 // drops stdio MCP servers (native code no longer starts processes) and
-// leaves web search off until the person turns it on.
+// removes web search's own Exa key: Office offers no web search (the
+// settings tab is gone), so no person's search key is kept.
 
 import type { Model, TProvider } from "@/lib/types";
 import { MARKETCANOPY_PROVIDER } from "./constants";
@@ -32,6 +33,8 @@ export const CURRENT_MODEL_KEY = "current-model";
 export const MCP_SERVERS_KEY = "mcpServers";
 export const DISABLED_TOOLS_KEY = "disabledTools";
 export const LAST_MODELS_KEY = "marketcanopy-models";
+// servers/WebSearch.ts: { provider: "Exa", key }.
+export const WEB_SEARCH_DATA_KEY = "webSearchProviderData";
 
 const PROVIDER: TProvider = MARKETCANOPY_PROVIDER;
 
@@ -113,6 +116,8 @@ export const applyManagedSettings = (
       JSON.stringify(withoutStdioServers(servers as Record<string, unknown>))
     );
   }
+
+  storage.removeItem(WEB_SEARCH_DATA_KEY);
 
   if (!storage.getItem(DISABLED_TOOLS_KEY)) {
     // useServersStore reads a non-empty "web-search" list as "off".

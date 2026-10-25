@@ -24,6 +24,7 @@ import {
   MCP_SERVERS_KEY,
   PROVIDERS_KEY,
   scrubThreadProviders,
+  WEB_SEARCH_DATA_KEY,
 } from "../bootstrap";
 import { withoutStdioServers } from "../mcp";
 import {
@@ -125,17 +126,24 @@ describe("applyManagedSettings", () => {
       })
     );
     storage.setItem(DISABLED_TOOLS_KEY, JSON.stringify({ "web-search": [] }));
+    storage.setItem(
+      WEB_SEARCH_DATA_KEY,
+      JSON.stringify({ provider: "Exa", key: "exa-key-SYNTHETIC" })
+    );
 
     applyManagedSettings(storage, readySession());
 
     expect(storage.dump()).not.toContain("sk-upstream-SYNTHETIC");
     expect(storage.dump()).not.toContain("api.openai.com");
+    expect(storage.dump()).not.toContain("exa-key-SYNTHETIC");
+    expect(storage.getItem(WEB_SEARCH_DATA_KEY)).toBeNull();
     expect(read(storage, PROVIDERS_KEY)).toEqual([MANAGED]);
     expect(read(storage, CURRENT_MODEL_KEY).id).toBe("mc-standard");
     expect(read(storage, MCP_SERVERS_KEY)).toEqual({
       mcpServers: { remote: { url: "https://mcp.example.com/mcp" } },
     });
-    // The person turned web search on in the upstream build: kept.
+    // The person's upstream tool switch is kept; with no search key there
+    // is no web search tool to switch on.
     expect(read(storage, DISABLED_TOOLS_KEY)).toEqual({ "web-search": [] });
   });
 });

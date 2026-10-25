@@ -1,0 +1,304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Market Canopy as the AI agent's only provider; no run_script
+ or stdio MCP
+
+ADR 0525: one managed provider, "marketcanopy", serves the AI agent. Its
+code is in the overlay (src/providers/marketcanopy); this change wires it
+in. The registry offers only that provider and resolves any stored
+provider type to it, so a thread saved by an upstream build never uses
+its stored key. main.tsx imports the bootstrap, which rewrites the stored
+settings before the stores load, and the watcher, which cancels requests
+in flight and reloads the models when the account or organization
+changes. The settings page shows the Market Canopy connection instead of
+the provider form; the Wallet description shows only when the Wallet is
+shown. Saved MCP settings keep only URL servers.
+
+Native code no longer runs processes for the agent: run_script is not
+registered, and the renderer's _createProcess, which started stdio MCP
+servers, refuses every call. file_opener's description stops pointing at
+run_script.
+
+A plugin in the user folder with the GUID of a bundled AI plugin (the
+agent or the in-editor AI plugin) and a higher version no longer
+replaces the bundled one, so a plugin from the store cannot bring back
+the third-party providers.
+---
+ .../cefwrapper/client_renderer_wrapper.cpp    |  5 ++
+ ChromiumBasedEditors/lib/src/plugins.h        |  5 +-
+ .../lib/tools/functions/file_opener/info.json |  2 +-
+ .../lib/tools/functions/file_opener/main.cpp  |  3 +-
+ .../lib/tools/functions/internal/funcs.h      |  3 +-
+ .../plugins/ai-agent/src/lib/types.ts         |  4 +-
+ .../plugins/ai-agent/src/main.tsx             |  3 +
+ .../ai-agent/src/pages/settings/index.tsx     |  7 +--
+ .../ai-agent/src/providers/registry.ts        | 57 +++++--------------
+ .../ai-agent/src/store/useServersStore.ts     |  6 +-
+ 10 files changed, 41 insertions(+), 54 deletions(-)
+
+diff --git a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
+index 7698e91..a6935d3 100644
+--- a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
++++ b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
+@@ -5419,6 +5419,10 @@ window.AscDesktopEditor.CallInFrame(\"" +
+ 			}
+ 			else if (name == "_createProcess")
+ 			{
++				// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: no page starts a process (ADR 0525: no stdio MCP server).
++				retval = CefV8Value::CreateInt(-1);
++				return true;
++#if 0
+ 				if (0 == arguments.size())
+ 					return true;
+ 
+@@ -5448,6 +5452,7 @@ window.AscDesktopEditor.CallInFrame(\"" +
+ 
+ 				retval = CefV8Value::CreateInt(process_id);
+ 				return true;
++#endif
+ 			}
+ 			else if (name == "_endProcess")
+ 			{
+diff --git a/ChromiumBasedEditors/lib/src/plugins.h b/ChromiumBasedEditors/lib/src/plugins.h
+index 287442d..6c56eb7 100644
+--- a/ChromiumBasedEditors/lib/src/plugins.h
++++ b/ChromiumBasedEditors/lib/src/plugins.h
+@@ -1,5 +1,6 @@
+ /*
+  * Copyright (C) Ascensio System SIA, 2009-2026
++ * Modified by Market Canopy on 2026-10-25 for Market Canopy Office: a plugin in the user folder never replaces the bundled AI plugins.
+  *
+  * This program is a free software product. You can redistribute it and/or
+  * modify it under the terms of the GNU Affero General Public License (AGPL)
+@@ -510,7 +511,9 @@ private:
+ 							int nVersionSys = GetIntVersion(sVersionSys);
+ 							int nVersionUser = GetIntVersion(sVersionUser);
+ 
+-							if (m_isSupportSystemUpdate && nVersionSys < nVersionUser)
++							// The bundled AI plugins use Market Canopy only (ADR 0525).
++							bool bIsManagedAI = (sGuidSys == "{9DC93CDB-B576-4F0C-B55E-FCC9C48DD007}" || sGuidSys == "{9DC93CDB-B576-4F0C-B55E-FCC9C48DD777}");
++							if (m_isSupportSystemUpdate && !bIsManagedAI && nVersionSys < nVersionUser)
+ 							{
+ 								bIsAdd = false;
+ 							}
+diff --git a/ChromiumBasedEditors/lib/tools/functions/file_opener/info.json b/ChromiumBasedEditors/lib/tools/functions/file_opener/info.json
+index 8cf5558..680932a 100644
+--- a/ChromiumBasedEditors/lib/tools/functions/file_opener/info.json
++++ b/ChromiumBasedEditors/lib/tools/functions/file_opener/info.json
+@@ -1,7 +1,7 @@
+ {
+   "type": "function",
+   "name": "file_opener",
+-  "description": "Show a file to the USER by opening it in an editor window. Input: the FULL path of the file. Output: only whether the window opened.\n\nThe path must be complete, from the drive or the root folder down to the file name: C:\\Users\\name\\Documents\\report.docx on Windows, /Users/name/Documents/report.docx on macOS, /home/name/Documents/report.docx on Linux. A bare file name or a relative path is refused - there is no folder it could be looked for in - and so is a path where no file exists; either way nothing opens and the error says why. A tool that creates or saves a file reports the full path it wrote to: pass that path exactly as reported, never shortened to the file name.\n\nThis function does NOT read the file: none of its content comes back to you, so calling it teaches you nothing about what is inside. Use it only when the user asked to SEE a file.\n\nTo find out what is inside a file, do not call this one:\n- a text file (.md, .txt, .csv, .json, .log, ...) -> read it with run_script (cat on macOS/Linux, Get-Content on Windows);\n- a document (.docx, .xlsx, .pptx, .pdf, .odt, .ods, .odp, .rtf, .epub, .xps, .djvu, ...) -> open it with the document tools, which return its text, cells or form fields. They read far more formats than the four obvious ones, so hand the file over instead of assuming it is unsupported.\n- a picture (.png, .jpg, .gif, .bmp, .tif) -> view_image, which returns the picture itself to you.\n\nReturn value:\n{\n\"role\": \"tool\", // Required constant field\n\"status\": \"success\" | \"error\",\n\"error_message\": \"string | null\" // Error details if status = 'error'\n}\n\nExample function call parameter: { \"path\": \"/home/user/document.txt\" }\n\nExample successful response:\n{\n\"role\": \"tool\",\n\"status\": \"success\",\n\"error_message\": null\n}\n\nExample error response:\n{\n\"role\": \"tool\",\n\"status\": \"error\",\n\"error_message\": \"File not found: /home/user/document.txt. Nothing was opened. Check the full path and call file_opener again with the path of a file that exists.\"\n}",
++  "description": "Show a file to the USER by opening it in an editor window. Input: the FULL path of the file. Output: only whether the window opened.\n\nThe path must be complete, from the drive or the root folder down to the file name: C:\\Users\\name\\Documents\\report.docx on Windows, /Users/name/Documents/report.docx on macOS, /home/name/Documents/report.docx on Linux. A bare file name or a relative path is refused - there is no folder it could be looked for in - and so is a path where no file exists; either way nothing opens and the error says why. A tool that creates or saves a file reports the full path it wrote to: pass that path exactly as reported, never shortened to the file name.\n\nThis function does NOT read the file: none of its content comes back to you, so calling it teaches you nothing about what is inside. Use it only when the user asked to SEE a file.\n\nTo find out what is inside a file, do not call this one:\n- a text file (.md, .txt, .csv, .json, .log, ...) -> no tool here reads it; ask the user to paste the part you need;\n- a document (.docx, .xlsx, .pptx, .pdf, .odt, .ods, .odp, .rtf, .epub, .xps, .djvu, ...) -> open it with the document tools, which return its text, cells or form fields. They read far more formats than the four obvious ones, so hand the file over instead of assuming it is unsupported.\n- a picture (.png, .jpg, .gif, .bmp, .tif) -> view_image, which returns the picture itself to you.\n\nReturn value:\n{\n\"role\": \"tool\", // Required constant field\n\"status\": \"success\" | \"error\",\n\"error_message\": \"string | null\" // Error details if status = 'error'\n}\n\nExample function call parameter: { \"path\": \"/home/user/document.txt\" }\n\nExample successful response:\n{\n\"role\": \"tool\",\n\"status\": \"success\",\n\"error_message\": null\n}\n\nExample error response:\n{\n\"role\": \"tool\",\n\"status\": \"error\",\n\"error_message\": \"File not found: /home/user/document.txt. Nothing was opened. Check the full path and call file_opener again with the path of a file that exists.\"\n}",
+   "parameters": {
+     "type": "object",
+     "properties": {
+diff --git a/ChromiumBasedEditors/lib/tools/functions/file_opener/main.cpp b/ChromiumBasedEditors/lib/tools/functions/file_opener/main.cpp
+index 442f3de..8b23450 100644
+--- a/ChromiumBasedEditors/lib/tools/functions/file_opener/main.cpp
++++ b/ChromiumBasedEditors/lib/tools/functions/file_opener/main.cpp
+@@ -33,6 +33,7 @@
+  * SPDX-License-Identifier: AGPL-3.0-only
+  */
+ 
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: run_script is gone, so the description no longer points to it.
+ #include "./../internal/base.h"
+ #include "../../../../../../core/DesktopEditor/common/Directory.h"
+ 
+@@ -44,7 +45,7 @@ namespace file_opener
+ {\
+   \"type\": \"function\",\
+   \"name\": \"file_opener\",\
+-  \"description\": \"Show a file to the USER by opening it in an editor window. Input: the FULL path of the file. Output: only whether the window opened.\\n\\nThe path must be complete, from the drive or the root folder down to the file name: C:\\\\Users\\\\name\\\\Documents\\\\report.docx on Windows, /Users/name/Documents/report.docx on macOS, /home/name/Documents/report.docx on Linux. A bare file name or a relative path is refused - there is no folder it could be looked for in - and so is a path where no file exists; either way nothing opens and the error says why. A tool that creates or saves a file reports the full path it wrote to: pass that path exactly as reported, never shortened to the file name.\\n\\nThis function does NOT read the file: none of its content comes back to you, so calling it teaches you nothing about what is inside. Use it only when the user asked to SEE a file.\\n\\nTo find out what is inside a file, do not call this one:\\n- a text file (.md, .txt, .csv, .json, .log, ...) -> read it with run_script (cat on macOS/Linux, Get-Content on Windows);\\n- a document (.docx, .xlsx, .pptx, .pdf, .odt, .ods, .odp, .rtf, .epub, .xps, .djvu, ...) -> open it with the document tools, which return its text, cells or form fields. They read far more formats than the four obvious ones, so hand the file over instead of assuming it is unsupported.\\n- a picture (.png, .jpg, .gif, .bmp, .tif) -> view_image, which returns the picture itself to you.\\n\\nReturn value:\\n{\\n\\\"role\\\": \\\"tool\\\", // Required constant field\\n\\\"status\\\": \\\"success\\\" | \\\"error\\\",\\n\\\"error_message\\\": \\\"string | null\\\" // Error details if status = 'error'\\n}\\n\\nExample function call parameter: { \\\"path\\\": \\\"/home/user/document.txt\\\" }\\n\\nExample successful response:\\n{\\n\\\"role\\\": \\\"tool\\\",\\n\\\"status\\\": \\\"success\\\",\\n\\\"error_message\\\": null\\n}\\n\\nExample error response:\\n{\\n\\\"role\\\": \\\"tool\\\",\\n\\\"status\\\": \\\"error\\\",\\n\\\"error_message\\\": \\\"File not found: /home/user/document.txt. Nothing was opened. Check the full path and call file_opener again with the path of a file that exists.\\\"\\n}\",\
++  \"description\": \"Show a file to the USER by opening it in an editor window. Input: the FULL path of the file. Output: only whether the window opened.\\n\\nThe path must be complete, from the drive or the root folder down to the file name: C:\\\\Users\\\\name\\\\Documents\\\\report.docx on Windows, /Users/name/Documents/report.docx on macOS, /home/name/Documents/report.docx on Linux. A bare file name or a relative path is refused - there is no folder it could be looked for in - and so is a path where no file exists; either way nothing opens and the error says why. A tool that creates or saves a file reports the full path it wrote to: pass that path exactly as reported, never shortened to the file name.\\n\\nThis function does NOT read the file: none of its content comes back to you, so calling it teaches you nothing about what is inside. Use it only when the user asked to SEE a file.\\n\\nTo find out what is inside a file, do not call this one:\\n- a text file (.md, .txt, .csv, .json, .log, ...) -> no tool here reads it; ask the user to paste the part you need;\\n- a document (.docx, .xlsx, .pptx, .pdf, .odt, .ods, .odp, .rtf, .epub, .xps, .djvu, ...) -> open it with the document tools, which return its text, cells or form fields. They read far more formats than the four obvious ones, so hand the file over instead of assuming it is unsupported.\\n- a picture (.png, .jpg, .gif, .bmp, .tif) -> view_image, which returns the picture itself to you.\\n\\nReturn value:\\n{\\n\\\"role\\\": \\\"tool\\\", // Required constant field\\n\\\"status\\\": \\\"success\\\" | \\\"error\\\",\\n\\\"error_message\\\": \\\"string | null\\\" // Error details if status = 'error'\\n}\\n\\nExample function call parameter: { \\\"path\\\": \\\"/home/user/document.txt\\\" }\\n\\nExample successful response:\\n{\\n\\\"role\\\": \\\"tool\\\",\\n\\\"status\\\": \\\"success\\\",\\n\\\"error_message\\\": null\\n}\\n\\nExample error response:\\n{\\n\\\"role\\\": \\\"tool\\\",\\n\\\"status\\\": \\\"error\\\",\\n\\\"error_message\\\": \\\"File not found: /home/user/document.txt. Nothing was opened. Check the full path and call file_opener again with the path of a file that exists.\\\"\\n}\",\
+   \"parameters\": {\
+     \"type\": \"object\",\
+     \"properties\": {\
+diff --git a/ChromiumBasedEditors/lib/tools/functions/internal/funcs.h b/ChromiumBasedEditors/lib/tools/functions/internal/funcs.h
+index d3a7043..e7eb773 100644
+--- a/ChromiumBasedEditors/lib/tools/functions/internal/funcs.h
++++ b/ChromiumBasedEditors/lib/tools/functions/internal/funcs.h
+@@ -34,10 +34,10 @@
+  */
+ 
+ #pragma once
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: run_script is not compiled in or registered (ADR 0525).
+ #include "./base.h"
+ #include "../file_opener/main.cpp"
+ #include "../recent_files_reader/main.cpp"
+-#include "../run_script/main.cpp"
+ 
+ struct TFuncInstance
+ {
+@@ -55,6 +55,5 @@ public:
+ 	{
+ 		m_funcs.insert(std::make_pair("file_opener", TFuncInstance(file_opener::description(), file_opener::main)));
+ 		m_funcs.insert(std::make_pair("recent_files_reader", TFuncInstance(recent_files_reader::description(), recent_files_reader::main)));
+-		m_funcs.insert(std::make_pair("run_script", TFuncInstance(run_script::description(), run_script::main)));
+ 	}
+ };
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/lib/types.ts b/ChromiumBasedEditors/plugins/ai-agent/src/lib/types.ts
+index f3e2cac..1b65244 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/lib/types.ts
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/lib/types.ts
+@@ -1,3 +1,4 @@
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the marketcanopy provider type.
+ export type TMCPItem = {
+   name: string;
+   description: string;
+@@ -26,7 +27,8 @@ export type ProviderType =
+   | "deepseek"
+   | "xai"
+   | "lm-studio"
+-  | "mistral";
++  | "mistral"
++  | "marketcanopy";
+ 
+ export type Model = {
+   id: string;
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/main.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/main.tsx
+index 23a7b26..f43b790 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/main.tsx
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/main.tsx
+@@ -1,3 +1,6 @@
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: managed AI settings load before any store (ADR 0525).
++import "./providers/marketcanopy/bootstrap";
++import "./providers/marketcanopy/watch";
+ import { StrictMode } from "react";
+ import { createRoot } from "react-dom/client";
+ import App from "./App.tsx";
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
+index 8519404..bb90ad7 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
+@@ -1,3 +1,4 @@
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the Connection tab shows the managed Market Canopy provider only (ADR 0525).
+ import React from "react";
+ import { useTranslation } from "react-i18next";
+ import { RadioButton } from "@/components/radio-button";
+@@ -5,8 +6,8 @@ import { Tabs } from "@/components/tabs";
+ import config from "@/config.json";
+ import { useDirection } from "@/hooks/useDirection";
+ import { cn } from "@/lib/utils";
++import { MarketCanopyConnection as Providers } from "@/providers/marketcanopy/connection";
+ import useProviders from "@/store/useProviders";
+-import { Providers } from "./sub-components/providers";
+ import { Servers } from "./sub-components/servers";
+ import { Wallet } from "./sub-components/wallet";
+ import { WebSearch } from "./sub-components/web-search";
+@@ -69,9 +70,7 @@ const Settings = () => {
+                     isRTL ? "text-end" : ""
+                   )}
+                 >
+-                  {isWallet
+-                    ? t("ONLYOFFICEWalletDescription")
+-                    : t("AIProvidersDescription")}
++                  {isWallet ? t("ONLYOFFICEWalletDescription") : null}
+                 </p>
+               </div>
+               {isWallet ? (
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts b/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
+index 7860e94..f8c8453 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
+@@ -1,56 +1,27 @@
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the managed marketcanopy provider is the only one (ADR 0525).
+ import type { ProviderType } from "@/lib/types";
+-import { type AnthropicProvider, anthropicProvider } from "./anthropic";
+-import { type DeepSeekProvider, deepseekProvider } from "./deepseek";
+-import { type GenAIProvider, genaiProvider } from "./genai";
+-import { type LMStudioProvider, lmStudioProvider } from "./lm-studio";
+-import { type MistralProvider, mistralProvider } from "./mistral";
+-import { type OllamaProvider, ollamaProvider } from "./ollama";
+-import { type OpenAIProvider, openaiProvider } from "./openai";
+ import {
+-  type OpenAICompatibleProvider,
+-  openaicompatibleProvider,
+-} from "./openaicompatible";
+-import { type OpenRouterProvider, openrouterProvider } from "./openrouter";
+-import { type TogetherProvider, togetherProvider } from "./together";
+-import { type XAIProvider, xaiProvider } from "./xai";
++  type MarketCanopyProvider,
++  marketcanopyProvider,
++} from "./marketcanopy";
+ 
+-export type BaseProvider =
+-  | AnthropicProvider
+-  | OllamaProvider
+-  | OpenAIProvider
+-  | OpenAICompatibleProvider
+-  | TogetherProvider
+-  | OpenRouterProvider
+-  | GenAIProvider
+-  | DeepSeekProvider
+-  | XAIProvider
+-  | LMStudioProvider
+-  | MistralProvider;
++export type BaseProvider = MarketCanopyProvider;
+ 
+ /**
+  * Registry mapping provider types to their singleton instances.
+- * This eliminates switch statements throughout the codebase.
++ * Market Canopy Office offers one provider; a stored provider of any other
++ * type resolves to it (getProvider).
+  */
+-export const providerRegistry: Record<ProviderType, BaseProvider> = {
+-  anthropic: anthropicProvider,
+-  ollama: ollamaProvider,
+-  openai: openaiProvider,
+-  openaicompatible: openaicompatibleProvider,
+-  together: togetherProvider,
+-  openrouter: openrouterProvider,
+-  genai: genaiProvider,
+-  deepseek: deepseekProvider,
+-  xai: xaiProvider,
+-  "lm-studio": lmStudioProvider,
+-  mistral: mistralProvider,
+-};
++export const providerRegistry = {
++  marketcanopy: marketcanopyProvider,
++} as Record<ProviderType, BaseProvider>;
+ 
+ /**
+- * Type-safe provider lookup.
+- * Returns undefined for invalid types instead of throwing.
++ * Provider lookup: every stored type resolves to the managed provider, so a
++ * thread saved by an upstream build uses Market Canopy and not its own key.
+  */
+-export const getProvider = (type: ProviderType): BaseProvider | undefined => {
+-  return providerRegistry[type];
++export const getProvider = (_type: ProviderType): BaseProvider | undefined => {
++  return marketcanopyProvider;
+ };
+ 
+ /**
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/store/useServersStore.ts b/ChromiumBasedEditors/plugins/ai-agent/src/store/useServersStore.ts
+index 4d11580..b9220e9 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/store/useServersStore.ts
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/store/useServersStore.ts
+@@ -1,3 +1,4 @@
++// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: a saved configuration keeps no stdio MCP server (ADR 0525).
+ import type { ThreadMessageLike } from "@assistant-ui/react";
+ import { create } from "zustand";
+ import {
+@@ -5,6 +6,7 @@ import {
+   MAX_TOOL_COUNT_WITH_WEB_SEARCH,
+ } from "@/lib/constants";
+ import type { TMCPItem } from "@/lib/types";
++import { withoutStdioServers } from "@/providers/marketcanopy/mcp";
+ import client from "@/servers";
+ 
+ const DISABLED_TOOLS_NAME = "disabledTools";
+@@ -317,7 +319,9 @@ const useServersStore = create<UseServersStoreProps>((set, get) => ({
+   saveConfig: (config: {
+     mcpServers: Record<string, Record<string, unknown>>;
+   }) => {
+-    const currConfig = config.mcpServers ? config : { mcpServers: {} };
++    const currConfig = config.mcpServers
++      ? withoutStdioServers(config)
++      : { mcpServers: {} };
+     localStorage.setItem(MCP_SERVERS_NAME, JSON.stringify(currConfig));
+     client.setCustomServers(currConfig);
+     client.startCustomServers();

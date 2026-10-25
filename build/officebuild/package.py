@@ -244,7 +244,10 @@ def mac_stage(ctx: Context) -> str:
             os.path.join(ctx.work_root, "desktop-apps", "package", "common", "license", "opensource", "LICENSE.html"),
             os.path.join(license_dir, "LICENSE.html"),
         )
-    defines = ["$(inherited)", "USE_ADDON_MODE", "OO_BRANDING=" + (BRANDING if ctx.branded else "onlyoffice")]
+    # No USE_ADDON_MODE: it turns on the vendor's BSL AI add-on (ASCAddonManager);
+    # Office's AI is the bundled agent (ADR 0525), as on Windows and Linux
+    # (disable_addon_mode in the branding defaults).
+    defines = ["$(inherited)", "OO_BRANDING=" + (BRANDING if ctx.branded else "onlyoffice")]
     xcargs = [
         "OO_BRANDING=" + (BRANDING if ctx.branded else "onlyoffice"),
         "GCC_PREPROCESSOR_DEFINITIONS=" + " ".join(defines),

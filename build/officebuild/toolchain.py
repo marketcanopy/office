@@ -30,9 +30,11 @@
   Debuggers folder. --install-deps installs it.
 - Windows and macOS need grunt-cli for the web apps (build_js.py runs
   `grunt`); Linux gets it from build_tools' deps.py. --install-deps installs it.
-- Every host needs Node.js 20 or later and Java 11 or later (build_tools'
-  deps.py and develop/dependence.py); `check_requirements` fails the build
-  before compiling when either is older or missing.
+- Every host needs Node.js 22.12 or later (the owner's floor is Node 22; the
+  AI agent's Vite 7 build needs 22.12 within it) and Java 11 or later
+  (build_tools' deps.py and develop/dependence.py); `check_requirements`
+  fails the build before compiling when either is older or missing. The
+  release workflow installs Node 22 with actions/setup-node.
 - Linux and macOS set DEPOT_TOOLS_DIR to v8's depot_tools as an absolute path.
   build_tools runs `./depot_tools/fetch`, which exports the relative
   `./depot_tools` for the scripts it calls, and bootstrap_python3 changes into
@@ -56,7 +58,7 @@ ARM64_WINDOWS_SDK = "10.0.22621.0"
 ARM64_WINDOWS_SDK_PACKAGE = "windows-sdk-11-version-22H2-all"
 V8_WINDOWS_SDK = "10.0.19041.0"
 V8_WINDOWS_SDK_PACKAGE = "windows-sdk-10-version-2004-all"
-NODE_MIN_MAJOR = 20
+NODE_MIN = (22, 12)
 JAVA_MIN_MAJOR = 11
 
 
@@ -284,6 +286,12 @@ def major_version(output: str) -> int:
     return int(found.group(2) or 0) if major == 1 else major
 
 
+def node_version(output: str) -> Tuple[int, int]:
+    """(major, minor) from `node -v` output; (0, 0) when there is none."""
+    found = re.search(r"^v(\d+)\.(\d+)", output, re.MULTILINE)
+    return (int(found.group(1)), int(found.group(2))) if found else (0, 0)
+
+
 def _tool_output(args: List[str], env: Dict[str, str]) -> str:
     path = env.get("PATH", os.environ.get("PATH", ""))
     found = shutil.which(args[0], path=path)
@@ -308,8 +316,8 @@ def check_requirements(env: Dict[str, str], dry_run: bool) -> None:
     for name, output in found.items():
         util.log("%s: %s" % (name, (output.strip().splitlines() or ["not found"])[0]))
     problems = []
-    if major_version(found["node"]) < NODE_MIN_MAJOR:
-        problems.append("Node.js %d or later" % NODE_MIN_MAJOR)
+    if node_version(found["node"]) < NODE_MIN:
+        problems.append("Node.js %d.%d or later" % NODE_MIN)
     if major_version(found["java"]) < JAVA_MIN_MAJOR:
         problems.append("Java %d or later" % JAVA_MIN_MAJOR)
     if problems:

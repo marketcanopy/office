@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Bootstrap depot_tools with Python 3.11 on Linux
+
+depot_tools' fetch.py now uses argparse.BooleanOptionalAction (Python 3.9),
+and v8_89.py pins the hermetic Python of depot_tools to 3.8.10 on Linux, so
+'fetch v8' stops before v8 is checked out. Linux takes the 3.11.8 package
+that build_tools already pins for Windows; macOS keeps its own fix (the
+system Python).
+---
+ scripts/core_common/modules/v8_89.py | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/core_common/modules/v8_89.py b/scripts/core_common/modules/v8_89.py
+index 26b9505..254c306 100644
+--- a/scripts/core_common/modules/v8_89.py
++++ b/scripts/core_common/modules/v8_89.py
+@@ -1,4 +1,5 @@
+ #!/usr/bin/env python
++# Modified by Market Canopy on 2026-10-25 for Market Canopy Office: depot_tools bootstraps Python 3.11 on Linux, as on Windows.
+ 
+ import sys
+ sys.path.append('../..')
+@@ -36,7 +37,8 @@ def change_bootstrap():
+ 
+   content += "@Subdir python3\n"
+ 
+-  if ("windows" == base.host_platform()):
++  # Market Canopy Office (modified 2026-10-25): depot_tools' fetch.py needs Python 3.9 or later
++  if base.host_platform() in ["windows", "linux"]:
+     content += "infra/3pp/tools/cpython3/${platform} version:2@3.11.8.chromium.35\n\n"
+   else:
+     content += "infra/3pp/tools/cpython3/${platform} version:2@3.8.10.chromium.23\n\n"

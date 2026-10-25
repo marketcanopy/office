@@ -13,7 +13,7 @@ import os
 import sys
 from typing import Dict, List
 
-from . import measure, package, patches, source_release, toolchain, util
+from . import measure, package, patches, source_release, thirdparty, toolchain, util
 from . import targets as targetlib
 from . import upstream as upstreamlib
 from .workspace import Workspace
@@ -200,11 +200,14 @@ def main(argv: List[str]) -> int:
             if os.path.isdir(workspace.path("marketcanopy")):
                 configure += ["--branding", "marketcanopy"]
             python = tools.python or util.python()
+            thirdparty.drop_incomplete(workspace.root, platforms, args.dry_run)
             util.run([python, "configure.py"] + configure, cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
             if args.third_party_only:
                 util.run([python, "-c", THIRD_PARTY_ONLY], cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
             else:
                 util.run([python, "make.py"], cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
+            if not args.dry_run:
+                thirdparty.check(workspace.root, platforms)
             util.end_group()
 
         source_info: Dict[str, str] = {}

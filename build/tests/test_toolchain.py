@@ -164,3 +164,43 @@ class CheckRequirements(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WindowsBuildTools(unittest.TestCase):
+    def setUp(self):
+        patcher = mock.patch.object(util, "run")
+        self.run = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def commands(self):
+        return [call.args[0] for call in self.run.call_args_list]
+
+    def test_perl_and_py_are_installed_when_missing(self):
+        with mock.patch.object(toolchain.shutil, "which", return_value=None):
+            with self.assertRaises(util.BuildError) as raised:
+                toolchain.windows_build_tools(True, False)
+        choco = [c[2] for c in self.commands() if c[:2] == ["choco", "install"]]
+        self.assertEqual(choco, ["strawberryperl", "python3"])
+        self.assertIn("perl Configure", str(raised.exception))
+        self.assertIn("py -3", str(raised.exception))
+
+    def test_strawberry_perl_outside_path_is_appended(self):
+        def which(name):
+            return "C:\\Windows\\py.exe" if name == "py" else None
+
+        perl_exe = os.path.join(toolchain.STRAWBERRY_PERL_BIN, "perl.exe")
+        with mock.patch.object(toolchain.shutil, "which", side_effect=which), mock.patch.object(
+            toolchain.os.path, "isfile", side_effect=lambda path: path == perl_exe
+        ):
+            self.assertEqual(toolchain.windows_build_tools(True, False), [toolchain.STRAWBERRY_PERL_BIN])
+
+    def test_present_tools_install_nothing(self):
+        with mock.patch.object(toolchain.shutil, "which", return_value="found"):
+            self.assertEqual(toolchain.windows_build_tools(True, False), [])
+        self.assertEqual(self.commands(), [])
+
+    def test_without_install_deps_a_missing_tool_is_refused(self):
+        with mock.patch.object(toolchain.shutil, "which", return_value=None):
+            with self.assertRaises(util.BuildError):
+                toolchain.windows_build_tools(False, False)
+        self.assertEqual(self.commands(), [])

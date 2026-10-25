@@ -39,6 +39,12 @@
   (build_tools' deps.py and develop/dependence.py); `check_requirements`
   fails the build before compiling when either is older or missing. The
   release workflow installs Node 22 with actions/setup-node.
+- Windows needs Perl and the Python launcher, which hosted images carry and a
+  bare Windows Server runner does not: OpenSSL's build runs `perl Configure`,
+  and ICU's data build runs `py -3`. build_tools runs both through batch files
+  whose errors it ignores, and creates their output folders first, so without
+  them a run "passes" and every later run skips both libraries. --install-deps
+  installs Strawberry Perl and Python (with its launcher) through Chocolatey.
 - Linux and macOS set DEPOT_TOOLS_DIR to v8's depot_tools as an absolute path.
   build_tools runs `./depot_tools/fetch`, which exports the relative
   `./depot_tools` for the scripts it calls, and bootstrap_python3 changes into
@@ -64,6 +70,9 @@ ARM64_WINDOWS_SDK = "10.0.22621.0"
 ARM64_WINDOWS_SDK_PACKAGE = "windows-sdk-11-version-22H2-all"
 V8_WINDOWS_SDK = "10.0.19041.0"
 V8_WINDOWS_SDK_PACKAGE = "windows-sdk-10-version-2004-all"
+# Where Chocolatey's strawberryperl puts perl.exe; the package's PATH change
+# reaches only processes started after it.
+STRAWBERRY_PERL_BIN = r"C:\Strawberry\perl\bin"
 NODE_MIN = (22, 12)
 JAVA_MIN_MAJOR = 11
 
@@ -270,6 +279,29 @@ def _grunt(install_deps: bool, dry_run: bool) -> None:
         util.run([npm, "install", "-g", "grunt-cli"], dry_run=dry_run)
 
 
+def windows_build_tools(install_deps: bool, dry_run: bool) -> List[str]:
+    """Folders to append to PATH so build_tools finds `perl` (OpenSSL) and `py`
+    (ICU's data build). A tool still missing fails the build here instead of
+    leaving an empty library folder behind."""
+    if install_deps and not shutil.which("perl"):
+        _choco("strawberryperl", dry_run)
+    if install_deps and not shutil.which("py"):
+        _choco("python3", dry_run)
+    if dry_run:
+        return []
+    extra = []
+    if not shutil.which("perl") and os.path.isfile(os.path.join(STRAWBERRY_PERL_BIN, "perl.exe")):
+        extra.append(STRAWBERRY_PERL_BIN)
+    missing = []
+    if not (shutil.which("perl") or extra):
+        missing.append("Perl (OpenSSL runs `perl Configure`)")
+    if not shutil.which("py"):
+        missing.append("the Python launcher `py` (ICU's data build runs `py -3`)")
+    if missing:
+        raise util.BuildError("%s not found; install it or pass --install-deps" % " and ".join(missing))
+    return extra
+
+
 def pin_windows_sdk(work_root: str, vs_path: str, version: str, dry_run: bool) -> Tuple[str, Dict[str, str]]:
     """A vcvarsall folder that passes `version` to the real one, and b2's user config that uses it."""
     folder = os.path.join(work_root, "vcvars-sdk")
@@ -317,8 +349,11 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         _choco("innosetup", dry_run)
     _grunt(install_deps, dry_run)
+    extra = windows_build_tools(install_deps, dry_run)
     if install_deps:
         env.update(_cmake3(work_root, dry_run))
+    if extra:
+        env["PATH"] = os.pathsep.join([env.get("PATH", os.environ.get("PATH", ""))] + extra)
     return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], env, util.python())
 
 

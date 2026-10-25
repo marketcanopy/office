@@ -28,7 +28,10 @@
 #      editor publisher strings) and refuses upstream's update feeds;
 #   5. writes the notices the About dialogs show (notices.py) and names the
 #      macOS bundle in its localized InfoPlist.strings;
-#   6. runs upstream's make.py unchanged.
+#   6. builds the AI agent from source (ai_plugins.py, ADR 0525);
+#   7. runs upstream's make.py unchanged;
+#   8. bundles the AI agent into the deployed editors and checks the in-editor
+#      AI plugin is deployed with the Market Canopy provider.
 
 import datetime
 import hashlib
@@ -38,6 +41,7 @@ import shutil
 import subprocess
 import sys
 
+import ai_plugins
 import notices
 
 HOOK_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -319,9 +323,23 @@ def main():
     write_notices(build_fields(root, upstream, flavor))
     name_macos_bundle(settings)
 
+    branding = settings["identity"]["brandingName"]
+    log("building the AI agent")
+    try:
+        ai_plugins.build_agent(WORKSPACE)
+    except ai_plugins.AiPluginError as error:
+        fail(str(error))
+
     log("flavor %s, upstream %s, running build_tools/make.py" % (flavor, upstream["tag"]))
-    env = dict(os.environ, OO_RUNNING_BRANDING="1", OO_BRANDING=settings["identity"]["brandingName"])
-    sys.exit(subprocess.run([sys.executable, "make.py"] + sys.argv[1:], cwd=BUILD_TOOLS, env=env).returncode)
+    env = dict(os.environ, OO_RUNNING_BRANDING="1", OO_BRANDING=branding)
+    code = subprocess.run([sys.executable, "make.py"] + sys.argv[1:], cwd=BUILD_TOOLS, env=env).returncode
+    if code != 0:
+        sys.exit(code)
+    try:
+        for destination in ai_plugins.deploy(WORKSPACE, branding):
+            log("bundled the AI agent in " + destination)
+    except ai_plugins.AiPluginError as error:
+        fail(str(error))
 
 
 if __name__ == "__main__":

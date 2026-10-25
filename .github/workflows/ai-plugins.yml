@@ -1,0 +1,85 @@
+# Checks the AI agent and the in-editor AI plugin with Market Canopy as their
+# only provider (platform-api ADR 0525, P09): applies the patch queue and the
+# overlay to UPSTREAM's commits, then lints, tests and builds the agent and
+# runs the in-editor plugin's tests against the patched plugin.
+#
+# GitHub-hosted runner, no secrets, read-only token. npm installs run no
+# lifecycle scripts.
+
+name: AI plugin tests
+
+on:
+  pull_request:
+    paths:
+      - "branding/marketcanopy/add/desktop-sdk/ChromiumBasedEditors/plugins/**"
+      - "branding/marketcanopy/add/onlyoffice.github.io/**"
+      - "branding/marketcanopy/build_tools/ai_plugins.py"
+      - "patches/desktop-sdk/**"
+      - "patches/onlyoffice.github.io/**"
+      - "tests/ai-plugin/**"
+      - "UPSTREAM"
+      - ".github/workflows/ai-plugins.yml"
+  push:
+    branches: [main]
+    paths:
+      - "branding/marketcanopy/add/desktop-sdk/ChromiumBasedEditors/plugins/**"
+      - "branding/marketcanopy/add/onlyoffice.github.io/**"
+      - "branding/marketcanopy/build_tools/ai_plugins.py"
+      - "patches/desktop-sdk/**"
+      - "patches/onlyoffice.github.io/**"
+      - "tests/ai-plugin/**"
+      - "UPSTREAM"
+      - ".github/workflows/ai-plugins.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-plugins-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: AI agent and in-editor AI plugin
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Apply the patch queue and the overlay
+        run: |
+          build/office-build --check-patches --targets linux-x64 --work-dir "$RUNNER_TEMP/ow"
+          scripts/smoke-test --work "$RUNNER_TEMP/ow"
+
+      - name: Install the agent's dependencies
+        working-directory: ${{ runner.temp }}/ow/desktop-sdk/ChromiumBasedEditors/plugins/ai-agent
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Agent tests
+        working-directory: ${{ runner.temp }}/ow/desktop-sdk/ChromiumBasedEditors/plugins/ai-agent
+        # Upstream's provider registry test lists the providers Office removes,
+        # and upstream's OpenRouter test already fails at the pinned commit.
+        run: npx vitest run --exclude src/providers/tests/registry.test.ts --exclude src/providers/openrouter/tests/index.test.ts
+
+      - name: Agent build
+        working-directory: ${{ runner.temp }}/ow/desktop-sdk/ChromiumBasedEditors/plugins/ai-agent
+        run: |
+          npm run build
+          grep -q getMarketCanopyAiSession "deploy/{9DC93CDB-B576-4F0C-B55E-FCC9C48DD777}/index.js"
+
+      - name: In-editor AI plugin tests
+        run: AI_PLUGIN_DIR="$RUNNER_TEMP/ow/onlyoffice.github.io/sdkjs-plugins/content/ai" node --test tests/ai-plugin/plugin.test.mjs

@@ -17,13 +17,18 @@
   (x265 for heif) set pre-3.5 policies to OLD, which CMake 4 refuses. Hosted
   images ship CMake 4, so --install-deps puts a pinned CMake 3 first on PATH.
   Linux gets CMake 3 from build_tools' own cmake.sh.
+- win-arm64 pins Windows SDK 10.0.20348: VS2019's ARM64 compiler does not
+  declare `_CountOneBits64`, which the 10.0.26100 headers on hosted runners
+  call. vcvarsall picks the newest SDK unless told, so build_tools gets a
+  vcvarsall that passes the version, and boost's b2, which runs vcvarsall on
+  its own, gets it as its msvc `<setup>` through BOOST_BUILD_USER_CONFIG.
 """
 
 import os
 import shutil
 import subprocess
 from dataclasses import dataclass, field
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from . import targets as targetlib
 from . import util
@@ -31,6 +36,7 @@ from . import util
 QT_VERSION = "5.15.2"
 AQT_VERSION = "3.3.0"
 CMAKE_VERSION = "3.31.6"
+ARM64_WINDOWS_SDK = "10.0.20348.0"
 
 
 @dataclass
@@ -98,6 +104,7 @@ VS2019_COMPONENTS = [
     "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
     "Microsoft.VisualStudio.Component.VC.ATL",
     "Microsoft.VisualStudio.Component.VC.ATL.ARM64",
+    "Microsoft.VisualStudio.Component.Windows10SDK.20348",
 ]
 
 
@@ -148,6 +155,26 @@ def visual_studio(install_deps: bool, dry_run: bool) -> str:
     return os.path.join(found, "VC", "Auxiliary", "Build")
 
 
+def pin_windows_sdk(work_root: str, vs_path: str, version: str, dry_run: bool) -> Tuple[str, Dict[str, str]]:
+    """A vcvarsall folder that passes `version` to the real one, and b2's user config that uses it."""
+    folder = os.path.join(work_root, "vcvars-sdk")
+    wrapper = os.path.join(folder, "vcvarsall.bat")
+    user_config = os.path.join(folder, "user-config.jam")
+    if not dry_run:
+        kits = os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Windows Kits", "10")
+        if not os.path.isfile(os.path.join(kits, "Include", version, "um", "winsdkver.h")):
+            raise util.BuildError(
+                "win-arm64 needs Windows SDK %s (Visual Studio 2019's ARM64 compiler cannot build the newer headers); "
+                "add the Visual Studio component Microsoft.VisualStudio.Component.Windows10SDK.20348" % version
+            )
+        os.makedirs(folder, exist_ok=True)
+        with open(wrapper, "w", newline="\r\n") as handle:
+            handle.write('@call "%s" %%* %s\n' % (os.path.join(vs_path, "vcvarsall.bat"), version))
+        with open(user_config, "w") as handle:
+            handle.write('using msvc : 14.2 : : <setup>"%s" ;\n' % wrapper.replace("\\", "\\\\"))
+    return folder, {"BOOST_BUILD_USER_CONFIG": user_config}
+
+
 def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
     qt_dir = os.environ.get("OFFICE_QT_DIR", "")
     if not qt_dir:
@@ -159,9 +186,13 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
         if not os.path.isdir(os.path.join(arm_tools, "qt_build", "Qt-5.15.2")):
             util.run([util.python(), "fetch_qt.py"], cwd=arm_tools, dry_run=dry_run)
     vs_path = visual_studio(install_deps, dry_run)
+    env: Dict[str, str] = {}
+    if "win-arm64" in build:
+        vs_path, env = pin_windows_sdk(work_root, vs_path, ARM64_WINDOWS_SDK, dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         util.run(["choco", "install", "innosetup", "--no-progress", "-y"], dry_run=dry_run, check=False)
-    env = _cmake3(work_root, dry_run) if install_deps else {}
+    if install_deps:
+        env.update(_cmake3(work_root, dry_run))
     return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], env, util.python())
 
 

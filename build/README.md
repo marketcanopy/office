@@ -63,7 +63,7 @@ then does not apply the queue, the replacements or the added files again).
 | Host | Needs |
 | --- | --- |
 | Linux x64 | Ubuntu 22.04 or 24.04, sudo, about 100 GB free, 16 GB of memory or swap. `--install-deps` runs build_tools' `deps.py` and fetches its prebuilt Qt 5.9.9. |
-| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components, Python 3, Git, CMake 3 (CMake 4 refuses x265's policies; `--install-deps` puts CMake 3.31.6 first on `PATH`); Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
+| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components and, for win-arm64, Windows SDK 10.0.20348 (the 2019 ARM64 compiler cannot build the 10.0.26100 headers; `office-build` passes the version to `vcvarsall` and to boost's b2), Python 3, Git, CMake 3 (CMake 4 refuses x265's policies; `--install-deps` puts CMake 3.31.6 first on `PATH`); Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
 | macOS | Xcode, Python 3, CMake 3 (as on Windows), Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`. |
 
 The release builds run in `circuitid/marketcanopy-office-release`

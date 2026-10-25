@@ -17,11 +17,17 @@
   (x265 for heif) set pre-3.5 policies to OLD, which CMake 4 refuses. Hosted
   images ship CMake 4, so --install-deps puts a pinned CMake 3 first on PATH.
   Linux gets CMake 3 from build_tools' own cmake.sh.
-- win-arm64 pins Windows SDK 10.0.20348: VS2019's ARM64 compiler does not
-  declare `_CountOneBits64`, which the 10.0.26100 headers on hosted runners
-  call. vcvarsall picks the newest SDK unless told, so build_tools gets a
-  vcvarsall that passes the version, and boost's b2, which runs vcvarsall on
-  its own, gets it as its msvc `<setup>` through BOOST_BUILD_USER_CONFIG.
+- win-arm64 pins Windows SDK 10.0.22621, the one upstream's v8 build pins for
+  ARM64: VS2019's ARM64 compiler does not declare `_CountOneBits64`, which the
+  10.0.26100 headers on hosted runners call. --install-deps installs it (hosted
+  images carry only 26100). vcvarsall picks the newest SDK unless told, so
+  build_tools gets a vcvarsall that passes the version, and boost's b2, which
+  runs vcvarsall on its own, gets it as its msvc `<setup>` through
+  BOOST_BUILD_USER_CONFIG.
+- Linux and macOS set DEPOT_TOOLS_DIR to v8's depot_tools as an absolute path.
+  build_tools runs `./depot_tools/fetch`, which exports the relative
+  `./depot_tools` for the scripts it calls, and bootstrap_python3 changes into
+  that folder before running cipd, which then cannot find its digests.
 """
 
 import os
@@ -36,7 +42,8 @@ from . import util
 QT_VERSION = "5.15.2"
 AQT_VERSION = "3.3.0"
 CMAKE_VERSION = "3.31.6"
-ARM64_WINDOWS_SDK = "10.0.20348.0"
+ARM64_WINDOWS_SDK = "10.0.22621.0"
+ARM64_WINDOWS_SDK_PACKAGE = "windows-sdk-11-version-22H2-all"
 
 
 @dataclass
@@ -75,6 +82,11 @@ def _cmake3(work_root: str, dry_run: bool) -> Dict[str, str]:
     return {"PATH": bin_dir + os.pathsep + os.environ.get("PATH", "")}
 
 
+def depot_tools(work_root: str) -> str:
+    """v8's depot_tools checkout, where build_tools' v8_89 module clones it."""
+    return os.path.join(os.path.abspath(work_root), "core", "Common", "3dParty", "v8_89", "depot_tools")
+
+
 def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
     tools = os.path.join(work_root, "build_tools", "tools", "linux")
     bundled = os.path.join(tools, "python3", "bin")
@@ -95,7 +107,8 @@ def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
     if any(not os.path.isdir(os.path.join(qt_dir, {"amd64": "gcc_64", "arm64": "gcc_arm64"}[name])) for name in wanted):
         util.run([python, "./qt_binary_fetch.py", "all" if len(wanted) > 1 else wanted[0]], cwd=tools, dry_run=dry_run)
     path = bundled + os.pathsep + os.environ.get("PATH", "")
-    return Toolchain(["--qt-dir", qt_dir, "--sysroot", "1"], {"PATH": path}, python)
+    env = {"PATH": path, "DEPOT_TOOLS_DIR": depot_tools(work_root)}
+    return Toolchain(["--qt-dir", qt_dir, "--sysroot", "1"], env, python)
 
 
 VS2019_COMPONENTS = [
@@ -104,7 +117,6 @@ VS2019_COMPONENTS = [
     "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
     "Microsoft.VisualStudio.Component.VC.ATL",
     "Microsoft.VisualStudio.Component.VC.ATL.ARM64",
-    "Microsoft.VisualStudio.Component.Windows10SDK.20348",
 ]
 
 
@@ -155,17 +167,21 @@ def visual_studio(install_deps: bool, dry_run: bool) -> str:
     return os.path.join(found, "VC", "Auxiliary", "Build")
 
 
+def _windows_sdk_installed(version: str) -> bool:
+    kits = os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Windows Kits", "10")
+    return os.path.isfile(os.path.join(kits, "Include", version, "um", "winsdkver.h"))
+
+
 def pin_windows_sdk(work_root: str, vs_path: str, version: str, dry_run: bool) -> Tuple[str, Dict[str, str]]:
     """A vcvarsall folder that passes `version` to the real one, and b2's user config that uses it."""
     folder = os.path.join(work_root, "vcvars-sdk")
     wrapper = os.path.join(folder, "vcvarsall.bat")
     user_config = os.path.join(folder, "user-config.jam")
     if not dry_run:
-        kits = os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Windows Kits", "10")
-        if not os.path.isfile(os.path.join(kits, "Include", version, "um", "winsdkver.h")):
+        if not _windows_sdk_installed(version):
             raise util.BuildError(
                 "win-arm64 needs Windows SDK %s (Visual Studio 2019's ARM64 compiler cannot build the newer headers); "
-                "add the Visual Studio component Microsoft.VisualStudio.Component.Windows10SDK.20348" % version
+                "install it or pass --install-deps" % version
             )
         os.makedirs(folder, exist_ok=True)
         with open(wrapper, "w", newline="\r\n") as handle:
@@ -188,6 +204,9 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
     vs_path = visual_studio(install_deps, dry_run)
     env: Dict[str, str] = {}
     if "win-arm64" in build:
+        if install_deps and (dry_run or not _windows_sdk_installed(ARM64_WINDOWS_SDK)):
+            package = ["choco", "install", ARM64_WINDOWS_SDK_PACKAGE, "--no-progress", "-y"]
+            util.run(package, dry_run=dry_run, check=False)
         vs_path, env = pin_windows_sdk(work_root, vs_path, ARM64_WINDOWS_SDK, dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         util.run(["choco", "install", "innosetup", "--no-progress", "-y"], dry_run=dry_run, check=False)
@@ -206,6 +225,7 @@ def macos(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
             raise util.BuildError("set OFFICE_QT_DIR to a Qt %s with clang_64, or pass --install-deps" % QT_VERSION)
         qt_dir = _aqt(work_root, "mac", "clang_64", dry_run)
     env = _cmake3(work_root, dry_run) if install_deps else {}
+    env["DEPOT_TOOLS_DIR"] = depot_tools(work_root)
     return Toolchain(["--qt-dir", qt_dir], env, util.python())
 
 

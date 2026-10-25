@@ -63,6 +63,12 @@ class MajorVersion(unittest.TestCase):
         self.assertEqual(toolchain.major_version(""), 0)
 
 
+class NodeVersion(unittest.TestCase):
+    def test_major_and_minor(self):
+        self.assertEqual(toolchain.node_version("v22.23.3\n"), (22, 23))
+        self.assertEqual(toolchain.node_version(""), (0, 0))
+
+
 class CheckRequirements(unittest.TestCase):
     def outputs(self, node, java):
         return lambda args, env: {"node": node, "java": java}.get(args[0], "tool 1.0")
@@ -71,8 +77,19 @@ class CheckRequirements(unittest.TestCase):
         with mock.patch.object(toolchain, "_tool_output", self.outputs("v18.20.0", "")):
             with self.assertRaises(util.BuildError) as raised:
                 toolchain.check_requirements({}, False)
-        self.assertIn("Node.js 20", str(raised.exception))
+        self.assertIn("Node.js 22.12", str(raised.exception))
         self.assertIn("Java 11", str(raised.exception))
+
+    def test_node_20_and_early_22_are_refused(self):
+        for node in ("v20.19.5", "v22.11.0"):
+            with mock.patch.object(toolchain, "_tool_output", self.outputs(node, 'openjdk version "17.0.20"')):
+                with self.assertRaises(util.BuildError):
+                    toolchain.check_requirements({}, False)
+
+    def test_newer_node_passes(self):
+        for node in ("v22.12.0", "v24.1.0"):
+            with mock.patch.object(toolchain, "_tool_output", self.outputs(node, 'openjdk version "17.0.20"')):
+                toolchain.check_requirements({}, False)
 
     def test_hosted_versions_pass(self):
         with mock.patch.object(toolchain, "_tool_output", self.outputs("v22.23.3", 'openjdk version "17.0.20"')):

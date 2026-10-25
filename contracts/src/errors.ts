@@ -71,4 +71,5 @@ export const GATEWAY_ERROR_TYPES: Partial<Record<ErrorCode, string>> = {
   RATE_LIMITED: 'rate_limit_error',
   QUOTA_EXCEEDED: 'insufficient_quota',
   PROVIDER_UNAVAILABLE: 'api_error',
+  VALIDATION_ERROR: 'invalid_request_error',
 };

@@ -1,6 +1,6 @@
 # Market Canopy Office integration contract
 
-- Contract version: `1.2.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
+- Contract version: `1.3.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
 - Upstream baseline: ONLYOFFICE Desktop Editors `v10.0.0.176` (desktop-apps `3fd628f986f5ae42853fefa3dbbb10c3992bf71c`, desktop-sdk `a75c35326aad475a5a4ec904baa9a5d518bcc162`). Every upstream seam cited below was read at that tag and is byte-identical to the research pins (desktop-apps `332c1905`, desktop-sdk `ae6cf2a0`).
 - Decision records: platform-api ADRs 0523 to 0530. This document replaces the contract baseline in platform-api `docs/architecture/marketcanopy-office/contracts.md` where they differ; section 14 lists every difference and why.
 - Normative words: MUST, MUST NOT, SHOULD. Examples are synthetic; no value in this folder is a real credential.
@@ -322,6 +322,9 @@ Errors (`schemas/gateway-error.schema.json`): `{ "error": { "message", "type", "
 | `RATE_LIMITED` | 429 | `rate_limit_error` | `Retry-After` set; clients may retry |
 | `QUOTA_EXCEEDED` | 429 | `insufficient_quota` | `x-should-retry: false`: the OpenAI SDK the agent uses retries 429 unless told not to |
 | `PROVIDER_UNAVAILABLE` | 503 | `api_error` | Upstream model failure after the router's fallbacks |
+| `VALIDATION_ERROR` | 422 | `invalid_request_error` | A body outside the accepted subset: `n` other than 1, a remote or non-image `image_url`, audio or file parts, no `messages`, an image sent to a model without `vision`. `param` names the failing field |
+
+A body above the API server's own transport limit (larger than any `ai.limits.maxRequestBytes`) may be refused by the server framework before the gateway answers, so that 413 is not in the gateway shape; clients treat any 413 as `REQUEST_TOO_LARGE`.
 
 CORS: both surfaces call from `onlyoffice://plugin/…` frames. The gateway answers preflight for any origin without credentials (`Access-Control-Allow-Origin: *`, no `Access-Control-Allow-Credentials`), methods `GET, POST, OPTIONS`, and lists `Authorization` explicitly (a wildcard does not cover it): `authorization, content-type, x-active-organization-id, x-stainless-arch, x-stainless-lang, x-stainless-os, x-stainless-package-version, x-stainless-retry-count, x-stainless-runtime, x-stainless-runtime-version, x-stainless-timeout`. It exposes `x-request-id`.
 
@@ -413,7 +416,7 @@ Signed with the runtime-pack key the desktop app already trusts (ADR 0528 decisi
 | `MODEL_NOT_ALLOWED` | 400 | Gateway | Reload models |
 | `REQUEST_TOO_LARGE` | 413 | Gateway | "That request is too large" |
 | `PROVIDER_UNAVAILABLE` | 503 | Gateway | "AI is unavailable, try again" |
-| `VALIDATION_ERROR` | 422 | Envelope routes | Bug report |
+| `VALIDATION_ERROR` | 422 | Envelope routes, gateway | Bug report |
 | `INVALID_CLIENT_HEADERS` | 400 | Envelope routes (existing) | Bug report |
 | `DOCUMENT_OPEN_IN_OFFICE` | n/a | Canopy local tools | "Close it in Market Canopy Office first" |
 | `PATH_OUTSIDE_GRANT` | n/a | Canopy local tools, launch | Refused |

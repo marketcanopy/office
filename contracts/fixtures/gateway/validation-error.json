@@ -1,0 +1,52 @@
+{
+  "fixture": 1,
+  "name": "validation-error",
+  "description": "A body outside the accepted subset (n other than 1)",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": null,
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "text",
+                "text": "Translate to French: Hello"
+              }
+            ]
+          }
+        ],
+        "stream": false,
+        "max_tokens": 512,
+        "temperature": 0.2,
+        "n": 2
+      }
+    },
+    "response": {
+      "status": 422,
+      "body": {
+        "error": {
+          "message": "That request isn't supported.",
+          "type": "invalid_request_error",
+          "code": "VALIDATION_ERROR",
+          "param": "n",
+          "request_id": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "VALIDATION_ERROR",
+    "requestValid": false
+  }
+}

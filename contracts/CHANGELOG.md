@@ -2,6 +2,15 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 1.3.0 (2026-10-25)
+
+Requested by P08 while implementing the gateway. Minor version under section 14: one more gateway error code, which an OpenAI client already handles as an `invalid_request_error`.
+
+- 8.3: the gateway refuses a body outside the accepted subset (`n` other than 1, a remote or non-image `image_url`, audio or file parts, no `messages`, an image sent to a model without `vision`) with 422 `VALIDATION_ERROR`, type `invalid_request_error`, `param` naming the failing field. Added to `gateway-error.schema.json` and `GATEWAY_ERROR_TYPES`; new fixtures `gateway/validation-error.json` and `gateway/validation-error-image-not-vision.json`.
+- 8.3: a body above the API server's own transport limit may be refused before the gateway answers, outside the gateway shape; clients treat any 413 as `REQUEST_TOO_LARGE`.
+
+Rerun: P08 (already answers this way), P09 (show the bug-report state for it). Unchanged for every other unit.
+
 ## 1.2.0 (2026-10-25)
 
 Requested by P07, the provider declaration's first consumer, after reading upstream's provider readers at `v10.0.0.176`. Minor version under section 14: no unit had shipped a 7.3 declaration, and nothing else in the contract changes, so every other consumer can ignore it (bootstrap's `contractVersion` stays `"1"`).

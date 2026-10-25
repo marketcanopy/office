@@ -1,0 +1,34 @@
+{
+  "fixture": 1,
+  "name": "provider-config-array",
+  "description": "An array is refused: desktop-sdk splices \"path\" after the file's first brace and joins the files into one array, so an array file becomes a nested array the start page cannot read",
+  "subject": "document",
+  "input": {
+    "schema": "provider-config",
+    "value": [
+      {
+        "provider": "marketcanopy",
+        "name": "Market Canopy",
+        "check": {
+          "url": "/office/connect/check"
+        },
+        "editorPage": "/office/documents/",
+        "startPage": "/office/connect",
+        "order": 0,
+        "icons": {
+          "themeLight": {
+            "connectionsList": "./assets/listicon.svg",
+            "buttonLogo": "./assets/buttonlogo.svg"
+          },
+          "themeDark": {
+            "connectionsList": "./assets/listicon_dark.svg",
+            "buttonLogo": "./assets/buttonlogo_dark.svg"
+          }
+        }
+      }
+    ]
+  },
+  "expect": {
+    "valid": false
+  }
+}

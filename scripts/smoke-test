@@ -265,14 +265,48 @@ def check_overlay(results, settings):
 
 
 def check_additions(results):
-    # branding/marketcanopy/add/<repo>/<path>: new files, each with its license line
+    # branding/marketcanopy/add/<repo>/<path>: new files, each with its license line,
+    # except Market Canopy artwork, which scripts/make-artwork generates and
+    # artwork/MAPPING.md records (it is not licensed under the AGPL)
+    artwork = set(re.findall(r"^\| `([^`]+)` \|", read(os.path.join(BRANDING, "artwork", "MAPPING.md")), re.M))
     missing = []
     for current, _, names in os.walk(os.path.join(BRANDING, "add")):
         for name in names:
             path = os.path.join(current, name)
+            relative = os.path.relpath(path, BRANDING).replace(os.sep, "/")
+            if relative in artwork:
+                continue
             if "SPDX-License-Identifier: AGPL-3.0-only" not in read(path):
-                missing.append(os.path.relpath(path, BRANDING))
+                missing.append(relative)
     results.check("added files carry the AGPL license line", not missing, ", ".join(missing[:5]))
+
+
+def check_provider(results):
+    # The Market Canopy cloud provider (Office contract 7.3): one object in
+    # upstream's provider shape, and every icon it names is in its folder
+    folder = os.path.join(BRANDING, "add", "desktop-apps", "common", "loginpage", "providers", "marketcanopy")
+    try:
+        config = json.loads(read(os.path.join(folder, "config.json")))
+    except (OSError, ValueError) as error:
+        results.check("provider config is strict JSON", False, str(error))
+        return
+    expected = {
+        "provider": "marketcanopy",
+        "name": "Market Canopy",
+        "check": {"url": "/office/connect/check"},
+        "editorPage": "/office/documents/",
+        "startPage": "/office/connect",
+        "order": 0,
+    }
+    results.check(
+        "provider config is one object with the contract's values",
+        isinstance(config, dict) and all(config.get(key) == value for key, value in expected.items()),
+    )
+    results.check("provider config has no entryPage", isinstance(config, dict) and "entryPage" not in config)
+    icons = config.get("icons", {}) if isinstance(config, dict) else {}
+    named = [icons.get(theme, {}).get(kind) for theme in ("themeLight", "themeDark") for kind in ("connectionsList", "buttonLogo")]
+    missing = [str(path) for path in named if not path or not os.path.isfile(os.path.join(folder, path))]
+    results.check("provider icons exist", not missing, ", ".join(missing))
 
 
 def check_notices(results):
@@ -364,6 +398,7 @@ def main():
     check_queue(results)
     check_overlay(results, settings)
     check_additions(results)
+    check_provider(results)
     check_notices(results)
     if args.work:
         check_work(results, os.path.abspath(args.work), settings)

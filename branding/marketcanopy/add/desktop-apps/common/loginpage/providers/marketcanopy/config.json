@@ -1,0 +1,21 @@
+{
+  "$comment": "Market Canopy Office: the Market Canopy cloud provider (P07, Office contract 7.3). Copyright (C) 2026 Market Canopy LLC. SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the LICENSE file of https://github.com/marketcanopy/office). Office connects it by itself after sign-in; the domain comes from portal:login.",
+  "provider": "marketcanopy",
+  "name": "Market Canopy",
+  "check": {
+    "url": "/office/connect/check"
+  },
+  "editorPage": "/office/documents/",
+  "startPage": "/office/connect",
+  "order": 0,
+  "icons": {
+    "themeLight": {
+      "connectionsList": "./assets/listicon.svg",
+      "buttonLogo": "./assets/buttonlogo.svg"
+    },
+    "themeDark": {
+      "connectionsList": "./assets/listicon_dark.svg",
+      "buttonLogo": "./assets/buttonlogo_dark.svg"
+    }
+  }
+}

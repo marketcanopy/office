@@ -1,6 +1,6 @@
 # Market Canopy Office integration contract
 
-- Contract version: `1.1.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
+- Contract version: `1.2.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
 - Upstream baseline: ONLYOFFICE Desktop Editors `v10.0.0.176` (desktop-apps `3fd628f986f5ae42853fefa3dbbb10c3992bf71c`, desktop-sdk `a75c35326aad475a5a4ec904baa9a5d518bcc162`). Every upstream seam cited below was read at that tag and is byte-identical to the research pins (desktop-apps `332c1905`, desktop-sdk `ae6cf2a0`).
 - Decision records: platform-api ADRs 0523 to 0530. This document replaces the contract baseline in platform-api `docs/architecture/marketcanopy-office/contracts.md` where they differ; section 14 lists every difference and why.
 - Normative words: MUST, MUST NOT, SHOULD. Examples are synthetic; no value in this folder is a real credential.
@@ -244,7 +244,19 @@ The page relays the cookie and calls `portal:logout`.
 
 ### 7.3 Provider declaration
 
-`common/loginpage/providers/marketcanopy/config.json` in the branding overlay, strict JSON (upstream's own files are not), validated by `schemas/provider-config.schema.json`: `provider` = `marketcanopy`, `name` = `Market Canopy`, `check.url`, `editorPage`, `entryPage`, `order` = 0, light and dark `icons`.
+`common/loginpage/providers/marketcanopy/config.json` in the branding overlay: one strict-JSON object in the shape upstream's own providers use at the tag, validated by `schemas/provider-config.schema.json`:
+
+| Field | Value | Upstream reader |
+| --- | --- | --- |
+| `provider` | `marketcanopy` | desktop-sdk `providers.h` (the provider id), the start page |
+| `name` | `Market Canopy` | desktop-sdk `providers.h`, the start page |
+| `check.url` | `/office/connect/check` (200 on the app origin) | the start page's Clouds route (kept, not linked) |
+| `editorPage` | `/office/documents/` | desktop-sdk `cefview.cpp` `IsExternalCloudEditor`: a navigation or pop-up whose URL contains it opens as an editor tab |
+| `startPage` | `/office/connect` | the start page's `openConnectedPortal`: Office opens `<domain><startPage>`, `<domain>` being the `portal:login` domain |
+| `order` | `0` | the start page's sort |
+| `icons` | `themeLight` and `themeDark`, each `{ connectionsList, buttonLogo }`, `./assets/<name>.svg` | the start page's provider icons |
+
+An optional `$comment` string carries the file's license line, since strict JSON has no comments. There is no `entryPage`: upstream opens an `entryPage` as the whole address (an OAuth provider's own page) instead of appending `startPage` to the signed-in domain. The declaration holds no origin, so the staging and production builds ship the same file; the domain comes from `portal:login`.
 
 ## 8. Bootstrap and AI
 
@@ -432,6 +444,7 @@ Changes from the baseline (`contracts.md`, 2026-10-24):
 | Client app id | `office` | `com.marketcanopy.office` | The client-app registry keys apps by reverse-DNS id (`com.marketcanopy.mobile`) |
 | New codes | | `RATE_LIMITED`, `PROVIDER_UNAVAILABLE`, `PATH_NOT_WRITABLE`, `CREDENTIAL_IN_LINK`, `INVALID_LINK`, `INVALID_ARGUMENT`, `VALIDATION_ERROR`, `INVALID_CLIENT_HEADERS` | Conditions the baseline did not name |
 | Lock states | Locked or not | Adds `lock_file_only` and `read_only` | A crashed Office leaves the lock file (observed) |
+| Provider declaration (1.2.0) | `contracts.md` named the fields; 1.0.0 made it a one-item array with `entryPage` and `icons.light/dark.{normal,big}` | One object with `startPage` and upstream's `icons.themeLight/themeDark.{connectionsList,buttonLogo}`, no `entryPage` | desktop-sdk `providers.h` `GetAllJSON` splices `"path"` after the file's first brace and joins the files into one array, so an array file reaches the start page as a nested array; the start page reads only upstream's icon keys and opens `entryPage` as an absolute address (P07, read at the tag) |
 
 ## 15. Not verified
 

@@ -16,7 +16,11 @@
 - Windows and macOS need CMake 3: the third-party CMakeLists build_tools builds
   (x265 for heif) set pre-3.5 policies to OLD, which CMake 4 refuses. Hosted
   images ship CMake 4, so --install-deps puts a pinned CMake 3 first on PATH.
-  Linux gets CMake 3 from build_tools' own cmake.sh.
+  Linux gets the CMake 3.30.0 build_tools' cmake.sh installs, Kitware's own
+  build, unpacked in the work directory instead of /opt (no sudo). It links
+  libstdc++ statically: build_tools runs cmake with the Ubuntu 16.04 sysroot's
+  libraries on LD_LIBRARY_PATH, and a distribution cmake then fails to load
+  ("GLIBCXX_3.4.32 not found").
 - win-arm64 pins Windows SDK 10.0.22621, the one upstream's v8 build pins for
   ARM64: VS2019's ARM64 compiler does not declare `_CountOneBits64`, which the
   10.0.26100 headers on hosted runners call. --install-deps installs it (hosted
@@ -45,6 +49,8 @@ import os
 import re
 import shutil
 import subprocess
+import tarfile
+import urllib.request
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple
 
@@ -126,6 +132,33 @@ LINUX_BASE_PACKAGES = [
 ]
 
 
+# build_tools' tools/linux/cmake.sh downloads this version; the digest is
+# Kitware's cmake-3.30.0-SHA-256.txt.
+LINUX_CMAKE = "cmake-3.30.0-linux-x86_64"
+LINUX_CMAKE_URL = "https://github.com/Kitware/CMake/releases/download/v3.30.0/%s.tar.gz" % LINUX_CMAKE
+LINUX_CMAKE_SHA256 = "09846a3858583f38189b59177586adf125a08c15f3cddcaf7d7d7081ac86969f"
+
+
+def _linux_cmake(work_root: str, dry_run: bool) -> str:
+    """The bin folder of Kitware's CMake 3.30.0, unpacked in the work directory."""
+    root = os.path.join(os.path.abspath(work_root), LINUX_CMAKE)
+    bin_dir = os.path.join(root, "bin")
+    if dry_run or os.path.isfile(os.path.join(bin_dir, "cmake")):
+        return bin_dir
+    archive = root + ".tar.gz"
+    util.log("download " + LINUX_CMAKE_URL)
+    with urllib.request.urlopen(LINUX_CMAKE_URL) as response, open(archive, "wb") as handle:
+        shutil.copyfileobj(response, handle)
+    digest = util.sha256_file(archive)
+    if digest != LINUX_CMAKE_SHA256:
+        os.remove(archive)
+        raise util.BuildError("%s has sha256 %s, not %s" % (LINUX_CMAKE_URL, digest, LINUX_CMAKE_SHA256))
+    with tarfile.open(archive) as tar:
+        tar.extractall(os.path.dirname(root))
+    os.remove(archive)
+    return bin_dir
+
+
 def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
     tools = os.path.join(work_root, "build_tools", "tools", "linux")
     bundled = os.path.join(tools, "python3", "bin")
@@ -139,7 +172,6 @@ def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
     python = os.path.join(bundled, "python3")
     if deps_needed:
         util.run([python, "./deps.py"], cwd=tools, dry_run=dry_run)
-        util.run(["sudo", "./cmake.sh"], cwd=tools, dry_run=dry_run)
         # make_package.py's Makefile: m4 templates, rpmbuild for the .rpm targets.
         util.run(
             ["sudo", "apt-get", "install", "-y", "--no-install-recommends", "m4", "rpm", "fakeroot"], dry_run=dry_run
@@ -149,6 +181,8 @@ def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
     if any(not os.path.isdir(os.path.join(qt_dir, {"amd64": "gcc_64", "arm64": "gcc_arm64"}[name])) for name in wanted):
         util.run([python, "./qt_binary_fetch.py", "all" if len(wanted) > 1 else wanted[0]], cwd=tools, dry_run=dry_run)
     path = bundled + os.pathsep + os.environ.get("PATH", "")
+    if install_deps:
+        path = _linux_cmake(work_root, dry_run) + os.pathsep + path
     env = {"PATH": path, "DEPOT_TOOLS_DIR": depot_tools(work_root)}
     return Toolchain(["--qt-dir", qt_dir, "--sysroot", "1"], env, python)
 

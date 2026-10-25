@@ -1,4 +1,7 @@
+import hashlib
+import io
 import os
+import tarfile
 import tempfile
 import unittest
 from unittest import mock
@@ -57,6 +60,9 @@ class LinuxToolchain(unittest.TestCase):
     def setUp(self):
         self.work = tempfile.mkdtemp()
         os.makedirs(os.path.join(self.work, "build_tools", "tools", "linux"))
+        self.cmake_bin = os.path.join(self.work, toolchain.LINUX_CMAKE, "bin")
+        os.makedirs(self.cmake_bin)
+        open(os.path.join(self.cmake_bin, "cmake"), "w").close()
         patcher = mock.patch.object(util, "run")
         self.run = patcher.start()
         self.addCleanup(patcher.stop)
@@ -73,9 +79,44 @@ class LinuxToolchain(unittest.TestCase):
         self.assertLess(install, commands.index(["bash", "./python.sh"]))
         self.assertIn("wget", toolchain.LINUX_BASE_PACKAGES)
 
+    def test_kitware_cmake_comes_first_on_path_and_cmake_sh_is_not_run(self):
+        result = toolchain.linux(self.work, ["linux-x64"], True, False)
+        self.assertEqual(result.env["PATH"].split(os.pathsep)[0], self.cmake_bin)
+        self.assertNotIn(["sudo", "./cmake.sh"], self.commands())
+
     def test_without_install_deps_nothing_is_installed(self):
         toolchain.linux(self.work, ["linux-x64"], False, False)
         self.assertFalse([c for c in self.commands() if c[:1] == ["sudo"]])
+
+
+class LinuxCmake(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.mkdtemp()
+        payload = io.BytesIO()
+        with tarfile.open(fileobj=payload, mode="w:gz") as tar:
+            data = b"#!/bin/sh\n"
+            info = tarfile.TarInfo(toolchain.LINUX_CMAKE + "/bin/cmake")
+            info.size = len(data)
+            tar.addfile(info, io.BytesIO(data))
+        self.archive = payload.getvalue()
+        patcher = mock.patch.object(
+            toolchain.urllib.request, "urlopen", side_effect=lambda url: io.BytesIO(self.archive)
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def test_verified_archive_is_unpacked_in_the_work_directory(self):
+        digest = hashlib.sha256(self.archive).hexdigest()
+        with mock.patch.object(toolchain, "LINUX_CMAKE_SHA256", digest):
+            bin_dir = toolchain._linux_cmake(self.work, False)
+        self.assertEqual(bin_dir, os.path.join(self.work, toolchain.LINUX_CMAKE, "bin"))
+        self.assertTrue(os.path.isfile(os.path.join(bin_dir, "cmake")))
+        self.assertFalse(os.path.exists(os.path.join(self.work, toolchain.LINUX_CMAKE + ".tar.gz")))
+
+    def test_wrong_digest_is_refused_and_nothing_is_unpacked(self):
+        with self.assertRaises(util.BuildError):
+            toolchain._linux_cmake(self.work, False)
+        self.assertEqual(os.listdir(self.work), [])
 
 
 class MajorVersion(unittest.TestCase):

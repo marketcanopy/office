@@ -34,7 +34,8 @@ for every other requested target; it exits `3` when it can build none of them.
 | `--phase` | Run one of `prepare`, `compile`, `stage`, `installers`, `seal`. |
 | `--work-dir` | The workspace (default `$OFFICE_WORK_DIR`, else `../office-work`). It must be outside any git work tree. |
 | `--out` | Artifact directory (default `build/out/`). |
-| `--install-deps` | Provision the toolchain (CI runners): apt packages, Qt, Inno Setup, Visual Studio 2019 Build Tools, CMake 3. |
+| `--install-deps` | Provision the toolchain (CI runners): apt packages, Qt, Inno Setup, Visual Studio 2019 Build Tools, the Windows SDKs v8 and win-arm64 need, grunt-cli, CMake 3. |
+| `--third-party-only` | Compile only build_tools' third-party libraries (boost, ICU, OpenSSL, CEF, V8 and the rest) and stop: a short run that proves a runner before a full compile. |
 | `--check-patches` | Only check out the components, apply the patch queue and the overlay, and report the patch budget. |
 | `--dry-run` | Print the plan and the commands; run nothing. |
 
@@ -63,8 +64,8 @@ then does not apply the queue, the replacements or the added files again).
 | Host | Needs |
 | --- | --- |
 | Linux x64 | Ubuntu 22.04 or 24.04, sudo, about 100 GB free, 16 GB of memory or swap. `--install-deps` runs build_tools' `deps.py` and fetches its prebuilt Qt 5.9.9. |
-| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components and, for win-arm64, Windows SDK 10.0.22621 (the 2019 ARM64 compiler cannot build the 10.0.26100 headers; `--install-deps` installs it, and `office-build` passes the version to `vcvarsall` and to boost's b2), Python 3, Git, CMake 3 (CMake 4 refuses x265's policies; `--install-deps` puts CMake 3.31.6 first on `PATH`); Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6. |
-| macOS | Xcode, Python 3, CMake 3 (as on Windows), Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`. |
+| Windows x64 | Visual Studio 2019 (any edition or the Build Tools; `--install-deps` installs the Build Tools) with the C++ x64, ARM64 and ATL components; Windows SDK 10.0.19041 with the Debugging Tools for Windows (v8 8.9's toolchain scripts pin that version and copy `dbghelp.dll` from it), and, for win-arm64, Windows SDK 10.0.22621 (the 2019 ARM64 compiler cannot build the 10.0.26100 headers; `--install-deps` installs it, and `office-build` passes the version to `vcvarsall` and to boost's b2), Python 3, Git, CMake 3 (CMake 4 refuses x265's policies; `--install-deps` puts CMake 3.31.6 first on `PATH`); Qt 5.15.2 msvc2019_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Inno Setup 6; Node.js 20 or later with grunt-cli; Java 11 or later. |
+| macOS | Xcode, Python 3, CMake 3 (as on Windows), Qt 5.15.2 clang_64 in `OFFICE_QT_DIR` or fetched with aqtinstall under `--install-deps`; Node.js 20 or later with grunt-cli; Java 11 or later. |
 
 The release builds run in `circuitid/marketcanopy-office-release`
 (`office-release.yml`). This repository's own CI runs on GitHub-hosted runners

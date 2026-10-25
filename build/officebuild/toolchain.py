@@ -24,6 +24,15 @@
   build_tools gets a vcvarsall that passes the version, and boost's b2, which
   runs vcvarsall on its own, gets it as its msvc `<setup>` through
   BOOST_BUILD_USER_CONFIG.
+- Windows also needs Windows SDK 10.0.19041.0 with its Debugging Tools, for
+  either target: v8 8.9's build/toolchain/win/setup_toolchain.py passes that
+  version to vcvarsall, and build/vs_toolchain.py copies dbghelp.dll from its
+  Debuggers folder. --install-deps installs it.
+- Windows and macOS need grunt-cli for the web apps (build_js.py runs
+  `grunt`); Linux gets it from build_tools' deps.py. --install-deps installs it.
+- Every host needs Node.js 20 or later and Java 11 or later (build_tools'
+  deps.py and develop/dependence.py); `check_requirements` fails the build
+  before compiling when either is older or missing.
 - Linux and macOS set DEPOT_TOOLS_DIR to v8's depot_tools as an absolute path.
   build_tools runs `./depot_tools/fetch`, which exports the relative
   `./depot_tools` for the scripts it calls, and bootstrap_python3 changes into
@@ -31,6 +40,7 @@
 """
 
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass, field
@@ -44,6 +54,10 @@ AQT_VERSION = "3.3.0"
 CMAKE_VERSION = "3.31.6"
 ARM64_WINDOWS_SDK = "10.0.22621.0"
 ARM64_WINDOWS_SDK_PACKAGE = "windows-sdk-11-version-22H2-all"
+V8_WINDOWS_SDK = "10.0.19041.0"
+V8_WINDOWS_SDK_PACKAGE = "windows-sdk-10-version-2004-all"
+NODE_MIN_MAJOR = 20
+JAVA_MIN_MAJOR = 11
 
 
 @dataclass
@@ -167,9 +181,31 @@ def visual_studio(install_deps: bool, dry_run: bool) -> str:
     return os.path.join(found, "VC", "Auxiliary", "Build")
 
 
+def _windows_kits() -> str:
+    return os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Windows Kits", "10")
+
+
 def _windows_sdk_installed(version: str) -> bool:
-    kits = os.path.join(os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)"), "Windows Kits", "10")
-    return os.path.isfile(os.path.join(kits, "Include", version, "um", "winsdkver.h"))
+    return os.path.isfile(os.path.join(_windows_kits(), "Include", version, "um", "winsdkver.h"))
+
+
+def _v8_sdk_missing(cpus: List[str]) -> List[str]:
+    """What v8's Windows toolchain scripts need from the SDK and cannot find."""
+    missing = [] if _windows_sdk_installed(V8_WINDOWS_SDK) else ["Windows SDK " + V8_WINDOWS_SDK]
+    for cpu in cpus:
+        if not os.path.isfile(os.path.join(_windows_kits(), "Debuggers", cpu, "dbghelp.dll")):
+            missing.append("Debugging Tools for Windows (%s)" % cpu)
+    return missing
+
+
+def _choco(package: str, dry_run: bool) -> None:
+    util.run(["choco", "install", package, "--no-progress", "-y"], dry_run=dry_run, check=False)
+
+
+def _grunt(install_deps: bool, dry_run: bool) -> None:
+    if install_deps and not shutil.which("grunt"):
+        npm = shutil.which("npm") or "npm"
+        util.run([npm, "install", "-g", "grunt-cli"], dry_run=dry_run)
 
 
 def pin_windows_sdk(work_root: str, vs_path: str, version: str, dry_run: bool) -> Tuple[str, Dict[str, str]]:
@@ -202,14 +238,23 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
         if not os.path.isdir(os.path.join(arm_tools, "qt_build", "Qt-5.15.2")):
             util.run([util.python(), "fetch_qt.py"], cwd=arm_tools, dry_run=dry_run)
     vs_path = visual_studio(install_deps, dry_run)
+    # build_tools adds win_64 to a win_arm64 build on an x64 host.
+    v8_cpus = ["x64"] + (["arm64"] if "win-arm64" in build else [])
+    if install_deps and (dry_run or _v8_sdk_missing(v8_cpus)):
+        _choco(V8_WINDOWS_SDK_PACKAGE, dry_run)
+    if not dry_run and _v8_sdk_missing(v8_cpus):
+        raise util.BuildError(
+            "v8 needs %s (its setup_toolchain.py and vs_toolchain.py); install them or pass --install-deps"
+            % " and ".join(_v8_sdk_missing(v8_cpus))
+        )
     env: Dict[str, str] = {}
     if "win-arm64" in build:
         if install_deps and (dry_run or not _windows_sdk_installed(ARM64_WINDOWS_SDK)):
-            package = ["choco", "install", ARM64_WINDOWS_SDK_PACKAGE, "--no-progress", "-y"]
-            util.run(package, dry_run=dry_run, check=False)
+            _choco(ARM64_WINDOWS_SDK_PACKAGE, dry_run)
         vs_path, env = pin_windows_sdk(work_root, vs_path, ARM64_WINDOWS_SDK, dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
-        util.run(["choco", "install", "innosetup", "--no-progress", "-y"], dry_run=dry_run, check=False)
+        _choco("innosetup", dry_run)
+    _grunt(install_deps, dry_run)
     if install_deps:
         env.update(_cmake3(work_root, dry_run))
     return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], env, util.python())
@@ -224,10 +269,54 @@ def macos(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
         if not install_deps:
             raise util.BuildError("set OFFICE_QT_DIR to a Qt %s with clang_64, or pass --install-deps" % QT_VERSION)
         qt_dir = _aqt(work_root, "mac", "clang_64", dry_run)
+    _grunt(install_deps, dry_run)
     env = _cmake3(work_root, dry_run) if install_deps else {}
     env["DEPOT_TOOLS_DIR"] = depot_tools(work_root)
     return Toolchain(["--qt-dir", qt_dir], env, util.python())
 
 
+def major_version(output: str) -> int:
+    """The major version in `node -v` or `java -version` output; Java 8 prints 1.8. 0 when there is none."""
+    found = re.search(r'(?:^v|version ")(\d+)(?:\.(\d+))?', output, re.MULTILINE)
+    if not found:
+        return 0
+    major = int(found.group(1))
+    return int(found.group(2) or 0) if major == 1 else major
+
+
+def _tool_output(args: List[str], env: Dict[str, str]) -> str:
+    path = env.get("PATH", os.environ.get("PATH", ""))
+    found = shutil.which(args[0], path=path)
+    if not found:
+        return ""
+    result = subprocess.run(
+        [found] + args[1:], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, check=False
+    )
+    return result.stdout
+
+
+def check_requirements(env: Dict[str, str], dry_run: bool) -> None:
+    """Fail before compiling when a tool build_tools needs is missing or too old, and log what was found."""
+    if dry_run:
+        return
+    found = {
+        "cmake": _tool_output(["cmake", "--version"], env),
+        "node": _tool_output(["node", "-v"], env),
+        "java": _tool_output(["java", "-version"], env),
+        "git": _tool_output(["git", "--version"], env),
+    }
+    for name, output in found.items():
+        util.log("%s: %s" % (name, (output.strip().splitlines() or ["not found"])[0]))
+    problems = []
+    if major_version(found["node"]) < NODE_MIN_MAJOR:
+        problems.append("Node.js %d or later" % NODE_MIN_MAJOR)
+    if major_version(found["java"]) < JAVA_MIN_MAJOR:
+        problems.append("Java %d or later" % JAVA_MIN_MAJOR)
+    if problems:
+        raise util.BuildError("build_tools needs " + " and ".join(problems) + " on PATH")
+
+
 def prepare(host: targetlib.Host, work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
-    return {"linux": linux, "windows": windows, "macos": macos}[host.os](work_root, build, install_deps, dry_run)
+    tools = {"linux": linux, "windows": windows, "macos": macos}[host.os](work_root, build, install_deps, dry_run)
+    check_requirements(tools.env, dry_run)
+    return tools

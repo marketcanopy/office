@@ -53,5 +53,31 @@ class DepotTools(unittest.TestCase):
         self.assertEqual(path, expected)
 
 
+class MajorVersion(unittest.TestCase):
+    def test_node_and_java_outputs(self):
+        self.assertEqual(toolchain.major_version("v22.23.3\n"), 22)
+        self.assertEqual(toolchain.major_version('openjdk version "17.0.20" 2026-07-21\nOpenJDK Runtime'), 17)
+        self.assertEqual(toolchain.major_version('java version "1.8.0_462"\n'), 8)
+
+    def test_missing_tool_is_zero(self):
+        self.assertEqual(toolchain.major_version(""), 0)
+
+
+class CheckRequirements(unittest.TestCase):
+    def outputs(self, node, java):
+        return lambda args, env: {"node": node, "java": java}.get(args[0], "tool 1.0")
+
+    def test_old_node_and_missing_java_are_refused(self):
+        with mock.patch.object(toolchain, "_tool_output", self.outputs("v18.20.0", "")):
+            with self.assertRaises(util.BuildError) as raised:
+                toolchain.check_requirements({}, False)
+        self.assertIn("Node.js 20", str(raised.exception))
+        self.assertIn("Java 11", str(raised.exception))
+
+    def test_hosted_versions_pass(self):
+        with mock.patch.object(toolchain, "_tool_output", self.outputs("v22.23.3", 'openjdk version "17.0.20"')):
+            toolchain.check_requirements({}, False)
+
+
 if __name__ == "__main__":
     unittest.main()

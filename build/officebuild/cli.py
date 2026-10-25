@@ -20,6 +20,25 @@ from .workspace import Workspace
 
 PHASES = ["prepare", "compile", "stage", "installers", "seal"]
 
+# make.py up to and including its third-party step (make_common.make(): boost,
+# ICU, OpenSSL, CEF, V8 and the rest), for a short run that proves a runner can
+# build the dependencies before a full compile. Run with build_tools as cwd.
+THIRD_PARTY_ONLY = """
+import os, sys
+root = os.getcwd()
+for sub in ["scripts", "scripts/develop", "scripts/develop/vendor", "scripts/core_common",
+            "scripts/core_common/modules", "scripts/core_common/modules/android"]:
+    sys.path.append(os.path.join(root, sub))
+import config, base, make_common
+config.parse()
+base.check_python()
+base.set_env("BUILD_PLATFORM", config.option("platform"))
+config.parse_defaults()
+base.check_build_version(root)
+base.configure_common_apps()
+make_common.make()
+"""
+
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -57,6 +76,11 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument("--out", default="", help="artifact directory (default build/out/)")
     parser.add_argument("--install-deps", action="store_true", help="provision the host toolchain (CI runners)")
     parser.add_argument(
+        "--third-party-only",
+        action="store_true",
+        help="compile only build_tools' third-party libraries (boost, ICU, OpenSSL, CEF, V8, ...) and stop",
+    )
+    parser.add_argument(
         "--check-patches", action="store_true", help="only check out the patched components and report the patch budget"
     )
     parser.add_argument("--dry-run", action="store_true", help="print the plan and commands, run nothing")
@@ -68,6 +92,8 @@ def phases_for(args: argparse.Namespace) -> List[str]:
         return [args.phase]
     if args.check_patches:
         return ["prepare"]
+    if args.third_party_only:
+        return ["prepare", "compile"]
     return PHASES if args.package else ["prepare", "compile"]
 
 
@@ -175,7 +201,10 @@ def main(argv: List[str]) -> int:
                 configure += ["--branding", "marketcanopy"]
             python = tools.python or util.python()
             util.run([python, "configure.py"] + configure, cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
-            util.run([python, "make.py"], cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
+            if args.third_party_only:
+                util.run([python, "-c", THIRD_PARTY_ONLY], cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
+            else:
+                util.run([python, "make.py"], cwd=workspace.build_tools, env=env, dry_run=args.dry_run)
             util.end_group()
 
         source_info: Dict[str, str] = {}

@@ -1,0 +1,33 @@
+{
+  "fixture": 1,
+  "name": "provider-config-entry-page",
+  "description": "entryPage is refused: the start page opens it as the whole address instead of appending startPage to the signed-in domain",
+  "subject": "document",
+  "input": {
+    "schema": "provider-config",
+    "value": {
+      "provider": "marketcanopy",
+      "name": "Market Canopy",
+      "check": {
+        "url": "/office/connect/check"
+      },
+      "editorPage": "/office/documents/",
+      "startPage": "/office/connect",
+      "order": 0,
+      "icons": {
+        "themeLight": {
+          "connectionsList": "./assets/listicon.svg",
+          "buttonLogo": "./assets/buttonlogo.svg"
+        },
+        "themeDark": {
+          "connectionsList": "./assets/listicon_dark.svg",
+          "buttonLogo": "./assets/buttonlogo_dark.svg"
+        }
+      },
+      "entryPage": "/office/connect"
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

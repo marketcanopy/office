@@ -7,29 +7,32 @@ The start screen shows the Market Canopy account the native account
 module keeps (desktop-sdk patch 0002): Sign in to Market Canopy opens the
 system browser, then the signed-in person, the organization picker,
 Update required or offline. Market Canopy's cloud connection is made by
-native code after sign-in, so there is no connect step. Window focus
-asks the module to read the credential store again (P02 contract 5.4).
+native code after sign-in, so there is no connect step; Market Canopy
+documents opens a tab on the provider's startPage (providers/marketcanopy,
+P07), which the module connects before the page shows the drive. Window
+focus asks the module to read the credential store again (P02 contract
+5.4).
 
 Both shells hand every launch argument and opened link to the module
 first (CallCommand "mc:scheme:"), so a sign-in callback forwarded by the
 single-instance check, or a link that carries a credential, is never
 opened as a document.
 ---
- .../home/components/MarketCanopyAccount.jsx   | 117 ++++++++++++++++++
+ .../home/components/MarketCanopyAccount.jsx   | 125 ++++++++++++++++++
  .../components/MarketCanopyAccount.styles.css |  34 +++++
  common/loginpage/src/routes/home/index.jsx    |   5 +
  macos/ONLYOFFICE/AppDelegate.mm               |   6 +
  .../src/cascapplicationmanagerwrapper.cpp     |   5 +
- 5 files changed, 167 insertions(+)
+ 5 files changed, 175 insertions(+)
  create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
  create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
 
 diff --git a/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
 new file mode 100644
-index 0000000..87dc35b
+index 0000000..164d7f0
 --- /dev/null
 +++ b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,125 @@
 +/*
 + * Market Canopy Office: the Market Canopy account on the start screen.
 + * Copyright (C) 2026 Market Canopy LLC
@@ -49,10 +52,13 @@ index 0000000..87dc35b
 +// The native account module (desktop-sdk src/marketcanopy) owns everything:
 +// this only shows its state and sends the person's choices. It never sees a
 +// token, a code or a device id. Market Canopy's cloud connection is set up by
-+// native code after sign-in, so there is no "connect a cloud" step.
++// native code after sign-in, so there is no "connect a cloud" step; Market
++// Canopy documents opens the provider's startPage (providers/marketcanopy),
++// whose load the native module connects before the page shows the drive.
 +import { For, Match, Show, Switch, createSignal, onCleanup, onMount } from "solid-js";
 +import { onNativeMessage } from "@/sdk/events.js";
 +import { command } from "@/sdk/bridge.js";
++import { openPortal } from "@/sdk/portals.js";
 +import { t } from "@/services/l10n.js";
 +import { Button } from "@/components";
 +import "./MarketCanopyAccount.styles.css";
@@ -120,6 +126,11 @@ index 0000000..87dc35b
 +              </Show>
 +              <For each={organizations()}>{(org) => <option value={org.id}>{org.name}</option>}</For>
 +            </select>
++          </Show>
++          <Show when={state() === "signed_in" && account()?.docs?.enabled && account()?.appOrigin}>
++            <Button variant="accent" onClick={() => openPortal(account().appOrigin, "marketcanopy", "/office/connect")}>
++              {t("mcAccountDocuments", "Market Canopy documents")}
++            </Button>
 +          </Show>
 +          <Button onClick={() => send("signOut")}>{t("mcAccountSignOut", "Sign out")}</Button>
 +        </Match>

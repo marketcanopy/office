@@ -2,6 +2,14 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 1.2.0 (2026-10-25)
+
+Requested by P07, the provider declaration's first consumer, after reading upstream's provider readers at `v10.0.0.176`. Minor version under section 14: no unit had shipped a 7.3 declaration, and nothing else in the contract changes, so every other consumer can ignore it (bootstrap's `contractVersion` stays `"1"`).
+
+- 7.3: `config.json` is one object, not a one-item array (desktop-sdk `providers.h` `GetAllJSON` would hand the start page a nested array). The connect page is `startPage` (`/office/connect`, appended to the `portal:login` domain); `entryPage` is refused, since upstream opens it as an absolute address. `editorPage` is fixed to `/office/documents/`. Icons use upstream's keys, `themeLight` and `themeDark` with `connectionsList` and `buttonLogo`. New fixtures `provider-config-array.json` and `provider-config-entry-page.json`.
+
+Rerun: P07. Unchanged for P03 to P06 and P08 to P12.
+
 ## 1.1.0 (2026-10-24)
 
 Requested by P06 while implementing the identity routes. Minor version under `SPEC.md` section 14: the routes are additions, and dropping the second-factor answer narrows what the API returns, which no consumer has to handle.

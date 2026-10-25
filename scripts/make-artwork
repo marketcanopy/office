@@ -399,6 +399,13 @@ class Artwork:
             "About dialog mark",
         )
 
+        # The Market Canopy cloud provider (P07), a new folder beside upstream's providers
+        provider = "add/desktop-apps/common/loginpage/providers/marketcanopy/assets/"
+        for name in ("listicon", "listicon_dark"):
+            self.svg(provider + name + ".svg", 36, 36, fit(self.mark, 36 * 4, 36 * 4), logo_src, "provider list icon")
+        self.svg(provider + "buttonlogo.svg", 196, 36, self.lockup(False), logo_src, "provider logo, dark text")
+        self.svg(provider + "buttonlogo_dark.svg", 196, 36, self.lockup(True), logo_src, "provider logo, white text")
+
         # Editors (web-apps)
         self.svg(
             wa + "main/resources/img/about/logo_s.svg", 245, 45, self.lockup(False), logo_src, "About logo, dark text"

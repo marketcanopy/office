@@ -5,26 +5,26 @@
   "subject": "document",
   "input": {
     "schema": "provider-config",
-    "value": [
-      {
-        "provider": "onlyoffice",
-        "name": "Market Canopy",
-        "check": {
-          "url": "/x"
+    "value": {
+      "provider": "onlyoffice",
+      "name": "Market Canopy",
+      "check": {
+        "url": "/office/connect/check"
+      },
+      "editorPage": "/office/documents/",
+      "startPage": "/office/connect",
+      "order": 0,
+      "icons": {
+        "themeLight": {
+          "connectionsList": "./assets/listicon.svg",
+          "buttonLogo": "./assets/buttonlogo.svg"
         },
-        "editorPage": "/x",
-        "entryPage": "/x",
-        "order": 0,
-        "icons": {
-          "light": {
-            "normal": "a"
-          },
-          "dark": {
-            "normal": "b"
-          }
+        "themeDark": {
+          "connectionsList": "./assets/listicon_dark.svg",
+          "buttonLogo": "./assets/buttonlogo_dark.svg"
         }
       }
-    ]
+    }
   },
   "expect": {
     "valid": false

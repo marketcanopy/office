@@ -2,96 +2,95 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://contracts.marketcanopy.com/office/v1/provider-config.schema.json",
   "title": "common/loginpage/providers/marketcanopy/config.json (7.3)",
-  "type": "array",
-  "minItems": 1,
-  "maxItems": 1,
-  "items": {
-    "type": "object",
-    "properties": {
-      "provider": {
-        "const": "marketcanopy"
-      },
-      "name": {
-        "const": "Market Canopy"
-      },
-      "check": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "pattern": "^/"
-          }
-        },
-        "required": [
-          "url"
-        ],
-        "additionalProperties": false
-      },
-      "editorPage": {
-        "type": "string",
-        "pattern": "^/"
-      },
-      "entryPage": {
-        "type": "string",
-        "pattern": "^/"
-      },
-      "order": {
-        "const": 0
-      },
-      "icons": {
-        "type": "object",
-        "properties": {
-          "light": {
-            "type": "object",
-            "properties": {
-              "normal": {
-                "type": "string",
-                "minLength": 1
-              },
-              "big": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "normal"
-            ],
-            "additionalProperties": false
-          },
-          "dark": {
-            "type": "object",
-            "properties": {
-              "normal": {
-                "type": "string",
-                "minLength": 1
-              },
-              "big": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "required": [
-              "normal"
-            ],
-            "additionalProperties": false
-          }
-        },
-        "required": [
-          "light",
-          "dark"
-        ],
-        "additionalProperties": false
-      }
+  "description": "One object, in the shape upstream's providers use at v10.0.0.176 (desktop-sdk providers.h, loginpage services/portals.js and routes/clouds). No entryPage: upstream opens an entryPage as an absolute address instead of the signed-in domain.",
+  "type": "object",
+  "properties": {
+    "$comment": {
+      "type": "string"
     },
-    "required": [
-      "provider",
-      "name",
-      "check",
-      "editorPage",
-      "entryPage",
-      "order",
-      "icons"
-    ],
-    "additionalProperties": false
-  }
+    "provider": {
+      "const": "marketcanopy"
+    },
+    "name": {
+      "const": "Market Canopy"
+    },
+    "check": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "pattern": "^/"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "additionalProperties": false
+    },
+    "editorPage": {
+      "const": "/office/documents/"
+    },
+    "startPage": {
+      "const": "/office/connect"
+    },
+    "order": {
+      "const": 0
+    },
+    "icons": {
+      "type": "object",
+      "properties": {
+        "themeLight": {
+          "type": "object",
+          "properties": {
+            "connectionsList": {
+              "type": "string",
+              "pattern": "^\\./assets/[a-z0-9_-]+\\.svg$"
+            },
+            "buttonLogo": {
+              "type": "string",
+              "pattern": "^\\./assets/[a-z0-9_-]+\\.svg$"
+            }
+          },
+          "required": [
+            "connectionsList",
+            "buttonLogo"
+          ],
+          "additionalProperties": false
+        },
+        "themeDark": {
+          "type": "object",
+          "properties": {
+            "connectionsList": {
+              "type": "string",
+              "pattern": "^\\./assets/[a-z0-9_-]+\\.svg$"
+            },
+            "buttonLogo": {
+              "type": "string",
+              "pattern": "^\\./assets/[a-z0-9_-]+\\.svg$"
+            }
+          },
+          "required": [
+            "connectionsList",
+            "buttonLogo"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "themeLight",
+        "themeDark"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "provider",
+    "name",
+    "check",
+    "editorPage",
+    "startPage",
+    "order",
+    "icons"
+  ],
+  "additionalProperties": false
 }

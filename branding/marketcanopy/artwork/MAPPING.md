@@ -7,6 +7,10 @@ not listed here carry no ONLYOFFICE logo and are shipped unmodified under CC BY-
 
 | Output (relative to `branding/marketcanopy/`) | Source (`artwork/source/`) | How |
 |---|---|---|
+| `add/desktop-apps/common/loginpage/providers/marketcanopy/assets/buttonlogo.svg` | `logo.png` | provider logo, dark text |
+| `add/desktop-apps/common/loginpage/providers/marketcanopy/assets/buttonlogo_dark.svg` | `logo.png` | provider logo, white text |
+| `add/desktop-apps/common/loginpage/providers/marketcanopy/assets/listicon.svg` | `logo.png` | provider list icon |
+| `add/desktop-apps/common/loginpage/providers/marketcanopy/assets/listicon_dark.svg` | `logo.png` | provider list icon |
 | `desktop-apps/package/common/linux/icons/128x128.png` | `icon.icns (1024 px)` | Linux hicolor icon |
 | `desktop-apps/package/common/linux/icons/16x16.png` | `icon.icns (1024 px)` | Linux hicolor icon |
 | `desktop-apps/package/common/linux/icons/24x24.png` | `icon.icns (1024 px)` | Linux hicolor icon |

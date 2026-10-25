@@ -103,15 +103,41 @@ def depot_tools(work_root: str) -> str:
     return os.path.join(os.path.abspath(work_root), "core", "Common", "3dParty", "v8_89", "depot_tools")
 
 
+# What build_tools runs on Linux that deps.py leaves to the machine: GitHub's
+# Ubuntu images have them, a minimal runner image (the Azure Container Apps
+# runner) does not. python.sh and cmake.sh download with wget.
+LINUX_BASE_PACKAGES = [
+    "wget",
+    "curl",
+    "ca-certificates",
+    "git",
+    "xz-utils",
+    "zip",
+    "unzip",
+    "file",
+    "rsync",
+    "patchelf",
+    "pkg-config",
+    "ninja-build",
+    "gperf",
+    "flex",
+    "bison",
+    "lsb-release",
+]
+
+
 def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
     tools = os.path.join(work_root, "build_tools", "tools", "linux")
     bundled = os.path.join(tools, "python3", "bin")
+    deps_needed = install_deps and not os.path.isfile(os.path.join(tools, "packages_complete"))
+    if deps_needed:
+        # deps.py runs apt-get install without an update; a fresh runner's lists are stale.
+        util.run(["sudo", "apt-get", "update"], dry_run=dry_run)
+        util.run(["sudo", "apt-get", "install", "-y", "--no-install-recommends", *LINUX_BASE_PACKAGES], dry_run=dry_run)
     if not os.path.isdir(bundled):
         util.run(["bash", "./python.sh"], cwd=tools, dry_run=dry_run)
     python = os.path.join(bundled, "python3")
-    if install_deps and not os.path.isfile(os.path.join(tools, "packages_complete")):
-        # deps.py runs apt-get install without an update; a fresh runner's lists are stale.
-        util.run(["sudo", "apt-get", "update"], dry_run=dry_run)
+    if deps_needed:
         util.run([python, "./deps.py"], cwd=tools, dry_run=dry_run)
         util.run(["sudo", "./cmake.sh"], cwd=tools, dry_run=dry_run)
         # make_package.py's Makefile: m4 templates, rpmbuild for the .rpm targets.

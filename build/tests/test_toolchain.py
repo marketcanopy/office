@@ -53,6 +53,31 @@ class DepotTools(unittest.TestCase):
         self.assertEqual(path, expected)
 
 
+class LinuxToolchain(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.mkdtemp()
+        os.makedirs(os.path.join(self.work, "build_tools", "tools", "linux"))
+        patcher = mock.patch.object(util, "run")
+        self.run = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def commands(self):
+        return [call.args[0] for call in self.run.call_args_list]
+
+    def test_base_packages_come_before_python_sh(self):
+        toolchain.linux(self.work, ["linux-x64"], True, False)
+        commands = self.commands()
+        base = ["sudo", "apt-get", "install", "-y", "--no-install-recommends", *toolchain.LINUX_BASE_PACKAGES]
+        install = commands.index(base)
+        self.assertLess(commands.index(["sudo", "apt-get", "update"]), install)
+        self.assertLess(install, commands.index(["bash", "./python.sh"]))
+        self.assertIn("wget", toolchain.LINUX_BASE_PACKAGES)
+
+    def test_without_install_deps_nothing_is_installed(self):
+        toolchain.linux(self.work, ["linux-x64"], False, False)
+        self.assertFalse([c for c in self.commands() if c[:1] == ["sudo"]])
+
+
 class MajorVersion(unittest.TestCase):
     def test_node_and_java_outputs(self):
         self.assertEqual(toolchain.major_version("v22.23.3\n"), 22)

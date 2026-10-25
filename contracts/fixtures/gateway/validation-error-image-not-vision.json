@@ -1,0 +1,49 @@
+{
+  "fixture": 1,
+  "name": "validation-error-image-not-vision",
+  "description": "An image sent to a model without vision",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/chat/completions",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-chat-request",
+      "body": {
+        "model": "mc-standard",
+        "messages": [
+          {
+            "role": "user",
+            "content": [
+              {
+                "type": "image_url",
+                "image_url": {
+                  "url": "data:image/png;base64,iVBORw0KGgo="
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "response": {
+      "status": 422,
+      "body": {
+        "error": {
+          "message": "That request isn't supported.",
+          "type": "invalid_request_error",
+          "code": "VALIDATION_ERROR",
+          "param": "messages",
+          "request_id": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "VALIDATION_ERROR"
+  }
+}

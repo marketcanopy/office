@@ -33,6 +33,7 @@
             "REQUEST_TOO_LARGE",
             "RATE_LIMITED",
             "QUOTA_EXCEEDED",
+            "VALIDATION_ERROR",
             "PROVIDER_UNAVAILABLE"
           ]
         },

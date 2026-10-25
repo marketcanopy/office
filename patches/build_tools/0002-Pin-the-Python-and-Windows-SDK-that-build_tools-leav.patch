@@ -1,0 +1,60 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Pin the Python and Windows SDK that build_tools leaves to the
+ host
+
+depot_tools' fetch.py now uses argparse.BooleanOptionalAction (Python 3.9),
+and v8_89.py pins the hermetic Python of depot_tools to 3.8.10 on Linux, so
+'fetch v8' stops before v8 is checked out. Linux takes the 3.11.8 package
+that build_tools already pins for Windows; macOS keeps its own fix (the
+system Python).
+
+CMake's Visual Studio generator picks the newest installed Windows SDK. On
+a host with 10.0.26100.0, x265's ARM64 build fails: that SDK's winnt.h
+calls _CountOneBits64, which the Visual Studio 2019 ARM64 compiler does not
+declare. v8 already pins 10.0.22621.0 for win_arm64; x265, libde265 and
+libheif now pass the same version as CMAKE_SYSTEM_VERSION.
+---
+ scripts/core_common/modules/heif.py  | 3 +++
+ scripts/core_common/modules/v8_89.py | 4 +++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/scripts/core_common/modules/heif.py b/scripts/core_common/modules/heif.py
+index 28b5037..6aeb5d7 100644
+--- a/scripts/core_common/modules/heif.py
++++ b/scripts/core_common/modules/heif.py
+@@ -1,3 +1,4 @@
++# Modified by Market Canopy on 2026-10-25 for Market Canopy Office: win_arm64 builds against Windows SDK 10.0.22621.0, as v8 does.
+ import sys
+ sys.path.append('../..')
+ import base
+@@ -60,6 +61,8 @@ def build_with_cmake(platform, cmake_args, build_type):
+       cmake_args_ext += ["-A", "Win32"]
+     elif platform == "win_arm64":
+       cmake_args_ext += ["-A", "ARM64"]
++      # Market Canopy Office (modified 2026-10-25): the newest SDK's winnt.h calls _CountOneBits64, which VS2019's ARM64 compiler lacks
++      cmake_args_ext += ["-DCMAKE_SYSTEM_VERSION=10.0.22621.0"]
+   # LINUX, MAC
+   elif "linux" in platform or "mac" in platform:
+     cmake_args_ext = [
+diff --git a/scripts/core_common/modules/v8_89.py b/scripts/core_common/modules/v8_89.py
+index 26b9505..254c306 100644
+--- a/scripts/core_common/modules/v8_89.py
++++ b/scripts/core_common/modules/v8_89.py
+@@ -1,4 +1,5 @@
+ #!/usr/bin/env python
++# Modified by Market Canopy on 2026-10-25 for Market Canopy Office: depot_tools bootstraps Python 3.11 on Linux, as on Windows.
+ 
+ import sys
+ sys.path.append('../..')
+@@ -36,7 +37,8 @@ def change_bootstrap():
+ 
+   content += "@Subdir python3\n"
+ 
+-  if ("windows" == base.host_platform()):
++  # Market Canopy Office (modified 2026-10-25): depot_tools' fetch.py needs Python 3.9 or later
++  if base.host_platform() in ["windows", "linux"]:
+     content += "infra/3pp/tools/cpython3/${platform} version:2@3.11.8.chromium.35\n\n"
+   else:
+     content += "infra/3pp/tools/cpython3/${platform} version:2@3.8.10.chromium.23\n\n"

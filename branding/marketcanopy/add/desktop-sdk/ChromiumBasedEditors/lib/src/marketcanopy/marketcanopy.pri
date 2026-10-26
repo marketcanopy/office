@@ -1,7 +1,7 @@
 # Market Canopy Office: the account module (ADR 0524). Included once by
 # ascdocumentscore.pro (patches/desktop-sdk/0002). office-build exports
-# OFFICE_VERSION and OFFICE_FLAVOR for the build; a build without them is a
-# staging development build.
+# OFFICE_VERSION for the build; a build without it is a development build.
+# Office builds production only (owner rule 2026-10-26).
 #
 # Copyright (C) 2026 Market Canopy LLC
 # SPDX-License-Identifier: AGPL-3.0-only
@@ -41,6 +41,4 @@ core_linux {
 
 MC_OFFICE_VERSION = $$(OFFICE_VERSION)
 isEmpty(MC_OFFICE_VERSION): MC_OFFICE_VERSION = 0.0.0-mc.0
-MC_OFFICE_FLAVOR = $$(OFFICE_FLAVOR)
-!equals(MC_OFFICE_FLAVOR, production): MC_OFFICE_FLAVOR = staging
-DEFINES += MARKETCANOPY_OFFICE_VERSION=\\\"$$MC_OFFICE_VERSION\\\" MARKETCANOPY_OFFICE_FLAVOR=\\\"$$MC_OFFICE_FLAVOR\\\"
+DEFINES += MARKETCANOPY_OFFICE_VERSION=\\\"$$MC_OFFICE_VERSION\\\"

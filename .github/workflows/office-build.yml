@@ -41,7 +41,7 @@ jobs:
         run: python -m unittest discover -s build/tests -t build -v
 
       - name: Dry run of every target
-        run: build/office-build --targets all --package --upstream-tag v10.0.0.176 --dry-run --work-dir "$RUNNER_TEMP/ow"
+        run: build/office-build --targets all --package --dry-run --work-dir "$RUNNER_TEMP/ow"
 
       - name: actionlint
         run: |

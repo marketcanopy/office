@@ -49,9 +49,6 @@
 #ifndef MARKETCANOPY_OFFICE_VERSION
 #define MARKETCANOPY_OFFICE_VERSION "0.0.0-mc.0"
 #endif
-#ifndef MARKETCANOPY_OFFICE_FLAVOR
-#define MARKETCANOPY_OFFICE_FLAVOR "staging"
-#endif
 
 #ifdef MESSAGE_IN_BROWSER
 #define MC_SEND_TO_RENDERER(frame, message) (frame)->GetBrowser()->SendProcessMessage(PID_RENDERER, message)
@@ -190,7 +187,7 @@ namespace NSMarketCanopy
 				if (!m_account)
 				{
 					CAccount::CConfig config;
-					config.flavor = std::string(MARKETCANOPY_OFFICE_FLAVOR) == "production" ? EFlavor::Production : EFlavor::Staging;
+					config.flavor = EFlavor::Production;
 					config.version = MARKETCANOPY_OFFICE_VERSION;
 					std::string service = ServiceName(config.flavor);
 					m_store = CreateOsCredentialStore(service);
@@ -492,7 +489,7 @@ namespace NSMarketCanopy
 
 			static EFlavor Flavor()
 			{
-				return std::string(MARKETCANOPY_OFFICE_FLAVOR) == "production" ? EFlavor::Production : EFlavor::Staging;
+				return EFlavor::Production;
 			}
 
 			static std::string TrimSlash(const std::string& value)

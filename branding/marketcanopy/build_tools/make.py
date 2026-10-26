@@ -214,9 +214,9 @@ def channel_feeds(settings, flavor):
 
 
 def resolve_feeds(settings):
-    flavor = os.environ.get("OFFICE_FLAVOR", "staging")
-    if flavor not in ("staging", "production"):
-        fail("OFFICE_FLAVOR must be staging or production, not %r" % flavor)
+    flavor = os.environ.get("OFFICE_FLAVOR", "production")
+    if flavor != "production":
+        fail("OFFICE_FLAVOR must be production, not %r: Office builds production only" % flavor)
     feeds = channel_feeds(settings, flavor)
     upstream_defaults = set(settings["updates"]["upstreamDefaults"])
     main = os.environ.get("DESKTOP_URL_UPDATES_MAIN_CHANNEL") or feeds["windowsAppcast"]

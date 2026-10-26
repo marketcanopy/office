@@ -7,8 +7,8 @@ dependencies beyond the standard library; the per-OS toolchain is upstream
 build_tools' own.
 
 ```
-build/office-build --targets all|windows|macos|linux|<list> --flavor production|staging
-                   [--package] [--sign] [--source-release] [--upstream-tag <tag>]
+build/office-build --targets all|windows|macos|linux|<list>
+                   [--flavor production] [--package] [--sign] [--source-release]
 ```
 
 Targets: `win-x64`, `win-arm64`, `mac-arm64`, `mac-x64`, `linux-x64`,
@@ -25,11 +25,10 @@ for every other requested target; it exits `3` when it can build none of them.
 
 | Option | Meaning |
 | --- | --- |
-| `--flavor` | `staging` (default) or `production`. Production refuses a component that `UPSTREAM` does not pin. |
+| `--flavor` | `production`, the default and the only flavor: Office builds production only. A component that `UPSTREAM` does not pin is refused. |
 | `--package` | Run every phase: compile, then installers, then seal. Without it the build stops after compile. |
 | `--sign` | A signed release. macOS signs, notarizes and staples here (keychain identity and App Store Connect key from the environment). Windows refuses to make installers from unsigned binaries; the release workflow signs between phases. Without `--sign` every artifact is named `-development` and cannot enter a release manifest. |
 | `--source-release` | Write `<out>/source/`: the source archive of this repository and every patched component, `SOURCE-MANIFEST.json`, an SPDX 2.3 SBOM and `SHA256SUMS`. |
-| `--upstream-tag` | Build another tag; the commit pins are dropped and resolve from the tag. For sync rehearsals. |
 | `--release-number` | `<n>` of the version `<upstream>-mc.<n>`. `0` (default) is a development build. |
 | `--phase` | Run one of `prepare`, `compile`, `stage`, `installers`, `seal`. |
 | `--work-dir` | The workspace (default `$OFFICE_WORK_DIR`, else `../office-work`). It must be outside any git work tree. |

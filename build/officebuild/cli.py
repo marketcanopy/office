@@ -1,8 +1,7 @@
 """office-build: build every Market Canopy Office target, or one (ADR 0530).
 
     office-build --targets all|windows|macos|linux|<win-x64,win-arm64,mac-arm64,mac-x64,linux-x64,linux-arm64>
-                 --flavor production|staging
-                 [--package] [--sign] [--source-release] [--upstream-tag <tag>]
+                 [--flavor production] [--package] [--sign] [--source-release]
 
 The host builds what it can and prints every requested target it skipped.
 """
@@ -49,7 +48,8 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default="all",
         help="all, windows, macos, linux, or a comma list of %s" % ", ".join(targetlib.TARGETS),
     )
-    parser.add_argument("--flavor", choices=["production", "staging"], default="staging")
+    # Office builds production only (owner rule 2026-10-26): there is no staging flavor.
+    parser.add_argument("--flavor", choices=["production"], default="production")
     parser.add_argument("--package", action="store_true", help="make installers after compiling")
     parser.add_argument(
         "--sign",
@@ -58,7 +58,6 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         "binaries (the workflow signs them between --phase stage and --phase installers)",
     )
     parser.add_argument("--source-release", action="store_true", help="write the source archive and SBOM")
-    parser.add_argument("--upstream-tag", help="build this upstream tag instead of UPSTREAM's (pins dropped)")
     parser.add_argument(
         "--release-number", type=int, default=0, help="<n> of <upstream version>-mc.<n>; 0 is a development build"
     )
@@ -118,7 +117,7 @@ def main(argv: List[str]) -> int:
     host = targetlib.detect_host()
     try:
         wanted = targetlib.parse_targets(args.targets)
-        upstream = upstreamlib.load(source_root, args.upstream_tag)
+        upstream = upstreamlib.load(source_root)
     except (targetlib.TargetError, upstreamlib.UpstreamError) as error:
         print("office-build: " + str(error), file=sys.stderr)
         return 2
@@ -175,7 +174,7 @@ def main(argv: List[str]) -> int:
             util.group("prepare: checkout at %s, branding, patches" % upstream.tag)
             repos = workspace.prepare(source_root, configure_base)
             unpinned = sorted(repo for repo in repos + ["build_tools"] if not upstream.commit(repo))
-            if args.flavor == "production" and unpinned:
+            if unpinned:
                 raise util.BuildError(
                     "a production build needs every component pinned in UPSTREAM; unpinned: " + ", ".join(unpinned)
                 )

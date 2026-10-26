@@ -1,5 +1,5 @@
 {
-  "$comment": "Build-time settings of the Market Canopy branding (ADR 0529 decision 2, first layer). Identity values are the ones P02's contract section 2 fixes; scripts/smoke-test checks that the overlay and the patches agree with this file. The update feeds are staging placeholders until P12 publishes the real ones.",
+  "$comment": "Build-time settings of the Market Canopy branding (ADR 0529 decision 2, first layer). Identity values are the ones P02's contract section 2 fixes; scripts/smoke-test checks that the overlay and the patches agree with this file.",
   "identity": {
     "productName": "Market Canopy Office",
     "companyName": "Market Canopy",
@@ -52,12 +52,6 @@
     "pluginStore": ""
   },
   "updates": {
-    "staging": {
-      "windowsAppcast": "https://staging.invalid/office/beta/windows/appcast.json",
-      "windowsAppcastDev": "https://staging.invalid/office/beta/windows/appcastdev.json",
-      "macosArmFeed": "https://staging.invalid/office/beta/macos/arm64/appcast.xml",
-      "macosX64Feed": "https://staging.invalid/office/beta/macos/x64/appcast.xml"
-    },
     "production": {
       "$comment": "The desktop app's Azure Storage site (P12). {channel} is OFFICE_CHANNEL, beta or stable, which the release workflow sets per run; the dev channel (--appcast-dev-channel) is always beta.",
       "windowsAppcast": "https://updates.marketcanopy.com/office/{channel}/windows/appcast.json",

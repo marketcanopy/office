@@ -43,7 +43,7 @@ s3_bucket = ""
 s3_region = ""
 s3_base_url = ""
 
-_flavor = os.environ.get("OFFICE_FLAVOR", "staging")
+_flavor = os.environ.get("OFFICE_FLAVOR", "production")
 _feeds = _settings["updates"][_flavor]
 # {channel} is OFFICE_CHANNEL, as in make.py's channel_feeds.
 if any("{channel}" in str(_value) for _value in _feeds.values()):

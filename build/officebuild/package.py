@@ -46,9 +46,7 @@ BRANDED_WINDOWS = {"CompanyName": "MarketCanopy", "ProductName": "Office"}
 UNBRANDED_WINDOWS = {"CompanyName": "ONLYOFFICE", "ProductName": "DesktopEditors"}
 # The translations Inno Setup 6.7.1 (the version toolchain.py installs) leaves
 # out of its installer.
-INNO_UNOFFICIAL_LANGUAGE = (
-    "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s.isl"
-)
+INNO_UNOFFICIAL_LANGUAGE = "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s"
 INNO_SETUP_DIR = r"C:\Program Files (x86)\Inno Setup 6"
 MAC_SCHEME = {"mac-arm64": "ONLYOFFICE-arm", "mac-x64": "ONLYOFFICE-x86_64"}
 
@@ -189,10 +187,12 @@ def _download(url: str, path: str) -> None:
 
 
 def inno_languages(common_iss: str) -> List[str]:
-    """The Languages\\<name>.isl files common.iss uses with Inno Setup 6."""
+    """The Languages\\<name>.isl and .islu files common.iss uses with Inno Setup 6."""
     with open(common_iss, encoding="utf-8-sig") as handle:
         text = handle.read()
-    names = re.findall(r"^\s*Name:.*MessagesFile:\s*compiler:Languages\\(\w+)\.isl\s*;", text, re.MULTILINE)
+    # The branch for Inno Setup 5 names .islu files Inno Setup 6 does not have.
+    text = re.sub(r"^#if Int\(DecodeVer\(PREPROCVER,1\)\) < 6$.*?^#else$", "", text, flags=re.MULTILINE | re.DOTALL)
+    names = re.findall(r"^\s*Name:.*MessagesFile:\s*compiler:Languages\\(\w+\.islu?)\s*;", text, re.MULTILINE)
     return sorted(set(names))
 
 
@@ -211,7 +211,7 @@ def inno_setup(ctx: Context) -> str:
     shutil.copytree(found[0], copy)
     common_iss = os.path.join(ctx.work_root, "desktop-apps", "package", "inno", "common.iss")
     for name in inno_languages(common_iss):
-        path = os.path.join(copy, "Languages", name + ".isl")
+        path = os.path.join(copy, "Languages", name)
         if not os.path.isfile(path):
             util.log("Inno Setup translation %s <- %s" % (name, INNO_UNOFFICIAL_LANGUAGE % name))
             _download(INNO_UNOFFICIAL_LANGUAGE % name, path)

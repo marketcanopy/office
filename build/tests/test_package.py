@@ -57,7 +57,7 @@ class LinuxInstallers(unittest.TestCase):
         self.assertIn("no .rpm", str(raised.exception))
 
 
-UNOFFICIAL = "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s.isl"
+UNOFFICIAL = "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s"
 COMMON_ISS = """[Languages]
 Name: en; MessagesFile: compiler:Default.isl;
 Name: bg; MessagesFile: compiler:Languages\\Bulgarian.isl;
@@ -68,6 +68,7 @@ Name: vi; MessagesFile: compiler:Languages\\Vietnamese.islu;
 #else
 Name: vi; MessagesFile: compiler:Languages\\Vietnamese.isl;
 #endif
+Name: si; MessagesFile: compiler:Languages\\Sinhala.islu;
 """
 
 
@@ -124,12 +125,12 @@ class WindowsInstallers(unittest.TestCase):
         self.assertNotEqual(innopath, self.inno)
         self.assertEqual(
             sorted(os.listdir(os.path.join(innopath, "Languages"))),
-            ["Bulgarian.isl", "Greek.isl", "Vietnamese.isl"],
+            ["Bulgarian.isl", "Greek.isl", "Sinhala.islu", "Vietnamese.isl"],
         )
         self.assertTrue(os.path.isfile(os.path.join(innopath, "ISCC.exe")))
         self.assertEqual(
             self.fetched,
-            [UNOFFICIAL % "Greek", UNOFFICIAL % "Vietnamese"],
+            [UNOFFICIAL % "Greek.isl", UNOFFICIAL % "Sinhala.islu", UNOFFICIAL % "Vietnamese.isl"],
         )
         self.assertEqual(os.listdir(os.path.join(self.inno, "Languages")), ["Bulgarian.isl"])
 

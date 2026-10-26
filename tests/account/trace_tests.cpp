@@ -42,7 +42,6 @@ namespace
 		{
 			env.Seed(installation, grant);
 			CAccount::CConfig config;
-			config.flavor = EFlavor::Production;
 			config.version = "10.0.0-mc.3";
 			account.reset(new CAccount(&env, &env.store, &env.lock, config));
 		}

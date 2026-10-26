@@ -12,8 +12,9 @@
 # The artwork this script reads and writes is Market Canopy's (see NOTICE); the
 # AGPL covers the script, not the logos.
 #
-# Reads branding/marketcanopy/artwork/source (copied from platform-dashboard,
-# provenance in SOURCES.json) and writes:
+# Reads branding/marketcanopy/artwork/source (Office's icon and logo from the
+# owner, the rest copied from platform-dashboard; provenance in SOURCES.json)
+# and writes:
 #   branding/marketcanopy/replace/<component>/<upstream path>   files that
 #       replace an upstream file of the same path (the hook copies them);
 #   branding/marketcanopy/desktop-apps/...                     files the
@@ -159,20 +160,39 @@ class Artwork:
     def __init__(self, out_root):
         self.out_root = out_root
         self.mapping = []  # (output, source, how)
-        icns = Image.open(os.path.join(SOURCE, "icon.icns"))
-        icns.size = (1024, 1024)
-        icns.load()
-        self.app = icns.convert("RGBA")
-        logo = Image.open(os.path.join(SOURCE, "logo.png")).convert("RGBA")
-        # logo.png is the mark above the "Market Canopy" wordmark. The two are
-        # cut apart along the transparent band between them.
-        alpha = logo.getchannel("A")
-        rows = [alpha.crop((0, y, logo.width, y + 1)).getbbox() is not None for y in range(logo.height)]
-        gap = next(y for y in range(1, logo.height) if rows[y - 1] and not rows[y])
-        self.mark = logo.crop((0, 0, logo.width, gap)).crop(alpha.crop((0, 0, logo.width, gap)).getbbox())
-        text = logo.crop((0, gap, logo.width, logo.height))
-        self.wordmark = text.crop(text.getchannel("A").getbbox())
-        self.wordmark_white = recolor_dark(self.wordmark, (255, 255, 255))
+        # office-icon.png is Office's own symbol (a document with a ribbon),
+        # centred on a square canvas for the application icons.
+        icon = Image.open(os.path.join(SOURCE, "office-icon.png")).convert("RGBA")
+        icon = icon.crop(icon.getchannel("A").getbbox())
+        side = max(icon.size)
+        self.app = Image.new("RGBA", (side, side), (0, 0, 0, 0))
+        self.app.alpha_composite(icon, ((side - icon.width) // 2, (side - icon.height) // 2))
+        # office-logo.png is the same symbol beside the "Market Canopy"
+        # wordmark. It is the lockup as drawn; the mark and the wordmark are
+        # cut apart along the transparent column between them.
+        logo = Image.open(os.path.join(SOURCE, "office-logo.png")).convert("RGBA")
+        self.logo = logo.crop(logo.getchannel("A").getbbox())
+        alpha = self.logo.getchannel("A")
+        columns = [alpha.crop((x, 0, x + 1, self.logo.height)).getbbox() is not None for x in range(self.logo.width)]
+        gap = next(x for x in range(1, self.logo.width) if columns[x - 1] and not columns[x])
+        self.mark = self.logo.crop((0, 0, gap, self.logo.height))
+        self.mark = self.mark.crop(self.mark.getchannel("A").getbbox())
+        self.logo_white = self.logo.copy()
+        self.logo_white.paste(
+            recolor_dark(self.logo.crop((gap, 0, self.logo.width, self.logo.height)), (255, 255, 255)), (gap, 0)
+        )
+        # logo.png is the Market Canopy service's mark above its wordmark; only
+        # the Market Canopy cloud provider (P07) shows it.
+        service = Image.open(os.path.join(SOURCE, "logo.png")).convert("RGBA")
+        alpha = service.getchannel("A")
+        rows = [alpha.crop((0, y, service.width, y + 1)).getbbox() is not None for y in range(service.height)]
+        gap = next(y for y in range(1, service.height) if rows[y - 1] and not rows[y])
+        self.service_mark = service.crop((0, 0, service.width, gap)).crop(
+            alpha.crop((0, 0, service.width, gap)).getbbox()
+        )
+        text = service.crop((0, gap, service.width, service.height))
+        self.service_wordmark = text.crop(text.getchannel("A").getbbox())
+        self.service_wordmark_white = recolor_dark(self.service_wordmark, (255, 255, 255))
         self.documents = {
             name: Image.open(os.path.join(SOURCE, "documents", name + ".png")).convert("RGBA")
             for name in DOCUMENT_FAMILIES
@@ -222,10 +242,14 @@ class Artwork:
     # -- compositions --------------------------------------------------------
 
     def lockup(self, white_text):
-        """The mark beside the wordmark, as the title bar and About logos need."""
+        """Office's mark beside the wordmark, as the title bar and About logos need."""
+        return self.logo_white if white_text else self.logo
+
+    def service_lockup(self, white_text):
+        """The Market Canopy service's mark beside its wordmark (the cloud provider)."""
         height = 400
-        mark = scale_to_height(self.mark, height)
-        word = scale_to_height(self.wordmark_white if white_text else self.wordmark, int(height * 0.62))
+        mark = scale_to_height(self.service_mark, height)
+        word = scale_to_height(self.service_wordmark_white if white_text else self.service_wordmark, int(height * 0.62))
         gap = int(height * 0.18)
         canvas = Image.new("RGBA", (mark.width + gap + word.width, height), (0, 0, 0, 0))
         canvas.alpha_composite(mark, (0, 0))
@@ -256,8 +280,8 @@ class Artwork:
     # -- outputs -------------------------------------------------------------
 
     def generate(self):
-        app_src = "icon.icns (1024 px)"
-        logo_src = "logo.png"
+        app_src = "office-icon.png"
+        logo_src = "office-logo.png"
         da = "replace/desktop-apps/"
         wa = "replace/web-apps/apps/common/"
 
@@ -402,9 +426,25 @@ class Artwork:
         # The Market Canopy cloud provider (P07), a new folder beside upstream's providers
         provider = "add/desktop-apps/common/loginpage/providers/marketcanopy/assets/"
         for name in ("listicon", "listicon_dark"):
-            self.svg(provider + name + ".svg", 36, 36, fit(self.mark, 36 * 4, 36 * 4), logo_src, "provider list icon")
-        self.svg(provider + "buttonlogo.svg", 196, 36, self.lockup(False), logo_src, "provider logo, dark text")
-        self.svg(provider + "buttonlogo_dark.svg", 196, 36, self.lockup(True), logo_src, "provider logo, white text")
+            self.svg(
+                provider + name + ".svg",
+                36,
+                36,
+                fit(self.service_mark, 36 * 4, 36 * 4),
+                "logo.png",
+                "provider list icon",
+            )
+        self.svg(
+            provider + "buttonlogo.svg", 196, 36, self.service_lockup(False), "logo.png", "provider logo, dark text"
+        )
+        self.svg(
+            provider + "buttonlogo_dark.svg",
+            196,
+            36,
+            self.service_lockup(True),
+            "logo.png",
+            "provider logo, white text",
+        )
 
         # Editors (web-apps)
         self.svg(
@@ -484,7 +524,8 @@ def recolor_dark(image, color):
     for y in range(out.height):
         for x in range(out.width):
             r, g, b, a = pixels[x, y]
-            if a and (r * 299 + g * 587 + b * 114) // 1000 < 90:
+            # Dark and not blue: the bright blue of "Canopy" is dark by luma alone.
+            if a and b < 128 and (r * 299 + g * 587 + b * 114) // 1000 < 90:
                 pixels[x, y] = color + (a,)
     return out
 
@@ -520,8 +561,8 @@ def write_mapping(out_root, mapping):
     lines = [
         "# Artwork mapping",
         "",
-        "Generated by `scripts/make-artwork`; do not edit. Every output is made from Market Canopy artwork copied",
-        "from platform-dashboard (`artwork/source/SOURCES.json` records the commit and path of each source).",
+        "Generated by `scripts/make-artwork`; do not edit. Every output is made from Market Canopy artwork",
+        "(`artwork/source/SOURCES.json` records where each source came from).",
         "No ONLYOFFICE logo is shipped: every upstream image that carries one is in this table. Upstream icons",
         "not listed here carry no ONLYOFFICE logo and are shipped unmodified under CC BY-SA 4.0.",
         "",

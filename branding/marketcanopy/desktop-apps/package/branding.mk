@@ -35,3 +35,10 @@ endif
 DESKTOPEDITORS_PREFIX := marketcanopy/office
 DESKTOPEDITORS_EXEC := marketcanopy-office
 HELP_GLOB := opt/$(DESKTOPEDITORS_PREFIX)/editors/web-apps/apps/*/main/resources/help
+
+# rpm/common.spec lists an image viewer and a video player in /usr/bin for
+# every brand but ONLYOFFICE, and the Makefile never defines their names. This
+# product ships neither, so both name the editors' launcher, which rpmbuild
+# accepts as a file listed twice.
+RPM_PARAMS += --define '_imageviewer_exec $(DESKTOPEDITORS_EXEC)'
+RPM_PARAMS += --define '_videoplayer_exec $(DESKTOPEDITORS_EXEC)'

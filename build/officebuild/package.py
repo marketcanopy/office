@@ -232,11 +232,11 @@ def windows_installers(ctx: Context) -> List[str]:
     inno_ctx = replace(ctx, env=dict(ctx.env, INNOPATH=inno_setup(ctx)))
     _ps1(inno_ctx, "make_inno.ps1", args + branding_args)
     package_dir = os.path.join(ctx.work_root, "desktop-apps", "package")
-    # The runner's work folder keeps the other arch's installers from an
-    # earlier run, so only this arch's names are collected.
-    arch = targetlib.arch_of(ctx.target)
-    names = collect(ctx, glob.glob(os.path.join(package_dir, "zip", "*-%s.zip" % arch)), "", ".zip")
-    names += collect(ctx, glob.glob(os.path.join(package_dir, "inno", "*-%s.exe" % arch)), "setup", ".exe")
+    # The runner's work folder keeps installers from earlier runs, of the
+    # other arch and of other build numbers, so only this build's are collected.
+    stem = "*-%s.%s-%s" % (ctx.product_version, ctx.build_number, targetlib.arch_of(ctx.target))
+    names = collect(ctx, glob.glob(os.path.join(package_dir, "zip", stem + ".zip")), "", ".zip")
+    names += collect(ctx, glob.glob(os.path.join(package_dir, "inno", stem + ".exe")), "setup", ".exe")
     return names
 
 

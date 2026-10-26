@@ -1,24 +1,21 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Market Canopy <office@marketcanopy.invalid>
-Date: Sun, 25 Oct 2026 00:00:00 +0000
-Subject: [PATCH] Market Canopy as the AI agent's only provider; no run_script
- or stdio MCP
+Date: Mon, 26 Oct 2026 00:00:00 +0000
+Subject: [PATCH] Market Canopy as the AI agent's managed provider; no
+ run_script or stdio MCP
 
-ADR 0525: one managed provider, "marketcanopy", serves the AI agent. Its
-code is in the overlay (src/providers/marketcanopy); this change wires it
-in. The registry offers only that provider and resolves any stored
-provider type to it, so a thread saved by an upstream build never uses
-its stored key. main.tsx imports the bootstrap, which rewrites the stored
-settings before the stores load, and the watcher, which cancels requests
-in flight and reloads the models when the account or organization
-changes. The settings page shows the Market Canopy connection instead of
-the provider form; the Wallet description shows only when the Wallet is
-shown. Saved MCP settings keep only URL servers.
-
-The settings page has no Web search tab: upstream's web search needs
-each person's own Exa key, outside Market Canopy's metering, and
-Canopy already searches the web. The bootstrap removes a key an
-upstream build saved.
+ADR 0525, amended 2026-10-26: the managed provider "marketcanopy" is the
+AI agent's default, and people may also add upstream's providers with
+their own keys. Its code is in the overlay (src/providers/marketcanopy);
+this change wires it in. The registry offers it beside upstream's
+providers. main.tsx imports the bootstrap, which puts it first in the
+stored settings before the stores load, and the watcher, which cancels
+requests in flight and reloads the models when the account or
+organization changes. The settings page shows the Market Canopy
+connection above the person's own providers; the provider list and the
+Add provider dialog leave it out, since it needs no URL or key. Saved
+MCP settings keep only URL servers. Web search is upstream's, with each
+person's own Exa key.
 
 Native code no longer runs processes for the agent: run_script is not
 registered, and the renderer's _createProcess, which started stdio MCP
@@ -27,20 +24,22 @@ run_script.
 
 A plugin in the user folder with the GUID of a bundled AI plugin (the
 agent or the in-editor AI plugin) and a higher version no longer
-replaces the bundled one, so a plugin from the store cannot bring back
-the third-party providers.
+replaces the bundled one, so a plugin from the store cannot drop the
+Market Canopy provider.
 ---
- .../cefwrapper/client_renderer_wrapper.cpp    |  5 ++
- ChromiumBasedEditors/lib/src/plugins.h        |  5 +-
- .../lib/tools/functions/file_opener/info.json |  2 +-
- .../lib/tools/functions/file_opener/main.cpp  |  3 +-
- .../lib/tools/functions/internal/funcs.h      |  3 +-
- .../plugins/ai-agent/src/lib/types.ts         |  4 +-
- .../plugins/ai-agent/src/main.tsx             |  3 +
- .../ai-agent/src/pages/settings/index.tsx     | 14 +----
- .../ai-agent/src/providers/registry.ts        | 57 +++++--------------
- .../ai-agent/src/store/useServersStore.ts     |  6 +-
- 10 files changed, 41 insertions(+), 61 deletions(-)
+ .../lib/src/cefwrapper/client_renderer_wrapper.cpp       | 5 +++++
+ ChromiumBasedEditors/lib/src/plugins.h                   | 5 ++++-
+ .../lib/tools/functions/file_opener/info.json            | 2 +-
+ .../lib/tools/functions/file_opener/main.cpp             | 3 ++-
+ .../lib/tools/functions/internal/funcs.h                 | 3 +--
+ ChromiumBasedEditors/plugins/ai-agent/src/lib/types.ts   | 4 +++-
+ ChromiumBasedEditors/plugins/ai-agent/src/main.tsx       | 3 +++
+ .../plugins/ai-agent/src/pages/settings/index.tsx        | 7 ++++++-
+ .../sub-components/providers/AddProviderDialog.tsx       | 6 +++++-
+ .../pages/settings/sub-components/providers/index.tsx    | 9 ++++++---
+ .../plugins/ai-agent/src/providers/registry.ts           | 9 ++++++++-
+ .../plugins/ai-agent/src/store/useServersStore.ts        | 6 +++++-
+ 12 files changed, 49 insertions(+), 13 deletions(-)
 
 diff --git a/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp b/ChromiumBasedEditors/lib/src/cefwrapper/client_renderer_wrapper.cpp
 index 7698e91..a6935d3 100644
@@ -175,123 +174,112 @@ index 23a7b26..f43b790 100644
  import { createRoot } from "react-dom/client";
  import App from "./App.tsx";
 diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
-index 8519404..1ed4023 100644
+index 8519404..9ee172d 100644
 --- a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
 +++ b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/index.tsx
 @@ -1,3 +1,4 @@
-+// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the Connection tab shows the managed Market Canopy provider only, and there is no web search tab (ADR 0525).
++// Modified by Market Canopy on 2026-10-26 for Market Canopy Office: the Connection tab shows the managed Market Canopy provider above the person's own providers (ADR 0525).
  import React from "react";
  import { useTranslation } from "react-i18next";
  import { RadioButton } from "@/components/radio-button";
-@@ -5,11 +6,10 @@ import { Tabs } from "@/components/tabs";
+@@ -5,6 +6,7 @@ import { Tabs } from "@/components/tabs";
  import config from "@/config.json";
  import { useDirection } from "@/hooks/useDirection";
  import { cn } from "@/lib/utils";
-+import { MarketCanopyConnection as Providers } from "@/providers/marketcanopy/connection";
++import { MarketCanopyConnection } from "@/providers/marketcanopy/connection";
  import useProviders from "@/store/useProviders";
--import { Providers } from "./sub-components/providers";
+ import { Providers } from "./sub-components/providers";
  import { Servers } from "./sub-components/servers";
- import { Wallet } from "./sub-components/wallet";
--import { WebSearch } from "./sub-components/web-search";
- 
- const showWallet = config.showWallet;
- 
-@@ -69,9 +69,7 @@ const Settings = () => {
-                     isRTL ? "text-end" : ""
-                   )}
-                 >
--                  {isWallet
--                    ? t("ONLYOFFICEWalletDescription")
--                    : t("AIProvidersDescription")}
-+                  {isWallet ? t("ONLYOFFICEWalletDescription") : null}
-                 </p>
-               </div>
+@@ -77,7 +79,10 @@ const Settings = () => {
                {isWallet ? (
-@@ -105,12 +103,6 @@ const Settings = () => {
-               content: <Servers />,
-               disabled: !providers.length,
-             },
--            {
--              value: "web-search",
--              label: t("WebSearch"),
--              content: <WebSearch />,
--              disabled: !providers.length,
--            },
-           ]}
-         />
+                 <Wallet isActive={selectedSection === item} />
+               ) : (
+-                <Providers isActive={selectedSection === item} />
++                <>
++                  <MarketCanopyConnection />
++                  <Providers isActive={selectedSection === item} />
++                </>
+               )}
+             </div>
+           </div>
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/AddProviderDialog.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/AddProviderDialog.tsx
+index cb18344..5aefda3 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/AddProviderDialog.tsx
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/AddProviderDialog.tsx
+@@ -1,3 +1,4 @@
++// Modified by Market Canopy on 2026-10-26 for Market Canopy Office: the managed Market Canopy provider is not offered here.
+ import React from "react";
+ import { useTranslation } from "react-i18next";
+ import { Button } from "@/components/button";
+@@ -21,7 +22,10 @@ type AddProviderDialogProps = {
+   onClose: VoidFunction;
+ };
+ 
+-const providersInfo = provider.getProvidersInfo();
++// Market Canopy is set up by the bootstrap, never added by the person.
++const providersInfo = provider
++  .getProvidersInfo()
++  .filter((info) => info.type !== "marketcanopy");
+ 
+ const AddProviderDialog = ({ onClose }: AddProviderDialogProps) => {
+   const { addProvider } = useProviders();
+diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/index.tsx b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/index.tsx
+index 04e41f5..8768b3d 100644
+--- a/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/index.tsx
++++ b/ChromiumBasedEditors/plugins/ai-agent/src/pages/settings/sub-components/providers/index.tsx
+@@ -1,3 +1,4 @@
++// Modified by Market Canopy on 2026-10-26 for Market Canopy Office: the managed Market Canopy provider is shown above the list, not as an editable item.
+ import React from "react";
+ import { useTranslation } from "react-i18next";
+ import { Button } from "@/components/button";
+@@ -38,9 +39,11 @@ const Providers = ({ isActive }: ProvidersProps) => {
+           isRTL ? "justify-end" : ""
+         )}
+       >
+-        {providers.map((provider) => (
+-          <ProviderItem key={provider.name} provider={provider} />
+-        ))}
++        {providers
++          .filter((provider) => provider.type !== "marketcanopy")
++          .map((provider) => (
++            <ProviderItem key={provider.name} provider={provider} />
++          ))}
        </div>
+       {addProviderVisible ? (
+         <AddProviderDialog onClose={() => setAddProviderVisible(false)} />
 diff --git a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts b/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
-index 7860e94..f8c8453 100644
+index 7860e94..d53e099 100644
 --- a/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
 +++ b/ChromiumBasedEditors/plugins/ai-agent/src/providers/registry.ts
-@@ -1,56 +1,27 @@
-+// Modified by Market Canopy on 2026-10-25 for Market Canopy Office: the managed marketcanopy provider is the only one (ADR 0525).
+@@ -1,8 +1,13 @@
++// Modified by Market Canopy on 2026-10-26 for Market Canopy Office: the managed marketcanopy provider beside upstream's (ADR 0525).
  import type { ProviderType } from "@/lib/types";
--import { type AnthropicProvider, anthropicProvider } from "./anthropic";
--import { type DeepSeekProvider, deepseekProvider } from "./deepseek";
--import { type GenAIProvider, genaiProvider } from "./genai";
--import { type LMStudioProvider, lmStudioProvider } from "./lm-studio";
--import { type MistralProvider, mistralProvider } from "./mistral";
--import { type OllamaProvider, ollamaProvider } from "./ollama";
--import { type OpenAIProvider, openaiProvider } from "./openai";
- import {
--  type OpenAICompatibleProvider,
--  openaicompatibleProvider,
--} from "./openaicompatible";
--import { type OpenRouterProvider, openrouterProvider } from "./openrouter";
--import { type TogetherProvider, togetherProvider } from "./together";
--import { type XAIProvider, xaiProvider } from "./xai";
+ import { type AnthropicProvider, anthropicProvider } from "./anthropic";
+ import { type DeepSeekProvider, deepseekProvider } from "./deepseek";
+ import { type GenAIProvider, genaiProvider } from "./genai";
+ import { type LMStudioProvider, lmStudioProvider } from "./lm-studio";
++import {
 +  type MarketCanopyProvider,
 +  marketcanopyProvider,
 +} from "./marketcanopy";
- 
--export type BaseProvider =
--  | AnthropicProvider
--  | OllamaProvider
--  | OpenAIProvider
--  | OpenAICompatibleProvider
--  | TogetherProvider
--  | OpenRouterProvider
--  | GenAIProvider
--  | DeepSeekProvider
--  | XAIProvider
--  | LMStudioProvider
+ import { type MistralProvider, mistralProvider } from "./mistral";
+ import { type OllamaProvider, ollamaProvider } from "./ollama";
+ import { type OpenAIProvider, openaiProvider } from "./openai";
+@@ -25,7 +30,8 @@ export type BaseProvider =
+   | DeepSeekProvider
+   | XAIProvider
+   | LMStudioProvider
 -  | MistralProvider;
-+export type BaseProvider = MarketCanopyProvider;
++  | MistralProvider
++  | MarketCanopyProvider;
  
  /**
   * Registry mapping provider types to their singleton instances.
-- * This eliminates switch statements throughout the codebase.
-+ * Market Canopy Office offers one provider; a stored provider of any other
-+ * type resolves to it (getProvider).
-  */
--export const providerRegistry: Record<ProviderType, BaseProvider> = {
--  anthropic: anthropicProvider,
--  ollama: ollamaProvider,
--  openai: openaiProvider,
--  openaicompatible: openaicompatibleProvider,
--  together: togetherProvider,
--  openrouter: openrouterProvider,
--  genai: genaiProvider,
--  deepseek: deepseekProvider,
--  xai: xaiProvider,
--  "lm-studio": lmStudioProvider,
--  mistral: mistralProvider,
--};
-+export const providerRegistry = {
+@@ -43,6 +49,7 @@ export const providerRegistry: Record<ProviderType, BaseProvider> = {
+   xai: xaiProvider,
+   "lm-studio": lmStudioProvider,
+   mistral: mistralProvider,
 +  marketcanopy: marketcanopyProvider,
-+} as Record<ProviderType, BaseProvider>;
- 
- /**
-- * Type-safe provider lookup.
-- * Returns undefined for invalid types instead of throwing.
-+ * Provider lookup: every stored type resolves to the managed provider, so a
-+ * thread saved by an upstream build uses Market Canopy and not its own key.
-  */
--export const getProvider = (type: ProviderType): BaseProvider | undefined => {
--  return providerRegistry[type];
-+export const getProvider = (_type: ProviderType): BaseProvider | undefined => {
-+  return marketcanopyProvider;
  };
  
  /**

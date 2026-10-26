@@ -1,4 +1,5 @@
-// Market Canopy Office: tests of the in-editor AI plugin's managed provider.
+// Market Canopy Office: tests of the in-editor AI plugin's managed provider
+// beside upstream's own providers.
 // Copyright (C) 2026 Market Canopy LLC
 //
 // This program is free software: you can redistribute it and/or modify it under
@@ -136,7 +137,7 @@ function registerActions(AI, storage) {
 const upstreamProfile = () =>
   profile({
     [STORAGE_KEY]: JSON.stringify({
-      version: 3,
+      version: 4,
       providers: {
         OpenAI: { name: "OpenAI", url: "https://api.openai.com/v1", key: "sk-upstream-SYNTHETIC", models: [{ id: "gpt-4o", name: "gpt-4o", endpoints: [1], options: {} }] },
         Mine: { name: "Mine", url: "https://llm.example.com", key: "sk-custom-SYNTHETIC", models: [] },
@@ -150,10 +151,12 @@ const upstreamProfile = () =>
     [ACTIONS_KEY]: JSON.stringify({ Chat: { model: "gpt-4o" }, Summarization: { model: "mine" }, Vision: { model: "gpt-4o" } }),
   });
 
-test("a clean profile offers Market Canopy only, with the session's aliases", async () => {
+test("a clean profile lists Market Canopy first, with the session's aliases", async () => {
   const storage = profile();
   const { AI } = await boot(storage);
-  assert.deepEqual(plain(Object.keys(AI.Providers)), ["Market Canopy"]);
+  const providers = plain(AI.serializeProviders().map((p) => p.name));
+  assert.equal(providers[0], "Market Canopy");
+  for (const name of ["OpenAI", "Anthropic", "Ollama"]) assert.ok(providers.includes(name), name);
   assert.deepEqual(
     plain(AI.Models.map((m) => [m.id, m.provider])),
     [["mc-standard", "Market Canopy"], ["mc-reasoning", "Market Canopy"]],
@@ -176,14 +179,20 @@ test("a vision alias serves the OCR and Vision actions", async () => {
   assert.equal(AI.Actions.Vision.model, "mc-standard");
 });
 
-test("an upgraded profile loses every other provider, custom provider and key", async () => {
+test("an upgraded profile keeps the person's providers and loses custom providers", async () => {
   const storage = upstreamProfile();
   const { AI } = await boot(storage);
-  assert.deepEqual(plain(Object.keys(AI.Providers)), ["Market Canopy"]);
-  assert.equal(AI.Actions.Chat.model, "mc-standard");
-  assert.equal(AI.Actions.Summarization.model, "mc-standard");
+  assert.equal(AI.Providers.OpenAI.key, "sk-upstream-SYNTHETIC");
+  assert.equal(AI.Providers.Mine, undefined);
+  assert.deepEqual(
+    plain(AI.Models.map((m) => [m.id, m.provider])),
+    [["mc-standard", "Market Canopy"], ["mc-reasoning", "Market Canopy"], ["gpt-4o", "OpenAI"]],
+  );
+  assert.equal(AI.Actions.Chat.model, "gpt-4o", "the person's own model stays chosen");
+  assert.equal(AI.Actions.Summarization.model, "mc-standard", "a custom provider's model is replaced");
+  assert.equal(AI.Actions.Vision.model, "", "gpt-4o was saved without vision");
   const dump = storage.dump();
-  assert.doesNotMatch(dump, /sk-upstream|sk-custom|api\.openai\.com|llm\.example\.com/);
+  assert.doesNotMatch(dump, /sk-custom|llm\.example\.com/);
   assert.deepEqual(plain(storage.get(STORAGE_KEY).customProviders), {});
 });
 
@@ -234,7 +243,9 @@ test("nothing is sent while signed out, and the person is told to sign in", asyn
   const request = AI.Request.create("Chat");
   request.setErrorHandler((error) => errors.push(error));
   assert.equal(await request.chatRequest("Hello", false), undefined);
-  assert.deepEqual(plain(errors), [{ error: 1, message: "Sign in to Market Canopy to use AI." }]);
+  assert.deepEqual(plain(errors), [
+    { error: 1, message: "Sign in to Market Canopy on the Home screen to use Market Canopy AI." },
+  ]);
   assert.equal(state.requests.length, 0);
   assert.equal(context.MarketCanopyAI.readSession().state, "signed_out");
   assert.deepEqual(plain(AI.Models.map((m) => m.id)), ["mc-standard"]);
@@ -245,14 +256,29 @@ test("outside the bundled page the plugin reads as signed out", async () => {
   assert.equal(context.MarketCanopyAI.readSession().state, "signed_out");
 });
 
-test("a custom or external provider, or another provider's model, is refused", async () => {
+test("a custom or external provider is refused", async () => {
   const storage = profile();
   const { AI } = await boot(storage);
   assert.equal(AI.addCustomProvider('class Provider extends AI.Provider { constructor() { super("X", "https://x.example", "sk-x", "v1"); } }'), false);
   assert.equal(AI.addExternalProvider("", { name: "Y", url: "https://y.example", key: "sk-y" }), false);
-  AI.Storage.addModel({ name: "gpt", id: "gpt", provider: { name: "OpenAI", url: "https://api.openai.com/v1", key: "sk-z" }, capabilities: 1 });
-  assert.deepEqual(plain(Object.keys(AI.Providers)), ["Market Canopy"]);
-  assert.doesNotMatch(storage.dump(), /sk-x|sk-y|sk-z/);
+  assert.equal(AI.Providers.X, undefined);
+  assert.equal(AI.Providers.Y, undefined);
+  assert.doesNotMatch(storage.dump(), /sk-x|sk-y/);
+});
+
+test("the person can add a model of their own provider, and it survives a session change", async () => {
+  const storage = profile();
+  const { AI, state } = await boot(storage);
+  AI.Storage.addModel({ name: "gpt", id: "gpt", provider: { name: "OpenAI", url: "https://api.openai.com/v1", key: "sk-own-SYNTHETIC" }, capabilities: 1 });
+  AI.Actions.Chat.model = "gpt";
+  AI.ActionsSave();
+  state.session = ready({ organizationId: "66f0c0ffee0000000000b002" });
+  state.intervals[0].fn();
+  assert.equal(AI.Providers.OpenAI.key, "sk-own-SYNTHETIC");
+  assert.ok(AI.Models.some((m) => m.id === "gpt" && m.provider === "OpenAI"));
+  assert.equal(AI.Actions.Chat.model, "gpt");
+  const again = await boot(storage);
+  assert.equal(again.AI.Actions.Chat.model, "gpt");
 });
 
 test("a key or URL typed for Market Canopy is ignored", async () => {

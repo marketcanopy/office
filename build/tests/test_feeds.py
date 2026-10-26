@@ -47,9 +47,11 @@ class ProductionFeeds(unittest.TestCase):
             with mock.patch.dict(os.environ, {"OFFICE_CHANNEL": channel}), self.assertRaises(SystemExit):
                 make.channel_feeds(SETTINGS, "production")
 
-    def test_staging_feeds_need_no_channel(self):
-        with mock.patch.dict(os.environ, {"OFFICE_CHANNEL": ""}):
-            self.assertEqual(make.channel_feeds(SETTINGS, "staging"), SETTINGS["updates"]["staging"])
+    def test_a_staging_build_is_refused(self):
+        with mock.patch.dict(os.environ, {"OFFICE_FLAVOR": "staging", "OFFICE_CHANNEL": "beta"}), self.assertRaises(
+            SystemExit
+        ):
+            make.resolve_feeds(SETTINGS)
 
     def test_resolve_feeds_exports_the_channel_feeds(self):
         env = {"OFFICE_FLAVOR": "production", "OFFICE_CHANNEL": "beta"}

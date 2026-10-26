@@ -19,21 +19,16 @@ import {
   applyManagedSettings,
   CURRENT_MODEL_KEY,
   CURRENT_PROVIDER_KEY,
-  DISABLED_TOOLS_KEY,
   LAST_MODELS_KEY,
   MCP_SERVERS_KEY,
   PROVIDERS_KEY,
-  scrubThreadProviders,
-  WEB_SEARCH_DATA_KEY,
 } from "../bootstrap";
 import { withoutStdioServers } from "../mcp";
-import {
-  FakeIndexedDB,
-  MemoryStorage,
-  OTHER_TOKEN,
-  readySession,
-  TOKEN,
-} from "./fakes";
+import { MemoryStorage, OTHER_TOKEN, readySession, TOKEN } from "./fakes";
+
+// Upstream's keys, which the bootstrap leaves alone.
+const DISABLED_TOOLS_KEY = "disabledTools";
+const WEB_SEARCH_DATA_KEY = "webSearchProviderData";
 
 const MANAGED = { type: "marketcanopy", name: "Market Canopy", baseUrl: "" };
 
@@ -51,9 +46,7 @@ describe("applyManagedSettings", () => {
       id: "mc-standard",
       provider: "marketcanopy",
     });
-    expect(read(storage, DISABLED_TOOLS_KEY)).toEqual({
-      "web-search": ["web_search"],
-    });
+    expect(storage.getItem(DISABLED_TOOLS_KEY)).toBeNull();
     expect(storage.dump()).not.toContain(TOKEN);
   });
 
@@ -102,20 +95,18 @@ describe("applyManagedSettings", () => {
     expect(storage.dump()).not.toContain(TOKEN);
   });
 
-  it("upgrades a profile from an upstream build", () => {
+  it("keeps the person's own providers and their selection", () => {
     const storage = new MemoryStorage();
-    const old = {
+    const own = {
       type: "openai",
       name: "OpenAI",
-      key: "sk-upstream-SYNTHETIC",
+      key: "sk-own-SYNTHETIC",
       baseUrl: "https://api.openai.com/v1",
     };
-    storage.setItem(PROVIDERS_KEY, JSON.stringify([old]));
-    storage.setItem(CURRENT_PROVIDER_KEY, JSON.stringify(old));
-    storage.setItem(
-      CURRENT_MODEL_KEY,
-      JSON.stringify({ id: "gpt-4o", name: "GPT-4o", provider: "openai" })
-    );
+    const model = { id: "gpt-4o", name: "GPT-4o", provider: "openai" };
+    storage.setItem(PROVIDERS_KEY, JSON.stringify([own]));
+    storage.setItem(CURRENT_PROVIDER_KEY, JSON.stringify(own));
+    storage.setItem(CURRENT_MODEL_KEY, JSON.stringify(model));
     storage.setItem(
       MCP_SERVERS_KEY,
       JSON.stringify({
@@ -133,18 +124,55 @@ describe("applyManagedSettings", () => {
 
     applyManagedSettings(storage, readySession());
 
-    expect(storage.dump()).not.toContain("sk-upstream-SYNTHETIC");
-    expect(storage.dump()).not.toContain("api.openai.com");
-    expect(storage.dump()).not.toContain("exa-key-SYNTHETIC");
-    expect(storage.getItem(WEB_SEARCH_DATA_KEY)).toBeNull();
-    expect(read(storage, PROVIDERS_KEY)).toEqual([MANAGED]);
-    expect(read(storage, CURRENT_MODEL_KEY).id).toBe("mc-standard");
+    expect(read(storage, PROVIDERS_KEY)).toEqual([MANAGED, own]);
+    expect(read(storage, CURRENT_PROVIDER_KEY)).toEqual(own);
+    expect(read(storage, CURRENT_MODEL_KEY)).toEqual(model);
+    // Web search keeps the person's own Exa key.
+    expect(read(storage, WEB_SEARCH_DATA_KEY)).toEqual({
+      provider: "Exa",
+      key: "exa-key-SYNTHETIC",
+    });
     expect(read(storage, MCP_SERVERS_KEY)).toEqual({
       mcpServers: { remote: { url: "https://mcp.example.com/mcp" } },
     });
-    // The person's upstream tool switch is kept; with no search key there
-    // is no web search tool to switch on.
+    // The person's upstream tool switch is kept.
     expect(read(storage, DISABLED_TOOLS_KEY)).toEqual({ "web-search": [] });
+
+    const first = storage.dump();
+    applyManagedSettings(storage, readySession());
+    expect(storage.dump()).toBe(first);
+  });
+
+  it("selects Market Canopy when the selected provider is gone", () => {
+    const storage = new MemoryStorage();
+    storage.setItem(
+      CURRENT_PROVIDER_KEY,
+      JSON.stringify({ type: "openai", name: "Deleted", key: "k", baseUrl: "" })
+    );
+    storage.setItem(
+      CURRENT_MODEL_KEY,
+      JSON.stringify({ id: "gpt-4o", name: "GPT-4o", provider: "openai" })
+    );
+    applyManagedSettings(storage, readySession());
+    expect(read(storage, CURRENT_PROVIDER_KEY)).toEqual(MANAGED);
+    expect(read(storage, CURRENT_MODEL_KEY).id).toBe("mc-standard");
+  });
+
+  it("normalizes a stored Market Canopy entry and drops a provider using its name", () => {
+    const storage = new MemoryStorage();
+    const stale = { ...MANAGED, key: "stale-SYNTHETIC", baseUrl: "https://x" };
+    const lookalike = {
+      type: "openaicompatible",
+      name: "market canopy",
+      key: "k",
+      baseUrl: "https://example.com/v1",
+    };
+    storage.setItem(PROVIDERS_KEY, JSON.stringify([stale, lookalike]));
+    storage.setItem(CURRENT_PROVIDER_KEY, JSON.stringify(stale));
+    applyManagedSettings(storage, readySession());
+    expect(read(storage, PROVIDERS_KEY)).toEqual([MANAGED]);
+    expect(read(storage, CURRENT_PROVIDER_KEY)).toEqual(MANAGED);
+    expect(storage.dump()).not.toContain("stale-SYNTHETIC");
   });
 });
 
@@ -159,45 +187,5 @@ describe("withoutStdioServers", () => {
         },
       })
     ).toEqual({ mcpServers: { b: { url: "https://mcp.example.com" } } });
-  });
-});
-
-describe("scrubThreadProviders", () => {
-  it("rewrites every saved thread's provider and keeps the rest", async () => {
-    const factory = new FakeIndexedDB([
-      {
-        id: "1",
-        provider: {
-          type: "anthropic",
-          name: "Claude",
-          key: "sk-thread-SYNTHETIC",
-          baseUrl: "https://api.anthropic.com",
-        },
-      },
-      { id: "2", provider: { ...MANAGED } },
-      { id: "3" },
-    ]);
-
-    expect(await scrubThreadProviders(factory as unknown as IDBFactory)).toBe(
-      1
-    );
-    expect(factory.threads).toEqual([
-      { id: "1", provider: MANAGED },
-      { id: "2", provider: MANAGED },
-      { id: "3" },
-    ]);
-    expect(JSON.stringify(factory.threads)).not.toContain("sk-thread");
-
-    expect(await scrubThreadProviders(factory as unknown as IDBFactory)).toBe(
-      0
-    );
-  });
-
-  it("creates no database on a clean profile", async () => {
-    const factory = new FakeIndexedDB(null);
-    expect(await scrubThreadProviders(factory as unknown as IDBFactory)).toBe(
-      0
-    );
-    expect(factory.created).toBe(false);
   });
 });

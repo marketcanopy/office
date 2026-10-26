@@ -19,17 +19,20 @@ import type { MarketCanopyUnavailableState } from "./session";
 // One sentence per session state (contract section 9) and per gateway error
 // code (section 8.3). Never a token, a URL or a provider's own message.
 
+const SIGN_IN_MESSAGE =
+  "Sign in to Market Canopy on the Home screen to use Market Canopy AI.";
+
 export const STATE_MESSAGES: Record<MarketCanopyUnavailableState, string> = {
-  signed_out: "Sign in to Market Canopy to use AI.",
+  signed_out: SIGN_IN_MESSAGE,
   offline: "AI needs a network connection.",
   update_required: "Update Market Canopy Office to use AI.",
   not_entitled: "Your Market Canopy plan does not include AI.",
 };
 
 const CODE_MESSAGES: Record<string, string> = {
-  UNAUTHORIZED: "Sign in to Market Canopy to use AI.",
-  GRANT_REVOKED: "Sign in to Market Canopy to use AI.",
-  WRONG_AUDIENCE: "Sign in to Market Canopy to use AI.",
+  UNAUTHORIZED: SIGN_IN_MESSAGE,
+  GRANT_REVOKED: SIGN_IN_MESSAGE,
+  WRONG_AUDIENCE: SIGN_IN_MESSAGE,
   NOT_A_MEMBER:
     "You are no longer a member of this organization. Choose another organization in Market Canopy.",
   CLIENT_UPGRADE_REQUIRED: "Update Market Canopy Office to use AI.",
@@ -47,7 +50,7 @@ export const ACCOUNT_CHANGED_MESSAGE =
   "Your Market Canopy account or organization changed. Send the message again.";
 
 export const OTHER_PROVIDER_MESSAGE =
-  "Market Canopy Office uses Market Canopy AI only.";
+  "Market Canopy needs no URL or key. Add your own provider instead.";
 
 const GENERIC_MESSAGE = "AI is unavailable right now. Try again shortly.";
 

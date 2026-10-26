@@ -71,13 +71,10 @@ def parse(text: str, source: str = "UPSTREAM") -> Upstream:
     return Upstream(tag=tag, version=version, commits=commits)
 
 
-def load(repo_root: str, override_tag: Optional[str] = None) -> Upstream:
-    """Read UPSTREAM; --upstream-tag replaces the tag and drops the commit pins,
-    which then resolve from the tag (a sync rehearsal or a test of a new tag)."""
+def load(repo_root: str) -> Upstream:
+    """Read UPSTREAM."""
     path = os.path.join(repo_root, "UPSTREAM")
-    if override_tag:
-        return Upstream(tag=override_tag, version=version_of_tag(override_tag))
     if not os.path.isfile(path):
-        raise UpstreamError("%s is missing. Pass --upstream-tag <tag> until the UPSTREAM file lands." % path)
+        raise UpstreamError("%s is missing." % path)
     with open(path, encoding="utf-8") as handle:
         return parse(handle.read(), path)

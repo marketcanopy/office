@@ -58,7 +58,7 @@ namespace NSMarketCanopy
 		{
 			EFlavor flavor;
 			std::string version; // release form, 10.0.0-mc.3
-			CConfig() : flavor(EFlavor::Staging) {}
+			CConfig() : flavor(EFlavor::Production) {}
 		};
 
 		CAccount(IEnvironment* environment, ICredentialStore* store, IStoreLock* lock, const CConfig& config);

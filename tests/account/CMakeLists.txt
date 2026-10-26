@@ -47,7 +47,7 @@ else()
 endif()
 target_include_directories(account PUBLIC "${MODULE_DIR}" "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_definitions(account PUBLIC
-  MARKETCANOPY_OFFICE_VERSION="10.0.0-mc.3" MARKETCANOPY_OFFICE_FLAVOR="production")
+  MARKETCANOPY_OFFICE_VERSION="10.0.0-mc.3")
 
 enable_testing()
 foreach(name fixture_tests trace_tests os_store_tests)

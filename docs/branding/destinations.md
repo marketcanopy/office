@@ -11,7 +11,7 @@ help and feedback addresses (web-apps `Gruntfile.js` placeholders).
 | Destination | Where | Decision |
 |---|---|---|
 | `download.onlyoffice.com/install/desktop/editors/...` update feeds | build_tools defaults | Refused: the branding hook fails a build that would use them; `scripts/smoke-test` fails on any branding file or patch that adds one. |
-| BSL license of ONLYOFFICE's AI add-on (`docspace.onlyoffice.com/s/...`) | desktop-apps `defines.h` `URL_BSL_LICENSE` | No longer shown: desktop-apps `0003` drops it from About; the add-on is off on Windows and Linux (`disable_addon_mode`) and on macOS (office-build no longer defines `USE_ADDON_MODE`). Office's AI is the bundled agent with Market Canopy as its only provider (ADR 0525, P09). The define stays unused. |
+| BSL license of ONLYOFFICE's AI add-on (`docspace.onlyoffice.com/s/...`) | desktop-apps `defines.h` `URL_BSL_LICENSE` | No longer shown: desktop-apps `0003` drops it from About; the add-on is off on Windows and Linux (`disable_addon_mode`) and on macOS (office-build no longer defines `USE_ADDON_MODE`). Office's AI is the bundled agent with Market Canopy as its default provider beside upstream's built-in ones (ADR 0525, P09). The define stays unused. |
 | Plugin store, `<scheme>://action\|...`, `<scheme>://command/...` | desktop-apps, macOS `AppDelegate.mm` | Disabled by desktop-apps `0003` (P02 contract section 3.2). |
 | `templates.onlyoffice.com/?desktop=true` | desktop-apps `cascapplicationmanagerwrapper.cpp` (opening a template) | Kept: ONLYOFFICE's public template gallery, used only when a person opens Templates. `urls.templates` is empty until Market Canopy has a gallery. |
 | `templates-embed.onlyoffice.com` | start page `routes/templates/index.jsx` | Kept, as above. |

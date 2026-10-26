@@ -242,9 +242,7 @@ def check_overlay(results, settings):
     )
 
     feeds = settings["updates"]
-    staged = [
-        value for flavor in ("staging", "production") for key, value in feeds[flavor].items() if not key.startswith("$")
-    ]
+    staged = [value for key, value in feeds["production"].items() if not key.startswith("$")]
     results.check(
         "settings.json feeds are not upstream's",
         not any(value in feeds["upstreamDefaults"] or "onlyoffice.com" in value for value in staged),
@@ -313,7 +311,7 @@ def check_notices(results):
     build = {
         "version": "0.0.0-mc.0",
         "number": "0",
-        "flavor": "staging",
+        "flavor": "production",
         "upstreamTag": "v0",
         "sourceCommit": "0" * 40,
         "modified": {"first": "2026-10-24", "last": "2026-10-24"},
@@ -354,7 +352,7 @@ def check_work(results, work, settings):
             count == str(len(queue.queue(ROOT)[repo])),
             "%s commits over the pin" % count,
         )
-    written = notices.write(work, BRANDING, make.build_fields(ROOT, upstream, "staging"))
+    written = notices.write(work, BRANDING, make.build_fields(ROOT, upstream, "production"))
     results.check("notices write into the workspace", all(os.path.isfile(os.path.join(work, path)) for path in written))
     about = os.path.join(work, "web-apps", "apps", "common", "main", "lib", "view", "About.js")
     if os.path.isfile(about):

@@ -14,9 +14,10 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-// Replaces the upstream provider list on the Connection tab: Market Canopy is
-// the only provider, so there is nothing to add, edit or delete, and no URL or
-// key to type. The panel says whether AI is ready and lists the aliases.
+// Shown above the person's own providers on the Connection tab: Market
+// Canopy is set up by the bootstrap, so there is nothing to add, edit or
+// delete, and no URL or key to type. The panel says whether AI is ready and
+// lists the aliases.
 
 import React from "react";
 import { useTranslation } from "react-i18next";

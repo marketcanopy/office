@@ -31,9 +31,9 @@ class Parse(unittest.TestCase):
         with self.assertRaises(upstream.UpstreamError):
             upstream.parse("version=10.0.0")
 
-    def test_override_tag_drops_pins(self):
-        pins = upstream.load("/nonexistent", "v10.0.0.176")
-        self.assertEqual(pins.commits, {})
+    def test_load_needs_the_upstream_file(self):
+        with self.assertRaises(upstream.UpstreamError):
+            upstream.load("/nonexistent")
 
 
 if __name__ == "__main__":

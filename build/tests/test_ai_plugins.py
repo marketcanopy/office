@@ -104,10 +104,15 @@ class AiPlugins(unittest.TestCase):
         with self.assertRaisesRegex(ai_plugins.AiPluginError, "not deployed"):
             ai_plugins.deploy(self.workspace, "marketcanopy")
 
-    def test_deploy_refuses_other_providers_in_the_in_editor_plugin(self):
+    def test_deploy_accepts_upstream_providers_after_market_canopy(self):
         self.built()
         self.deployed("linux_64", providers=("marketcanopy", "openai"))
-        with self.assertRaisesRegex(ai_plugins.AiPluginError, "only marketcanopy"):
+        self.assertEqual(len(ai_plugins.deploy(self.workspace, "marketcanopy")), 1)
+
+    def test_deploy_needs_market_canopy_first_in_the_in_editor_plugin(self):
+        self.built()
+        self.deployed("linux_64", providers=("openai", "marketcanopy"))
+        with self.assertRaisesRegex(ai_plugins.AiPluginError, "marketcanopy first"):
             ai_plugins.deploy(self.workspace, "marketcanopy")
 
     def test_deploy_needs_the_market_canopy_provider_file(self):

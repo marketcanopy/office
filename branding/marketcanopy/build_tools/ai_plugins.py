@@ -14,7 +14,8 @@
 #
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# ADR 0525: both AI surfaces use Market Canopy as their only provider.
+# ADR 0525 (amended 2026-10-26): both AI surfaces use Market Canopy as their
+# default provider, beside upstream's built-in providers.
 #
 # The AI agent (desktop-sdk plugins/ai-agent) ships upstream as a prebuilt
 # bundle in its deploy/ folder, which build_tools never copies. Its Market
@@ -24,7 +25,7 @@
 #
 # The in-editor AI plugin (onlyoffice.github.io content/ai) is deployed by
 # build_tools from the branding's sdkjs-plugin list; the hook checks it was,
-# with the Market Canopy provider.
+# with the Market Canopy provider listed first.
 
 import glob
 import json
@@ -92,8 +93,8 @@ def check_editor_plugin(destination):
         )
     with open(config, "r", encoding="utf-8") as handle:
         providers = json.load(handle)
-    if providers != ["marketcanopy"]:
-        raise AiPluginError("%s lists %s; only marketcanopy is allowed" % (config, providers))
+    if not providers or providers[0] != "marketcanopy":
+        raise AiPluginError("%s lists %s; it must list marketcanopy first" % (config, providers))
     if not os.path.isfile(os.path.join(folder, EDITOR_PROVIDERS, "internal", "marketcanopy.js")):
         raise AiPluginError("%s has no Market Canopy provider" % folder)
 

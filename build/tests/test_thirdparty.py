@@ -1,6 +1,8 @@
 import os
+import stat
 import tempfile
 import unittest
+from unittest import mock
 
 from officebuild import thirdparty, util
 
@@ -55,6 +57,28 @@ class ThirdParty(unittest.TestCase):
         clone = os.path.join(self.third_party, "harfbuzz", "harfbuzz")
         self.assertEqual(thirdparty.drop_incomplete(self.work, ["win_64"]), [clone])
         self.assertFalse(os.path.exists(clone))
+
+    def test_read_only_git_objects_are_made_writable_and_removed(self):
+        # Windows refuses to delete a read-only file, which git leaves its pack files as.
+        self.build_all("win_64")
+        os.remove(os.path.join(self.third_party, "harfbuzz", "harfbuzz.pri"))
+        pack = os.path.join(self.third_party, "harfbuzz", "harfbuzz", ".git", "objects", "pack", "pack-1.idx")
+        os.makedirs(os.path.dirname(pack))
+        open(pack, "w").close()
+        os.chmod(pack, stat.S_IREAD)
+        real_remove = os.remove
+        refused = []
+
+        def windows_remove(path, *args, **kwargs):
+            if not os.stat(path, dir_fd=kwargs.get("dir_fd")).st_mode & stat.S_IWRITE:
+                refused.append(os.path.basename(path))
+                raise PermissionError(13, "Access is denied", path)
+            real_remove(path, *args, **kwargs)
+
+        with mock.patch("os.unlink", windows_remove):
+            thirdparty.drop_incomplete(self.work, ["win_64"])
+        self.assertIn("pack-1.idx", refused)
+        self.assertFalse(os.path.exists(os.path.join(self.third_party, "harfbuzz", "harfbuzz")))
 
     def test_win_arm64_also_checks_the_win_64_build_build_tools_adds(self):
         self.build_all("win_arm64")

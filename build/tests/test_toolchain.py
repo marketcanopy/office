@@ -48,6 +48,27 @@ class PinWindowsSdk(unittest.TestCase):
         self.assertFalse(os.path.exists(folder))
 
 
+class PinIcuSdk(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.mkdtemp()
+        self.rsp = os.path.join(self.work, "core", "Common", "3dParty", "icu", "Directory.Build.rsp")
+
+    def test_arm64_build_sets_the_sdk_above_icus_solution(self):
+        self.assertEqual(toolchain.pin_icu_sdk(self.work, "10.0.22621.0", False), self.rsp)
+        with open(self.rsp) as handle:
+            self.assertEqual(handle.read(), "/p:WindowsTargetPlatformVersion=10.0.22621.0\n")
+
+    def test_build_without_arm64_removes_a_left_over_file(self):
+        toolchain.pin_icu_sdk(self.work, "10.0.22621.0", False)
+        toolchain.pin_icu_sdk(self.work, "", False)
+        self.assertFalse(os.path.exists(self.rsp))
+        toolchain.pin_icu_sdk(self.work, "", False)
+
+    def test_dry_run_writes_nothing(self):
+        toolchain.pin_icu_sdk(self.work, "10.0.22621.0", True)
+        self.assertFalse(os.path.exists(self.rsp))
+
+
 class DepotTools(unittest.TestCase):
     def test_path_is_absolute_and_where_v8_89_clones_it(self):
         path = toolchain.depot_tools("work")

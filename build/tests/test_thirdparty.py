@@ -22,6 +22,8 @@ class ThirdParty(unittest.TestCase):
         for name in ("icuuc.lib", "icudt.lib", "icuuc74.dll", "icudt74.dll"):
             self.touch("icu", platform, "build", name)
         self.touch("icu", "icu", "include", "unicode", "utypes.h")
+        self.touch("harfbuzz", "harfbuzz", "src", "hb.h")
+        self.touch("harfbuzz", "harfbuzz.pri")
 
     def test_empty_openssl_folder_left_by_a_failed_build_is_removed(self):
         # build_tools creates the folder before `perl Configure`, then skips it.
@@ -45,6 +47,14 @@ class ThirdParty(unittest.TestCase):
             sorted(dropped),
             sorted(os.path.join(self.third_party, "icu", p, "build") for p in ("win_64", "win_arm64")),
         )
+
+    def test_harfbuzz_clone_without_its_qmake_include_is_removed(self):
+        # A run killed after the clone left harfbuzz/harfbuzz, so make.py never wrote harfbuzz.pri.
+        self.build_all("win_64")
+        os.remove(os.path.join(self.third_party, "harfbuzz", "harfbuzz.pri"))
+        clone = os.path.join(self.third_party, "harfbuzz", "harfbuzz")
+        self.assertEqual(thirdparty.drop_incomplete(self.work, ["win_64"]), [clone])
+        self.assertFalse(os.path.exists(clone))
 
     def test_win_arm64_also_checks_the_win_64_build_build_tools_adds(self):
         self.build_all("win_arm64")

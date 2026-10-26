@@ -3,8 +3,9 @@ ran failed.
 
 On Windows, build_tools' OpenSSL module creates `openssl/build/<platform>`
 before it runs `perl Configure` and nmake in a batch file whose errors it
-ignores, and its ICU module copies the MSBuild outputs with a copy that only
-warns when a file is missing. A failed build therefore leaves the folder that
+ignores, its ICU module copies the MSBuild outputs with a copy that only
+warns when a file is missing, and core's harfbuzz make.py writes harfbuzz.pri
+only after a fresh clone. A failed build therefore leaves the folder that
 the next run checks to skip the library, and the failure surfaces hours later
 as a missing header in core. office-build removes such a folder before
 build_tools runs, so the library is built again, and refuses a third-party
@@ -46,6 +47,14 @@ def products(work_root: str, platforms: List[str]) -> Dict[str, List[str]]:
         # The headers are shared by every platform; the MSBuild that copies them
         # runs only when this folder is missing.
         found[icu].append(icu_header)
+    if found:
+        # Shared by every platform: its make.py clones the sources and writes the
+        # qmake include only when the clone folder is missing.
+        harfbuzz = os.path.join(third_party, "harfbuzz", "harfbuzz")
+        found[harfbuzz] = [
+            os.path.join(harfbuzz, "src", "hb.h"),
+            os.path.join(third_party, "harfbuzz", "harfbuzz.pri"),
+        ]
     return found
 
 

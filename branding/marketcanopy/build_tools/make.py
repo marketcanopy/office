@@ -31,7 +31,9 @@
 #   6. builds the AI agent from source (ai_plugins.py, ADR 0525);
 #   7. runs upstream's make.py unchanged;
 #   8. bundles the AI agent into the deployed editors and checks the in-editor
-#      AI plugin is deployed with the Market Canopy provider.
+#      AI plugin is deployed with the Market Canopy provider;
+#   9. deploys Document Builder beside x2t for Canopy's local Docs tools
+#      (document_engine.py, ADR 0528).
 
 import datetime
 import hashlib
@@ -42,6 +44,7 @@ import subprocess
 import sys
 
 import ai_plugins
+import document_engine
 import notices
 
 HOOK_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -339,6 +342,11 @@ def main():
         for destination in ai_plugins.deploy(WORKSPACE, branding):
             log("bundled the AI agent in " + destination)
     except ai_plugins.AiPluginError as error:
+        fail(str(error))
+    try:
+        for destination in document_engine.deploy(WORKSPACE, branding):
+            log("deployed Document Builder as " + destination)
+    except document_engine.DocumentEngineError as error:
         fail(str(error))
 
 

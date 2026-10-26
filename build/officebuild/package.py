@@ -8,6 +8,12 @@
   common.iss names translations Inno Setup ships only in its source tree's
   Unofficial folder (Greek, Vietnamese, ...), so make_inno.ps1 gets, through
   INNOPATH, a copy of the installed Inno Setup with those added.
+- win-arm64 on an x64 host: build_tools cannot run arm64's allthemesgen or
+  x2t (upstream runs them in a Windows 11 ARM64 VM under QEMU), so the
+  themes' previews and the theme data in the slide editor are missing. With
+  --themes-from, the stage copies a win-x64 build's editors/sdkjs over the
+  staged one, as build_tools does for mac_arm64 on an x64 Mac, leaving out
+  the V8 snapshots (sdk-all.cache), which are per CPU.
 - Linux: build_tools' make_package.py (desktop-apps/package Makefile): .deb,
   .rpm and .tar.xz, the targets the branding's package_branding.py names.
   Upstream has no AppImage target.
@@ -60,6 +66,7 @@ class Context:
     dry_run: bool
     env: Dict[str, str] = field(default_factory=dict)
     python: str = ""
+    themes_from: str = ""  # a win-x64 build's editors/sdkjs, for win-arm64
 
     @property
     def out_dir(self) -> str:
@@ -148,8 +155,20 @@ def windows_stage(ctx: Context) -> str:
     ]
     _ps1(ctx, "make.ps1", args)
     stage = windows_stage_dir(ctx)
+    if ctx.themes_from:
+        overlay_sdkjs(ctx.themes_from, os.path.join(stage, "editors", "sdkjs"), ctx.dry_run)
     util.log("staged application: %s (sign every .exe and .dll here before installers)" % stage)
     return stage
+
+
+def overlay_sdkjs(source: str, sdkjs: str, dry_run: bool) -> None:
+    """Copy another build's editors/sdkjs over `sdkjs`, except its V8 snapshots."""
+    util.log("editor files from %s -> %s (without *.cache)" % (source, sdkjs))
+    if dry_run:
+        return
+    if not os.path.isdir(source):
+        raise util.BuildError("--themes-from %s is not a directory" % source)
+    shutil.copytree(source, sdkjs, ignore=shutil.ignore_patterns("*.cache"), dirs_exist_ok=True)
 
 
 def _assert_signed(ctx: Context, folder: str) -> None:

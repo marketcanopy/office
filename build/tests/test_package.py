@@ -182,6 +182,26 @@ class WindowsInstallers(unittest.TestCase):
             with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
                 self.assertEqual(handle.read(), "10.0.0.0")
 
+    def test_an_earlier_builds_release_files_are_not_sealed(self):
+        # Run 40412615217 (mc.1) sealed and uploaded run 36's mc.0 files, which
+        # the runner's persistent out folder still held.
+        stale = os.path.join(self.work.name, "out", "win-x64", "MarketCanopyOffice-10.0.0-mc.9-win-x64-development.zip")
+        os.makedirs(os.path.dirname(stale))
+        open(stale, "w").close()
+        package_dir = os.path.join(self.work.name, "desktop-apps", "package")
+        for folder, extension in (("zip", "zip"), ("inno", "exe")):
+            path = os.path.join(package_dir, folder, "MarketCanopy-Office-10.0.0.0-x64.%s" % extension)
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            open(path, "w").close()
+        package.installers(self.context())
+        self.assertEqual(
+            sorted(os.listdir(os.path.join(self.work.name, "out", "win-x64"))),
+            [
+                "MarketCanopyOffice-10.0.0-mc.0-win-x64-development.zip",
+                "MarketCanopyOffice-10.0.0-mc.0-win-x64-setup-development.exe",
+            ],
+        )
+
 
 class WindowsStageThemes(unittest.TestCase):
     def setUp(self):

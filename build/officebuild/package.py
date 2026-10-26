@@ -496,4 +496,8 @@ def stage(ctx: Context) -> str:
 
 def installers(ctx: Context) -> List[str]:
     os_name = targetlib.os_of(ctx.target)
+    # The Windows runners keep out/ between runs; seal hashes everything in
+    # out/<target>/, so an earlier build's files must not be left there.
+    if not ctx.dry_run and os.path.isdir(ctx.out_dir):
+        shutil.rmtree(ctx.out_dir)
     return {"windows": windows_installers, "macos": mac_installers, "linux": linux_installers}[os_name](ctx)

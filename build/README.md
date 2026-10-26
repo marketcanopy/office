@@ -36,6 +36,7 @@ for every other requested target; it exits `3` when it can build none of them.
 | `--out` | Artifact directory (default `build/out/`). |
 | `--install-deps` | Provision the toolchain (CI runners): apt packages, Qt, Inno Setup, Visual Studio 2019 Build Tools, the Windows SDKs v8 and win-arm64 need, grunt-cli, CMake 3. |
 | `--third-party-only` | Compile only build_tools' third-party libraries (boost, ICU, OpenSSL, CEF, V8 and the rest) and stop: a short run that proves a runner before a full compile. |
+| `--themes-from` | win-arm64, `--phase stage`: a win-x64 build's `editors/sdkjs`, copied over the staged app without its `sdk-all.cache` files. An x64 host cannot run arm64's `allthemesgen` and `x2t` (upstream runs them in a Windows 11 ARM64 VM under QEMU), so without it the arm64 app has no theme previews; the V8 snapshots stay missing either way. |
 | `--check-patches` | Only check out the components, apply the patch queue and the overlay, and report the patch budget. |
 | `--dry-run` | Print the plan and the commands; run nothing. |
 

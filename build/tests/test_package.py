@@ -133,5 +133,55 @@ class WindowsInstallers(unittest.TestCase):
         self.assertEqual(os.listdir(os.path.join(self.inno, "Languages")), ["Bulgarian.isl"])
 
 
+class WindowsStageThemes(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.TemporaryDirectory()
+        self.addCleanup(self.work.cleanup)
+        app = os.path.join(self.work.name, "build_tools", "out", "win_arm64", "marketcanopy", "Office")
+        os.makedirs(os.path.join(app, "editors"))
+        self.sdkjs = os.path.join(
+            self.work.name, "desktop-apps", "package", "build", "arm64", "desktop", "editors", "sdkjs"
+        )
+        self.write(os.path.join(self.sdkjs, "slide", "themes", "themes.js"), "arm64")
+        self.x64 = os.path.join(self.work.name, "x64-sdkjs")
+        self.write(os.path.join(self.x64, "slide", "themes", "themes.js"), "x64")
+        self.write(os.path.join(self.x64, "slide", "themes", "theme1", "thumbnail.png"), "x64")
+        self.write(os.path.join(self.x64, "common", "Images", "themes_thumbnail.png"), "x64")
+        self.write(os.path.join(self.x64, "word", "sdk-all.cache"), "x64 snapshot")
+        patcher = mock.patch.object(util, "run")
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def write(self, path, text):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write(text)
+
+    def read(self, *parts):
+        with open(os.path.join(self.sdkjs, *parts)) as handle:
+            return handle.read()
+
+    def test_arm64_takes_x64s_theme_previews_but_not_its_snapshots(self):
+        # An x64 host cannot run arm64's allthemesgen or x2t, so the staged
+        # arm64 app gets x64's generated editor files; V8 snapshots are per CPU.
+        ctx = package.Context(
+            work_root=self.work.name,
+            out_root=os.path.join(self.work.name, "out"),
+            target="win-arm64",
+            version="10.0.0-mc.0",
+            product_version="10.0.0",
+            build_number="0",
+            branded=True,
+            sign=False,
+            dry_run=False,
+            themes_from=self.x64,
+        )
+        package.windows_stage(ctx)
+        self.assertEqual(self.read("slide", "themes", "themes.js"), "x64")
+        self.assertEqual(self.read("slide", "themes", "theme1", "thumbnail.png"), "x64")
+        self.assertEqual(self.read("common", "Images", "themes_thumbnail.png"), "x64")
+        self.assertFalse(os.path.exists(os.path.join(self.sdkjs, "word", "sdk-all.cache")))
+
+
 if __name__ == "__main__":
     unittest.main()

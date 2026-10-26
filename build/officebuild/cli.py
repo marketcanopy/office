@@ -83,6 +83,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--check-patches", action="store_true", help="only check out the patched components and report the patch budget"
     )
+    parser.add_argument(
+        "--themes-from",
+        default="",
+        help="win-arm64 --phase stage: a win-x64 build's editors/sdkjs, for the theme previews an x64 host "
+        "cannot generate for arm64",
+    )
     parser.add_argument("--dry-run", action="store_true", help="print the plan and commands, run nothing")
     return parser.parse_args(argv)
 
@@ -247,6 +253,7 @@ def main(argv: List[str]) -> int:
                 args.dry_run,
                 env,
                 tools.python,
+                args.themes_from if target == "win-arm64" else "",
             )
             if "stage" in phases:
                 monitor.begin("stage " + target)

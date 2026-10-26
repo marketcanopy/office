@@ -10,8 +10,7 @@
     "channel": {
       "enum": [
         "stable",
-        "beta",
-        "staging"
+        "beta"
       ]
     },
     "version": {

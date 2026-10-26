@@ -1,11 +1,6 @@
 // OS credential store entries (SPEC.md section 5).
 
-export const SERVICES = {
-  production: 'com.marketcanopy.office',
-  staging: 'com.marketcanopy.office.staging',
-} as const;
-
-export type Flavor = keyof typeof SERVICES;
+export const SERVICE = 'com.marketcanopy.office';
 
 export const MAX_GRANT_BYTES = 2048;
 
@@ -30,17 +25,15 @@ export const INSTALLATION_ACCOUNT = 'installation';
 /** The per-OS address of an entry. */
 export function storeAddress(
   os: 'windows' | 'macos' | 'linux',
-  flavor: Flavor,
   account: string,
 ): Record<string, string> {
-  const service = SERVICES[flavor];
   switch (os) {
     case 'windows':
-      return { type: 'CRED_TYPE_GENERIC', targetName: `${service}:${account}`, userName: account, persist: 'CRED_PERSIST_LOCAL_MACHINE' };
+      return { type: 'CRED_TYPE_GENERIC', targetName: `${SERVICE}:${account}`, userName: account, persist: 'CRED_PERSIST_LOCAL_MACHINE' };
     case 'macos':
-      return { class: 'kSecClassGenericPassword', service, account, label: 'Market Canopy Office' };
+      return { class: 'kSecClassGenericPassword', service: SERVICE, account, label: 'Market Canopy Office' };
     case 'linux':
-      return { schema: 'com.marketcanopy.office.Credential', service, account, label: 'Market Canopy Office' };
+      return { schema: 'com.marketcanopy.office.Credential', service: SERVICE, account, label: 'Market Canopy Office' };
   }
 }
 

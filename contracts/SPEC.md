@@ -1,6 +1,6 @@
 # Market Canopy Office integration contract
 
-- Contract version: `1.3.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
+- Contract version: `2.0.0` (see `VERSION`; `CHANGELOG.md` lists each revision). `1.0.0` was frozen 2026-10-24 after reconciling P01's report (platform-api `prompts/marketcanopy-office/evidence/P01.md`). The hash is in `CONTRACT.sha256`.
 - Upstream baseline: ONLYOFFICE Desktop Editors `v10.0.0.176` (desktop-apps `3fd628f986f5ae42853fefa3dbbb10c3992bf71c`, desktop-sdk `a75c35326aad475a5a4ec904baa9a5d518bcc162`). Every upstream seam cited below was read at that tag and is byte-identical to the research pins (desktop-apps `332c1905`, desktop-sdk `ae6cf2a0`).
 - Decision records: platform-api ADRs 0523 to 0530. This document replaces the contract baseline in platform-api `docs/architecture/marketcanopy-office/contracts.md` where they differ; section 14 lists every difference and why.
 - Normative words: MUST, MUST NOT, SHOULD. Examples are synthetic; no value in this folder is a real credential.
@@ -30,8 +30,7 @@ These name Office on each OS. The desktop app, the installer and Office MUST use
 | --- | --- | --- |
 | Product name | `Market Canopy Office` | ADR 0527 |
 | URL scheme | `mc-office` | P03. MUST be exactly 9 characters while desktop-sdk `cefview.cpp` `CCefView::load` strips the scheme with the literal offsets 12 and 10 (written for `oo-office`); any other length needs a patch line there |
-| Production credential service | `com.marketcanopy.office` | Section 5 |
-| Staging credential service | `com.marketcanopy.office.staging` | Section 5 |
+| Credential service | `com.marketcanopy.office` | Section 5. Office builds production only; there is no staging flavor |
 | API client app id (`X-Client-App`) | `com.marketcanopy.office` | Section 6. The desktop app's is `com.marketcanopy.desktop` |
 | Client platforms | `windows`, `macos`, `linux` | ADR 0501 |
 | macOS bundle identifier | `com.marketcanopy.office` | P03 |
@@ -87,7 +86,7 @@ mc-office://open|n|<name>|<documentUrl>
 
 - `<name>`: the tab title, percent-encoded UTF-8, 1 to 255 characters after decoding, no `|`. Upstream decodes only `%20` in it; producers MUST encode only what a URL needs and SHOULD keep names to letters, digits, spaces and `.-_()`.
 - `<documentUrl>`: `https://<appOrigin>/office/documents/<documentId>?organizationId=<organizationId>`
-  - `<appOrigin>` is one of the allowed app origins: production `https://app.marketcanopy.com`, staging `https://staging-app.marketcanopy.com` (P07 records the deployed origins; a change is a contract revision).
+  - `<appOrigin>` is the production app origin `https://app.marketcanopy.com`, the only allowed one (Office builds production only; a change is a contract revision).
   - `<documentId>` and `<organizationId>`: 24 lower-case hex characters (MongoDB ObjectId).
   - No user info, port, fragment, or any other query parameter. Upstream appends `desktop=true` when it loads the URL (observed); the page MUST accept that one extra parameter and nothing else.
 - Upstream also accepts `f` (download through `ascdesktop://external/`); our links never carry it.
@@ -113,7 +112,7 @@ Reference: `src/deep-link.ts` `parseSchemeUrl`; fixtures `fixtures/deep-link/`.
 
 ### 5.1 Entries
 
-Two entries per OS user, under the service for the build flavor (`com.marketcanopy.office` or `com.marketcanopy.office.staging`):
+Two entries per OS user, under the service `com.marketcanopy.office`:
 
 | Account | Value | Written by | Deleted by |
 | --- | --- | --- | --- |
@@ -256,7 +255,7 @@ The page relays the cookie and calls `portal:logout`.
 | `order` | `0` | the start page's sort |
 | `icons` | `themeLight` and `themeDark`, each `{ connectionsList, buttonLogo }`, `./assets/<name>.svg` | the start page's provider icons |
 
-An optional `$comment` string carries the file's license line, since strict JSON has no comments. There is no `entryPage`: upstream opens an `entryPage` as the whole address (an OAuth provider's own page) instead of appending `startPage` to the signed-in domain. The declaration holds no origin, so the staging and production builds ship the same file; the domain comes from `portal:login`.
+An optional `$comment` string carries the file's license line, since strict JSON has no comments. There is no `entryPage`: upstream opens an `entryPage` as the whole address (an OAuth provider's own page) instead of appending `startPage` to the signed-in domain. The declaration holds no origin; the domain comes from `portal:login`.
 
 ## 8. Bootstrap and AI
 
@@ -448,6 +447,7 @@ Changes from the baseline (`contracts.md`, 2026-10-24):
 | New codes | | `RATE_LIMITED`, `PROVIDER_UNAVAILABLE`, `PATH_NOT_WRITABLE`, `CREDENTIAL_IN_LINK`, `INVALID_LINK`, `INVALID_ARGUMENT`, `VALIDATION_ERROR`, `INVALID_CLIENT_HEADERS` | Conditions the baseline did not name |
 | Lock states | Locked or not | Adds `lock_file_only` and `read_only` | A crashed Office leaves the lock file (observed) |
 | Provider declaration (1.2.0) | `contracts.md` named the fields; 1.0.0 made it a one-item array with `entryPage` and `icons.light/dark.{normal,big}` | One object with `startPage` and upstream's `icons.themeLight/themeDark.{connectionsList,buttonLogo}`, no `entryPage` | desktop-sdk `providers.h` `GetAllJSON` splices `"path"` after the file's first brace and joins the files into one array, so an array file reaches the start page as a nested array; the start page reads only upstream's icon keys and opens `entryPage` as an absolute address (P07, read at the tag) |
+| Build flavors (2.0.0) | Production and staging, each with its own origins and credential service | Production only: `https://api.marketcanopy.com`, `https://app.marketcanopy.com`, `com.marketcanopy.office`; a staging link or grant is refused | The owner ruled on 2026-10-26 that Office builds production only; the staging origins have no DNS, so a staging build could never sign in (release run 36) |
 
 ## 15. Not verified
 

@@ -2,6 +2,18 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 2.0.0 (2026-10-26)
+
+Requested by the Office test-issues thread after the owner ruled on 2026-10-26 that Office builds production only. The staging origins have no DNS, so release run 36, a staging build, could never sign in. Major version under section 14: a consumer that still accepts staging must change. Wire shapes are unchanged: schema `$id`s stay under `/office/v1/` and bootstrap's `contractVersion` stays `"1"`.
+
+- 2, 5.1: one credential service, `com.marketcanopy.office`; `com.marketcanopy.office.staging` is gone. `src/credential-entry.ts` exports `SERVICE` in place of `SERVICES`, and `storeAddress` takes no flavor.
+- 4.1: the only allowed app origin is `https://app.marketcanopy.com`. `fixtures/deep-link/open-staging.json` is now `staging-origin.json`, which expects `INVALID_LINK`.
+- `common.schema.json`: `apiOrigin` and `appOrigin` are production only. `install-manifest.schema.json`: `channel` is `stable` or `beta`.
+- `fixtures/credential-store/other-origin.json` uses `https://api.example.com` as its other origin.
+- 7.3: the provider declaration's note no longer mentions a staging build.
+
+Rerun: P04 and P05 (native account module: link and bootstrap origins, credential service), P07 (connect and document pages on the production origin only), P12 (install manifest channels). Unchanged for P03, P06, P08 to P11.
+
 ## 1.3.0 (2026-10-25)
 
 Requested by P08 while implementing the gateway. Minor version under section 14: one more gateway error code, which an OpenAI client already handles as an `invalid_request_error`.

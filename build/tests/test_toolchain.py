@@ -204,18 +204,18 @@ class WindowsBuildTools(unittest.TestCase):
     def commands(self):
         return [call.args[0] for call in self.run.call_args_list]
 
-    def test_perl_and_py_are_installed_when_missing(self):
+    def test_perl_py_and_7zip_are_installed_when_missing(self):
         with mock.patch.object(toolchain.shutil, "which", return_value=None):
             with self.assertRaises(util.BuildError) as raised:
                 toolchain.windows_build_tools(True, False)
         choco = [c[2] for c in self.commands() if c[:2] == ["choco", "install"]]
-        self.assertEqual(choco, ["strawberryperl", "python3"])
+        self.assertEqual(choco, ["strawberryperl", "python3", "7zip"])
         self.assertIn("perl Configure", str(raised.exception))
         self.assertIn("py -3", str(raised.exception))
 
     def test_strawberry_perl_outside_path_is_put_first(self):
         def which(name):
-            return "C:\\Windows\\py.exe" if name == "py" else None
+            return {"py": "C:\\Windows\\py.exe", "7z": "C:\\Program Files\\7-Zip\\7z.exe"}.get(name)
 
         perl_exe = os.path.join(toolchain.STRAWBERRY_PERL_BIN, "perl.exe")
         with mock.patch.object(toolchain.shutil, "which", side_effect=which), mock.patch.object(
@@ -244,6 +244,30 @@ class WindowsBuildTools(unittest.TestCase):
         choco = [c[2] for c in self.commands() if c[:2] == ["choco", "install"]]
         self.assertEqual(choco, ["strawberryperl"])
         self.assertIn("Windows Perl", str(raised.exception))
+
+    def test_7zip_outside_path_is_put_first(self):
+        # desktop-apps' make_zip.ps1 runs `7z`; Chocolatey's 7zip is not on PATH
+        # for the process that installed it.
+        seven_zip = os.path.join(toolchain.SEVEN_ZIP_DIR, "7z.exe")
+        with mock.patch.object(
+            toolchain.shutil, "which", side_effect=lambda name: None if name == "7z" else "found"
+        ), mock.patch.object(toolchain, "_tool_output", return_value="MSWin32"), mock.patch.object(
+            toolchain.os.path, "isfile", side_effect=lambda path: path == seven_zip
+        ):
+            self.assertEqual(toolchain.windows_build_tools(True, False), [toolchain.SEVEN_ZIP_DIR])
+        self.assertEqual(self.commands(), [])
+
+    def test_missing_7zip_is_installed_then_refused(self):
+        with mock.patch.object(
+            toolchain.shutil, "which", side_effect=lambda name: None if name == "7z" else "found"
+        ), mock.patch.object(toolchain, "_tool_output", return_value="MSWin32"), mock.patch.object(
+            toolchain.os.path, "isfile", return_value=False
+        ):
+            with self.assertRaises(util.BuildError) as raised:
+                toolchain.windows_build_tools(True, False)
+        choco = [c[2] for c in self.commands() if c[:2] == ["choco", "install"]]
+        self.assertEqual(choco, ["7zip"])
+        self.assertIn("7z", str(raised.exception))
 
     def test_present_tools_install_nothing(self):
         with mock.patch.object(toolchain.shutil, "which", return_value="found"), mock.patch.object(

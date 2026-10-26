@@ -75,6 +75,8 @@ V8_WINDOWS_SDK_PACKAGE = "windows-sdk-10-version-2004-all"
 # Where Chocolatey's strawberryperl puts perl.exe; the package's PATH change
 # reaches only processes started after it.
 STRAWBERRY_PERL_BIN = r"C:\Strawberry\perl\bin"
+# Where Chocolatey's 7zip puts 7z.exe, which desktop-apps' make_zip.ps1 runs.
+SEVEN_ZIP_DIR = r"C:\Program Files\7-Zip"
 NODE_MIN = (22, 12)
 JAVA_MIN_MAJOR = 11
 
@@ -294,14 +296,17 @@ def _windows_perl() -> bool:
 
 def windows_build_tools(install_deps: bool, dry_run: bool) -> List[str]:
     """Folders to put first on PATH so build_tools finds a Windows `perl`
-    (OpenSSL) and `py` (ICU's data build). A tool still missing fails the build
-    here instead of leaving an empty library folder behind."""
+    (OpenSSL) and `py` (ICU's data build), and make_zip.ps1 finds `7z`. A tool
+    still missing fails the build here instead of hours later."""
     strawberry = os.path.isfile(os.path.join(STRAWBERRY_PERL_BIN, "perl.exe"))
     windows_perl = not dry_run and shutil.which("perl") and _windows_perl()
     if install_deps and not windows_perl and not strawberry:
         _choco("strawberryperl", dry_run)
     if install_deps and not shutil.which("py"):
         _choco("python3", dry_run)
+    seven_zip = os.path.join(SEVEN_ZIP_DIR, "7z.exe")
+    if install_deps and not shutil.which("7z") and not os.path.isfile(seven_zip):
+        _choco("7zip", dry_run)
     if dry_run:
         return []
     extra = []
@@ -312,6 +317,11 @@ def windows_build_tools(install_deps: bool, dry_run: bool) -> List[str]:
         missing.append("a Windows Perl such as Strawberry Perl (OpenSSL runs `perl Configure`)")
     if not shutil.which("py"):
         missing.append("the Python launcher `py` (ICU's data build runs `py -3`)")
+    if not shutil.which("7z"):
+        if os.path.isfile(seven_zip):
+            extra.append(SEVEN_ZIP_DIR)
+        else:
+            missing.append("7-Zip's `7z` (make_zip.ps1 runs it)")
     if missing:
         raise util.BuildError("%s not found; install it or pass --install-deps" % " and ".join(missing))
     return extra

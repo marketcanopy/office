@@ -47,7 +47,7 @@ class ThirdParty(unittest.TestCase):
         dropped = thirdparty.drop_incomplete(self.work, ["win_arm64"])
         self.assertEqual(
             sorted(dropped),
-            sorted(os.path.join(self.third_party, "icu", p, "build") for p in ("win_64", "win_arm64")),
+            [os.path.join(self.third_party, "icu", "win_arm64", "build")],
         )
 
     def test_harfbuzz_clone_without_its_qmake_include_is_removed(self):
@@ -80,10 +80,11 @@ class ThirdParty(unittest.TestCase):
         self.assertIn("pack-1.idx", refused)
         self.assertFalse(os.path.exists(os.path.join(self.third_party, "harfbuzz", "harfbuzz")))
 
-    def test_win_arm64_also_checks_the_win_64_build_build_tools_adds(self):
+    def test_win_arm64_checks_only_its_own_build(self):
+        # At the tag, config.py's win_64 addition is disabled, and an arm64 build
+        # configures OpenSSL for VC-WIN64-ARM and ICU for ARM64 only (run 30).
         self.build_all("win_arm64")
-        absent = thirdparty.missing(self.work, ["win_arm64"])
-        self.assertIn(os.path.join(self.third_party, "openssl", "build", "win_64", "lib", "libssl.lib"), absent)
+        self.assertEqual(thirdparty.missing(self.work, ["win_arm64"]), [])
 
     def test_complete_outputs_are_kept_and_pass(self):
         self.build_all("win_64")

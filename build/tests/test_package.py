@@ -56,5 +56,82 @@ class LinuxInstallers(unittest.TestCase):
         self.assertIn("no .rpm", str(raised.exception))
 
 
+UNOFFICIAL = "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s.isl"
+COMMON_ISS = """[Languages]
+Name: en; MessagesFile: compiler:Default.isl;
+Name: bg; MessagesFile: compiler:Languages\\Bulgarian.isl;
+Name: el; MessagesFile: compiler:Languages\\Greek.isl;
+;Name: et; MessagesFile: compiler:Languages\\Estonian.isl;
+#if Int(DecodeVer(PREPROCVER,1)) < 6
+Name: vi; MessagesFile: compiler:Languages\\Vietnamese.islu;
+#else
+Name: vi; MessagesFile: compiler:Languages\\Vietnamese.isl;
+#endif
+"""
+
+
+class WindowsInstallers(unittest.TestCase):
+    def setUp(self):
+        self.work = tempfile.TemporaryDirectory()
+        self.addCleanup(self.work.cleanup)
+        self.inno = os.path.join(self.work.name, "Inno Setup 6")
+        os.makedirs(os.path.join(self.inno, "Languages"))
+        open(os.path.join(self.inno, "ISCC.exe"), "w").close()
+        open(os.path.join(self.inno, "Languages", "Bulgarian.isl"), "w").close()
+        self.inno_dir = os.path.join(self.work.name, "desktop-apps", "package", "inno")
+        os.makedirs(self.inno_dir)
+        with open(os.path.join(self.inno_dir, "common.iss"), "w") as handle:
+            handle.write(COMMON_ISS)
+        os.makedirs(os.path.join(self.work.name, "desktop-apps", "package", "build", "x64", "desktop"))
+        self.runs = []
+        patcher = mock.patch.object(util, "run", side_effect=lambda args, **kw: self.runs.append((args, kw)))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.fetched = []
+
+        def fetch(url, path):
+            self.fetched.append(url)
+            open(path, "w").close()
+
+        patcher = mock.patch.object(package, "_download", side_effect=fetch, create=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        patcher = mock.patch.dict(os.environ, {"INNOPATH": self.inno})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def context(self):
+        return package.Context(
+            work_root=self.work.name,
+            out_root=os.path.join(self.work.name, "out"),
+            target="win-x64",
+            version="10.0.0-mc.0",
+            product_version="10.0.0",
+            build_number="0",
+            branded=True,
+            sign=False,
+            dry_run=False,
+        )
+
+    def test_inno_gets_the_unofficial_languages_common_iss_names(self):
+        # common.iss names Greek and Vietnamese, which Inno Setup ships only
+        # in its source tree's Unofficial folder; the compiler stops at Greek.
+        with self.assertRaises(util.BuildError):  # no installers collected
+            package.windows_installers(self.context())
+        inno_args, inno_kw = [run for run in self.runs if "make_inno.ps1" in run[0]][0]
+        innopath = inno_kw["env"]["INNOPATH"]
+        self.assertNotEqual(innopath, self.inno)
+        self.assertEqual(
+            sorted(os.listdir(os.path.join(innopath, "Languages"))),
+            ["Bulgarian.isl", "Greek.isl", "Vietnamese.isl"],
+        )
+        self.assertTrue(os.path.isfile(os.path.join(innopath, "ISCC.exe")))
+        self.assertEqual(
+            self.fetched,
+            [UNOFFICIAL % "Greek", UNOFFICIAL % "Vietnamese"],
+        )
+        self.assertEqual(os.listdir(os.path.join(self.inno, "Languages")), ["Bulgarian.isl"])
+
+
 if __name__ == "__main__":
     unittest.main()

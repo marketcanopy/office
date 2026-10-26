@@ -5,6 +5,9 @@
   every executable and DLL between the two, as platform-dashboard's
   desktop-release.yml does with azure/artifact-signing-action. Advanced
   Installer (MSI) is left out: it is a commercial tool the runners do not have.
+  common.iss names translations Inno Setup ships only in its source tree's
+  Unofficial folder (Greek, Vietnamese, ...), so make_inno.ps1 gets, through
+  INNOPATH, a copy of the installed Inno Setup with those added.
 - Linux: build_tools' make_package.py (desktop-apps/package Makefile): .deb,
   .rpm and .tar.xz, the targets the branding's package_branding.py names.
   Upstream has no AppImage target.
@@ -20,9 +23,11 @@ release manifest.
 import glob
 import json
 import os
+import re
 import shutil
 import subprocess
-from dataclasses import dataclass, field
+import urllib.request
+from dataclasses import dataclass, field, replace
 from typing import Dict, List
 
 from . import targets as targetlib
@@ -33,6 +38,12 @@ PRODUCT_SLUG = "MarketCanopyOffice"
 # P02 contract section 2 identities for the branded build; upstream's otherwise.
 BRANDED_WINDOWS = {"CompanyName": "MarketCanopy", "ProductName": "Office"}
 UNBRANDED_WINDOWS = {"CompanyName": "ONLYOFFICE", "ProductName": "DesktopEditors"}
+# The translations Inno Setup 6.7.1 (the version toolchain.py installs) leaves
+# out of its installer.
+INNO_UNOFFICIAL_LANGUAGE = (
+    "https://raw.githubusercontent.com/jrsoftware/issrc/is-6_7_1/Files/Languages/Unofficial/%s.isl"
+)
+INNO_SETUP_DIR = r"C:\Program Files (x86)\Inno Setup 6"
 MAC_SCHEME = {"mac-arm64": "ONLYOFFICE-arm", "mac-x64": "ONLYOFFICE-x86_64"}
 
 
@@ -153,6 +164,35 @@ def _assert_signed(ctx: Context, folder: str) -> None:
     util.run(["powershell", "-NoProfile", "-Command", script], dry_run=ctx.dry_run)
 
 
+def _download(url: str, path: str) -> None:
+    with urllib.request.urlopen(url) as response, open(path, "wb") as handle:
+        shutil.copyfileobj(response, handle)
+
+
+def inno_languages(common_iss: str) -> List[str]:
+    """The Languages\\<name>.isl files common.iss uses with Inno Setup 6."""
+    with open(common_iss, encoding="utf-8-sig") as handle:
+        text = handle.read()
+    names = re.findall(r"^\s*Name:.*MessagesFile:\s*compiler:Languages\\(\w+)\.isl\s*;", text, re.MULTILINE)
+    return sorted(set(names))
+
+
+def inno_setup(ctx: Context) -> str:
+    """A copy of the installed Inno Setup with every translation common.iss names."""
+    source = os.environ.get("INNOPATH") or os.path.dirname(shutil.which("iscc") or "") or INNO_SETUP_DIR
+    copy = os.path.join(ctx.work_root, "inno-setup")
+    if ctx.dry_run:
+        return copy
+    shutil.copytree(source, copy, dirs_exist_ok=True)
+    common_iss = os.path.join(ctx.work_root, "desktop-apps", "package", "inno", "common.iss")
+    for name in inno_languages(common_iss):
+        path = os.path.join(copy, "Languages", name + ".isl")
+        if not os.path.isfile(path):
+            util.log("Inno Setup translation %s <- %s" % (name, INNO_UNOFFICIAL_LANGUAGE % name))
+            _download(INNO_UNOFFICIAL_LANGUAGE % name, path)
+    return copy
+
+
 def windows_installers(ctx: Context) -> List[str]:
     stage = windows_stage_dir(ctx)
     if not ctx.dry_run and not os.path.isdir(stage):
@@ -164,7 +204,8 @@ def windows_installers(ctx: Context) -> List[str]:
     if ctx.branded:
         branding_args = ["-BrandingDir", os.path.join(ctx.work_root, BRANDING, "desktop-apps", "package", "inno")]
     _ps1(ctx, "make_zip.ps1", args)
-    _ps1(ctx, "make_inno.ps1", args + branding_args)
+    inno_ctx = replace(ctx, env=dict(ctx.env, INNOPATH=inno_setup(ctx)))
+    _ps1(inno_ctx, "make_inno.ps1", args + branding_args)
     package_dir = os.path.join(ctx.work_root, "desktop-apps", "package")
     names = collect(ctx, glob.glob(os.path.join(package_dir, "zip", "*.zip")), "", ".zip")
     names += collect(ctx, glob.glob(os.path.join(package_dir, "inno", "*.exe")), "setup", ".exe")

@@ -118,6 +118,9 @@ def depot_tools(work_root: str) -> str:
     return os.path.join(os.path.abspath(work_root), "core", "Common", "3dParty", "v8_89", "depot_tools")
 
 
+# What the desktop-apps/package Makefile runs (make_package.py), after deps.py.
+LINUX_PACKAGING_PACKAGES = ["m4", "debhelper", "rpm", "fakeroot", "binutils-aarch64-linux-gnu"]
+
 # What build_tools runs on Linux that deps.py leaves to the machine: GitHub's
 # Ubuntu images have them, a minimal runner image (the Azure Container Apps
 # runner) does not. python.sh and cmake.sh download with wget.
@@ -181,9 +184,10 @@ def linux(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -
     python = os.path.join(bundled, "python3")
     if deps_needed:
         util.run([python, "./deps.py"], cwd=tools, dry_run=dry_run)
-        # make_package.py's Makefile: m4 templates, rpmbuild for the .rpm targets.
+        # make_package.py's Makefile: m4 templates, debhelper for the .deb, rpmbuild for the .rpm
+        # targets, and aarch64-linux-gnu-strip for both arm64 packages.
         util.run(
-            ["sudo", "apt-get", "install", "-y", "--no-install-recommends", "m4", "rpm", "fakeroot"], dry_run=dry_run
+            ["sudo", "apt-get", "install", "-y", "--no-install-recommends", *LINUX_PACKAGING_PACKAGES], dry_run=dry_run
         )
     qt_dir = os.path.join(tools, "qt_build", "Qt-5.9.9")
     wanted = ["amd64"] + (["arm64"] if "linux-arm64" in build else [])

@@ -84,6 +84,14 @@ class LinuxToolchain(unittest.TestCase):
         self.assertEqual(result.env["PATH"].split(os.pathsep)[0], self.cmake_bin)
         self.assertNotIn(["sudo", "./cmake.sh"], self.commands())
 
+    def test_packaging_tools_are_installed(self):
+        # desktop-apps/package: debhelper for the .deb, the aarch64 strip for both arm64 packages.
+        toolchain.linux(self.work, ["linux-arm64"], True, False)
+        packaging = [c for c in self.commands() if "fakeroot" in c]
+        self.assertEqual(len(packaging), 1)
+        for package in ("m4", "rpm", "debhelper", "binutils-aarch64-linux-gnu"):
+            self.assertIn(package, packaging[0])
+
     def test_without_install_deps_nothing_is_installed(self):
         toolchain.linux(self.work, ["linux-x64"], False, False)
         self.assertFalse([c for c in self.commands() if c[:1] == ["sudo"]])

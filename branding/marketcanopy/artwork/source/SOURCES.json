@@ -1,5 +1,5 @@
 {
-  "$comment": "Market Canopy artwork copied from platform-dashboard main. Market Canopy trademarks; not licensed under the AGPL or CC BY-SA (NOTICE). desktop/assets/logo-icon.png is byte-identical to icon.png and is not copied.",
+  "$comment": "Market Canopy trademarks; not licensed under the AGPL or CC BY-SA (NOTICE). office-icon.png and office-logo.png are Office's own icon and logo, supplied by the owner; the rest is copied from platform-dashboard main. desktop/assets/logo-icon.png is byte-identical to icon.png and is not copied.",
   "files": {
     "canopy-mark.png": {
       "repository": "circuitid/platform-dashboard",
@@ -120,13 +120,6 @@
       "gitBlob": "d884c343c0eff5e26644111b41358932be1b2e9b",
       "sha256": "4cc9f28b4f4c83957fad22133f35923c4fa7072ab521c3bcc5cd093165c9cb9a"
     },
-    "icon.icns": {
-      "repository": "circuitid/platform-dashboard",
-      "commit": "75a0227dd194083361722c57af88e8ee76aef237",
-      "path": "desktop/assets/icon.icns",
-      "gitBlob": "dd94029a0a5f887c0f5920fffe54234208963c7e",
-      "sha256": "c0b96170af33cf4b2b737c1eff45ec6d9fca7672ef5626c96ced33ca8b2b651d"
-    },
     "icon.png": {
       "repository": "circuitid/platform-dashboard",
       "commit": "75a0227dd194083361722c57af88e8ee76aef237",
@@ -140,6 +133,14 @@
       "path": "desktop/assets/logo.png",
       "gitBlob": "77cf25eedd4873a009b5f024b99dd92fe85162be",
       "sha256": "3c01ae46a3a7440d8611a96d90764a84027bab3e6af1b27ee0080f31734a35ec"
+    },
+    "office-icon.png": {
+      "supplied": "Market Canopy owner, 2026-10-26 (logo-symbol.png)",
+      "sha256": "054628441416c1839ab9bb42ef0ee83f4eab3cb460a90d79c08ca514db1c0ece"
+    },
+    "office-logo.png": {
+      "supplied": "Market Canopy owner, 2026-10-26 (logo.png)",
+      "sha256": "ed8ddf95ae7ed020d166c224a5773c22741cf1112d891a2f1909c2268def5a94"
     }
   }
 }

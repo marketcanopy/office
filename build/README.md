@@ -44,7 +44,7 @@ for every other requested target; it exits `3` when it can build none of them.
 1. `prepare`: a depth-1 checkout of build_tools and of every component build_tools lists for `--module desktop`, each at its `UPSTREAM` commit; the branding folder `branding/marketcanopy` copied beside them; `patches/<repo>/*.patch` applied with `git am --3way` under a fixed identity, so a patched component is the same commit everywhere; `branding/marketcanopy/replace/` copied over the tree and checked against its `MANIFEST.json`. It writes `<work>/resolved-commits.json`.
 2. `compile`: build_tools `configure.py` and `make.py` with `--branding marketcanopy`.
 3. `stage`: the app folder ready to sign (Windows: upstream `make.ps1`; macOS: an unsigned `xcodebuild` of the ONLYOFFICE scheme for the architecture). Prints `stage_dir`.
-4. `installers`: Windows ZIP and Inno Setup installer; Linux deb, rpm, rpm-suse and tar.xz through `make_package.py`; macOS zip and dmg, signed and notarized under `--sign`, with the Sparkle EdDSA signature of the zip.
+4. `installers`: Windows ZIP and Inno Setup installer; Linux deb, rpm and tar.xz through `make_package.py`; macOS zip and dmg, signed and notarized under `--sign`, with the Sparkle EdDSA signature of the zip.
 5. `seal`: `build-info.json` (version, flavor, signed, upstream commits, patch digests, this repository's commit, each file's SHA-256) and `SHA256SUMS` over the final files.
 
 Every run writes `<out>/measurements/measurements-<targets>-<phases>.json` with

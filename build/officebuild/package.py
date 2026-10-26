@@ -6,7 +6,8 @@
   desktop-release.yml does with azure/artifact-signing-action. Advanced
   Installer (MSI) is left out: it is a commercial tool the runners do not have.
 - Linux: build_tools' make_package.py (desktop-apps/package Makefile): .deb,
-  .rpm, SUSE .rpm and .tar.xz. Upstream has no AppImage target.
+  .rpm and .tar.xz, the targets the branding's package_branding.py names.
+  Upstream has no AppImage target.
 - macOS: xcodebuild of desktop-apps/macos (upstream's fastlane lane always
   signs and notarizes with ONLYOFFICE's setup), then, with --sign, the same
   Developer ID and App Store Connect API key notarization as desktop-release.yml,
@@ -194,9 +195,6 @@ def linux_installers(ctx: Context) -> List[str]:
     package_dir = os.path.join(ctx.work_root, "desktop-apps", "package")
     names = collect(ctx, glob.glob(os.path.join(package_dir, "deb", "*.deb")), "", ".deb")
     names += collect(ctx, glob.glob(os.path.join(package_dir, "rpm", "build", "RPMS", "*", "*.rpm")), "", ".rpm")
-    names += collect(
-        ctx, glob.glob(os.path.join(package_dir, "rpm-suse", "build", "RPMS", "*", "*.rpm")), "suse", ".rpm"
-    )
     tars = [path for path in glob.glob(os.path.join(package_dir, "tar", "*.tar.xz")) if "-help-" not in path]
     names += collect(ctx, tars, "", ".tar.xz")
     return names

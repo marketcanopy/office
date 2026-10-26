@@ -59,6 +59,9 @@ memory's peak use, and the host. In GitHub Actions it also writes the
 `OFFICE_FLAVOR`, `OFFICE_BUILD_SIGNED`, `OFFICE_SOURCE_ROOT`,
 `OFFICE_PATCHES_APPLIED=1` and `OFFICE_OVERLAY_APPLIED=1` (the branding hook
 then does not apply the queue, the replacements or the added files again).
+The release workflow also sets `OFFICE_CHANNEL` (`beta` or `stable`): the
+production update feeds in `branding/marketcanopy/settings.json` name
+`{channel}`, and the branding hook refuses a production build without it.
 
 ## Requirements
 

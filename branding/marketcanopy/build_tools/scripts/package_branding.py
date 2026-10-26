@@ -45,6 +45,12 @@ s3_base_url = ""
 
 _flavor = os.environ.get("OFFICE_FLAVOR", "staging")
 _feeds = _settings["updates"][_flavor]
+# {channel} is OFFICE_CHANNEL, as in make.py's channel_feeds.
+if any("{channel}" in str(_value) for _value in _feeds.values()):
+  _channel = os.environ.get("OFFICE_CHANNEL", "")
+  if _channel not in ("beta", "stable"):
+    raise SystemExit("package_branding: the %s update feeds need OFFICE_CHANNEL beta or stable" % _flavor)
+  _feeds = {_key: str(_value).replace("{channel}", _channel) for _key, _value in _feeds.items()}
 
 
 if utils.is_windows():

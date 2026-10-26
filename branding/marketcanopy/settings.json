@@ -59,11 +59,11 @@
       "macosX64Feed": "https://staging.invalid/office/beta/macos/x64/appcast.xml"
     },
     "production": {
-      "$comment": "P12 fills these with the office/<channel>/ paths on the desktop app's Azure Storage site. Empty means the hook refuses a production build.",
-      "windowsAppcast": "",
-      "windowsAppcastDev": "",
-      "macosArmFeed": "",
-      "macosX64Feed": ""
+      "$comment": "The desktop app's Azure Storage site (P12). {channel} is OFFICE_CHANNEL, beta or stable, which the release workflow sets per run; the dev channel (--appcast-dev-channel) is always beta.",
+      "windowsAppcast": "https://updates.marketcanopy.com/office/{channel}/windows/appcast.json",
+      "windowsAppcastDev": "https://updates.marketcanopy.com/office/beta/windows/appcast.json",
+      "macosArmFeed": "https://updates.marketcanopy.com/office/{channel}/macos/arm64/appcast.xml",
+      "macosX64Feed": "https://updates.marketcanopy.com/office/{channel}/macos/x64/appcast.xml"
     },
     "upstreamDefaults": [
       "https://download.onlyoffice.com/install/desktop/editors/windows/onlyoffice/appcast.json",

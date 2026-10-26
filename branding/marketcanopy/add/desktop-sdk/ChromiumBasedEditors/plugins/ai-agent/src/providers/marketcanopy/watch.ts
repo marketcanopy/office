@@ -60,7 +60,12 @@ export const checkSession = (
 
   const models = knownModels(window.localStorage, session);
   const selected = useModelsStore.getState().currentModel;
-  if (!selected || !models.some((model) => model.id === selected.id)) {
+  // A model of the person's own provider is theirs to change.
+  if (
+    !selected ||
+    (selected.provider === "marketcanopy" &&
+      !models.some((model) => model.id === selected.id))
+  ) {
     useModelsStore
       .getState()
       .selectModel(chooseModel(window.localStorage, session, models));

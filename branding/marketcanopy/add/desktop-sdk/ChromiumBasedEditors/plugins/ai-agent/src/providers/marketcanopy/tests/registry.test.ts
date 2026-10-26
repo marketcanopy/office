@@ -24,16 +24,19 @@ import {
 } from "../../registry";
 
 describe("registry", () => {
-  it("offers the managed provider only", () => {
-    expect(getSupportedProviderTypes()).toEqual(["marketcanopy"]);
-    expect(Object.keys(providerRegistry)).toEqual(["marketcanopy"]);
+  it("keeps upstream's providers beside Market Canopy", () => {
+    const types = getSupportedProviderTypes();
+    expect(types).toContain("openai");
+    expect(types).toContain("anthropic");
+    expect(types).toContain("ollama");
+    expect(types).toContain("marketcanopy");
     expect(isValidProviderType("marketcanopy")).toBe(true);
-    expect(isValidProviderType("openai")).toBe(false);
+    expect(isValidProviderType("openai")).toBe(true);
   });
 
-  it("resolves a stored provider of any type to the managed one", () => {
+  it("resolves each stored type to its own provider", () => {
     expect(getProvider("marketcanopy")).toBe(marketcanopyProvider);
-    expect(getProvider("openai")).toBe(marketcanopyProvider);
-    expect(getProvider("ollama")).toBe(marketcanopyProvider);
+    expect(getProvider("openai")).not.toBe(marketcanopyProvider);
+    expect(getProvider("openai")).toBe(providerRegistry.openai);
   });
 });

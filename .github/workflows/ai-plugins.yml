@@ -1,5 +1,5 @@
 # Checks the AI agent and the in-editor AI plugin with Market Canopy as their
-# only provider (platform-api ADR 0525, P09): applies the patch queue and the
+# default provider (platform-api ADR 0525, P09): applies the patch queue and the
 # overlay to UPSTREAM's commits, then lints, tests and builds the agent and
 # runs the in-editor plugin's tests against the patched plugin.
 #
@@ -71,9 +71,8 @@ jobs:
 
       - name: Agent tests
         working-directory: ${{ runner.temp }}/ow/desktop-sdk/ChromiumBasedEditors/plugins/ai-agent
-        # Upstream's provider registry test lists the providers Office removes,
-        # and upstream's OpenRouter test already fails at the pinned commit.
-        run: npx vitest run --exclude src/providers/tests/registry.test.ts --exclude src/providers/openrouter/tests/index.test.ts
+        # Upstream's OpenRouter test already fails at the pinned commit.
+        run: npx vitest run --exclude src/providers/openrouter/tests/index.test.ts
 
       - name: Agent build
         working-directory: ${{ runner.temp }}/ow/desktop-sdk/ChromiumBasedEditors/plugins/ai-agent

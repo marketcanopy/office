@@ -15,12 +15,11 @@
  */
 
 // main.tsx imports this module first, so it runs before the zustand stores
-// read localStorage. It makes the managed provider the only and the selected
-// one, removes every stored provider key (a profile from an upstream build
-// keeps them in "providers", "current-provider" and in each saved thread),
-// drops stdio MCP servers (native code no longer starts processes) and
-// removes web search's own Exa key: Office offers no web search (the
-// settings tab is gone), so no person's search key is kept.
+// read localStorage. It puts the managed provider first in the provider list
+// and selects it unless the person selected one of their own providers
+// (ADR 0525 amendment 2026-10-26: people may add upstream's providers with
+// their own keys). It drops stdio MCP servers (native code no longer starts
+// processes). Web search is upstream's, with the person's own Exa key.
 
 import type { Model, TProvider } from "@/lib/types";
 import { MARKETCANOPY_PROVIDER } from "./constants";
@@ -31,10 +30,7 @@ export const PROVIDERS_KEY = "providers";
 export const CURRENT_PROVIDER_KEY = "current-provider";
 export const CURRENT_MODEL_KEY = "current-model";
 export const MCP_SERVERS_KEY = "mcpServers";
-export const DISABLED_TOOLS_KEY = "disabledTools";
 export const LAST_MODELS_KEY = "marketcanopy-models";
-// servers/WebSearch.ts: { provider: "Exa", key }.
-export const WEB_SEARCH_DATA_KEY = "webSearchProviderData";
 
 const PROVIDER: TProvider = MARKETCANOPY_PROVIDER;
 
@@ -95,19 +91,49 @@ export const chooseModel = (
   return preferred ?? models[0];
 };
 
+const isManaged = (value: unknown): boolean =>
+  !!value &&
+  typeof value === "object" &&
+  (value as TProvider).type === "marketcanopy";
+
+/** The person's own providers, as stored; never the managed one. */
+const ownProviders = (storage: Storage): TProvider[] => {
+  const stored = readJson(storage, PROVIDERS_KEY);
+  if (!Array.isArray(stored)) return [];
+  return stored.filter(
+    (item): item is TProvider =>
+      !!item &&
+      typeof item === "object" &&
+      typeof (item as TProvider).name === "string" &&
+      !isManaged(item) &&
+      // The list is keyed by name, and this name is the managed provider's.
+      (item as TProvider).name.toLowerCase() !== PROVIDER.name.toLowerCase()
+  );
+};
+
 /** Applies the managed settings to `storage`; idempotent. */
 export const applyManagedSettings = (
   storage: Storage,
   session: MarketCanopySession
 ): void => {
-  storage.setItem(PROVIDERS_KEY, JSON.stringify([PROVIDER]));
-  storage.setItem(CURRENT_PROVIDER_KEY, JSON.stringify(PROVIDER));
+  const own = ownProviders(storage);
+  storage.setItem(PROVIDERS_KEY, JSON.stringify([PROVIDER, ...own]));
 
+  const current = readJson(storage, CURRENT_PROVIDER_KEY);
+  const kept =
+    current && !isManaged(current)
+      ? own.find((item) => item.name === (current as TProvider).name)
+      : undefined;
+  storage.setItem(CURRENT_PROVIDER_KEY, JSON.stringify(kept ?? PROVIDER));
+
+  // Always read, so the last aliases are remembered for an offline start.
   const models = knownModels(storage, session);
-  storage.setItem(
-    CURRENT_MODEL_KEY,
-    JSON.stringify(chooseModel(storage, session, models))
-  );
+  if (!kept) {
+    storage.setItem(
+      CURRENT_MODEL_KEY,
+      JSON.stringify(chooseModel(storage, session, models))
+    );
+  }
 
   const servers = readJson(storage, MCP_SERVERS_KEY);
   if (servers && typeof servers === "object") {
@@ -116,72 +142,7 @@ export const applyManagedSettings = (
       JSON.stringify(withoutStdioServers(servers as Record<string, unknown>))
     );
   }
-
-  storage.removeItem(WEB_SEARCH_DATA_KEY);
-
-  if (!storage.getItem(DISABLED_TOOLS_KEY)) {
-    // useServersStore reads a non-empty "web-search" list as "off".
-    storage.setItem(
-      DISABLED_TOOLS_KEY,
-      JSON.stringify({ "web-search": ["web_search"] })
-    );
-  }
 };
-
-/**
- * Rewrites every saved thread's provider to the managed one, so a thread
- * from an upstream build neither keeps nor uses a provider key.
- */
-export const scrubThreadProviders = (factory: IDBFactory): Promise<number> =>
-  new Promise((resolve) => {
-    let request: IDBOpenDBRequest;
-    try {
-      request = factory.open("ChatHistory");
-    } catch {
-      resolve(0);
-      return;
-    }
-    request.onupgradeneeded = () => {
-      // No history yet: leave creating the stores to the agent.
-      request.transaction?.abort();
-    };
-    request.onerror = () => resolve(0);
-    request.onsuccess = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains("threads")) {
-        db.close();
-        resolve(0);
-        return;
-      }
-      let changed = 0;
-      const transaction = db.transaction("threads", "readwrite");
-      const store = transaction.objectStore("threads");
-      const cursorRequest = store.openCursor();
-      cursorRequest.onsuccess = () => {
-        const cursor = cursorRequest.result;
-        if (!cursor) return;
-        const thread = cursor.value as { provider?: TProvider };
-        if (
-          thread.provider &&
-          (thread.provider.type !== "marketcanopy" ||
-            thread.provider.key ||
-            thread.provider.baseUrl)
-        ) {
-          cursor.update({ ...thread, provider: PROVIDER });
-          changed += 1;
-        }
-        cursor.continue();
-      };
-      transaction.oncomplete = () => {
-        db.close();
-        resolve(changed);
-      };
-      transaction.onerror = () => {
-        db.close();
-        resolve(changed);
-      };
-    };
-  });
 
 const run = () => {
   if (typeof window === "undefined" || !window.localStorage) return;
@@ -190,7 +151,6 @@ const run = () => {
   } catch (error) {
     console.error("Market Canopy AI settings:", error);
   }
-  if (window.indexedDB) void scrubThreadProviders(window.indexedDB);
 };
 
 run();

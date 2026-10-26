@@ -14,13 +14,13 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-// ADR 0525: Market Canopy is Office's only AI provider. The provider speaks
+// ADR 0525: Market Canopy is Office's managed AI provider, selected by
+// default; people may add upstream's providers with their own keys
+// (amendment 2026-10-26). The provider speaks
 // the OpenAI wire format to the Office AI gateway; the base URL, the model
 // aliases and a short-lived token come from getMarketCanopyAiSession() for
 // every request, so nothing secret is ever stored and the person types no
-// URL or key. A stored provider of another type (an older profile, a thread
-// saved before the upgrade) resolves to this one and its key and URL are
-// ignored.
+// URL or key. A stored Market Canopy entry's key and URL are ignored.
 
 import type { ThreadMessageLike } from "@assistant-ui/react";
 import OpenAI from "openai";

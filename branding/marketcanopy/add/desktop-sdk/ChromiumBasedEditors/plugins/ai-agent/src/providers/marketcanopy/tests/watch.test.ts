@@ -84,6 +84,19 @@ describe("checkSession", () => {
     expect(seen).toEqual([session]);
   });
 
+  it("leaves a model of the person's own provider selected", () => {
+    const own = { id: "gpt-4o", name: "GPT-4o", provider: "openai" as const };
+    useModelsStore.getState().selectModel(own);
+    checkSession(read);
+    session = readySession({
+      organizationId: OTHER_ORGANIZATION,
+      models: [{ id: "mc-reasoning", name: "Reasoning", capabilities: [] }],
+      defaultModel: "mc-reasoning",
+    });
+    checkSession(read);
+    expect(useModelsStore.getState().currentModel).toEqual(own);
+  });
+
   it("cancels requests on sign-out", () => {
     checkSession(read);
     const cancel = vi.spyOn(marketcanopyProvider, "cancelAll");

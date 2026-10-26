@@ -14,7 +14,9 @@
  * SPDX-License-Identifier: AGPL-3.0-only
  */
 
-// ADR 0525: Market Canopy is the plugin's only provider. The engine evaluates
+// ADR 0525: Market Canopy is the plugin's managed provider, listed first and
+// selected by default. Since the amendment of 2026-10-26 the person may also
+// use upstream's bundled providers with their own keys. The engine evaluates
 // this file as `(function(){ <file> return new Provider(); })()` while it loads
 // the providers config.json lists, before it calls AI.onLoadInternalProviders.
 //
@@ -22,11 +24,12 @@
 //   window.AscDesktopEditor.getMarketCanopyAiSession() (Office contract
 //   section 9) on every request. The token is never stored: the provider's
 //   key is always empty, and its URL is the session's.
-// - Once the providers load, every other provider, custom provider and model
-//   is removed from the plugin's storage, which drops the keys an upstream
-//   build saved, and each action is pointed at a Market Canopy alias.
-// - Custom and external providers cannot be added, and a model can be added
-//   only to Market Canopy.
+// - Once the providers load, Market Canopy's models are the session's
+//   aliases, and an action with no usable model is pointed at one. The
+//   person's own providers, models and choices are kept.
+// - Custom (JavaScript file) and external providers cannot be added, and
+//   stored ones are removed: a custom provider's code would run in this page,
+//   which can read the Market Canopy session.
 // - When the account or organization changes, requests in flight to the
 //   gateway are cancelled and the models reload.
 
@@ -56,7 +59,7 @@ if (!MC) {
 			Vision: "vision"
 		};
 		var MESSAGES = {
-			signed_out: "Sign in to Market Canopy to use AI.",
+			signed_out: "Sign in to Market Canopy on the Home screen to use Market Canopy AI.",
 			offline: "AI needs a network connection.",
 			update_required: "Update Market Canopy Office to use AI.",
 			not_entitled: "Your Market Canopy plan does not include AI.",
@@ -159,19 +162,25 @@ if (!MC) {
 			return actions && Object.prototype.hasOwnProperty.call(actions, key);
 		}
 
-		// Removes every other provider and model, then points each action at
-		// a Market Canopy alias. Idempotent.
+		// Removes custom and external providers, replaces Market Canopy's
+		// models with the session's aliases, keeps the person's own providers
+		// and models, and points each action without a usable model at a
+		// Market Canopy alias. Idempotent.
 		function configure() {
 			var AI = window.AI;
 			var session = readSession();
 			var list = knownModels(session);
 
+			var dropped = Object.keys(AI.InternalCustomProvidersSources || {});
+			AI.InternalCustomProviders.concat(AI.ExternalCustomProviders).forEach(function(item) {
+				dropped.push(item.name);
+			});
 			AI.InternalCustomProvidersSources = {};
 			AI.InternalCustomProviders = [];
 			AI.ExternalCustomProviders = [];
-			for (var name in AI.Providers) {
-				if (name !== NAME)
-					delete AI.Providers[name];
+			for (var d = 0; d < dropped.length; d++) {
+				if (dropped[d] !== NAME)
+					delete AI.Providers[dropped[d]];
 			}
 			var provider = AI.Providers[NAME];
 			if (!provider) {
@@ -181,7 +190,7 @@ if (!MC) {
 
 			provider.models = [];
 			provider.modelsUI = [];
-			var models = [];
+			var managed = [];
 			for (var i = 0; i < list.length; i++) {
 				var model = {
 					id: list[i].id,
@@ -193,14 +202,19 @@ if (!MC) {
 				var modelUI = new AI.UI.Model(model.name, model.id, NAME, provider.checkModelCapability(model));
 				provider.models.push(model);
 				provider.modelsUI.push(modelUI);
-				models.push(modelUI);
+				managed.push(modelUI);
 			}
+			var own = (AI.Models || []).filter(function(item) {
+				return item && item.provider !== NAME && AI.Providers[item.provider];
+			});
+			var models = managed.concat(own);
 			AI.Models = models;
 
 			var ids = models.map(function(item) { return item.id; });
-			var chat = session.state === "ready" && ids.indexOf(session.defaultModel) !== -1 ?
-				session.defaultModel : ids[0];
-			var visionModel = models.filter(function(item) {
+			var managedIds = managed.map(function(item) { return item.id; });
+			var chat = session.state === "ready" && managedIds.indexOf(session.defaultModel) !== -1 ?
+				session.defaultModel : managedIds[0];
+			var visionModel = managed.filter(function(item) {
 				return (item.capabilities & AI.CapabilitiesUI.Vision) !== 0;
 			})[0];
 			var choose = function(type, current) {
@@ -325,12 +339,6 @@ if (!MC) {
 			};
 			AI.addExternalProvider = function() {
 				return false;
-			};
-			var addModel = AI.Storage.addModel;
-			AI.Storage.addModel = function(model) {
-				if (!model || !model.provider || model.provider.name !== NAME)
-					return;
-				return addModel.apply(this, arguments);
 			};
 
 			// code.js would add the start window agent's selected model as an

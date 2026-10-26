@@ -1,0 +1,97 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Mon, 26 Oct 2026 00:00:00 +0000
+Subject: [PATCH] List Market Canopy first among the AI plugin's providers
+
+ADR 0525 (amendment 2026-10-26): the in-editor AI plugin offers
+Market Canopy, whose code is in the overlay
+(providers/internal/marketcanopy.js), first and selected by default,
+and upstream's bundled providers beside it for people who bring their
+own key.
+
+The model dialog asks for no URL or key when the provider is Market
+Canopy: the session supplies both for every request, and its models
+are the session's aliases. The Custom providers button is hidden: a
+custom provider is a JavaScript file that runs in the plugin page,
+which can read the Market Canopy session.
+---
+ .../content/ai/scripts/aiModelEdit.js         | 25 +++++++++++++------
+ .../ai/scripts/engine/providers/config.json   |  2 ++
+ 2 files changed, 19 insertions(+), 8 deletions(-)
+
+diff --git a/sdkjs-plugins/content/ai/scripts/aiModelEdit.js b/sdkjs-plugins/content/ai/scripts/aiModelEdit.js
+index 31c1e9c..2640667 100644
+--- a/sdkjs-plugins/content/ai/scripts/aiModelEdit.js
++++ b/sdkjs-plugins/content/ai/scripts/aiModelEdit.js
+@@ -28,6 +28,9 @@
+  * Creative Commons Attribution-ShareAlike 4.0 International. See the License
+  * terms at http://creativecommons.org/licenses/by-sa/4.0/legalcode
+  *
++ * Modified by Market Canopy on 2026-10-26 for Market Canopy Office: Market
++ * Canopy needs no URL or key, and there are no custom providers.
++ *
+  */
+ 
+ var themeType = 'light';
+@@ -95,9 +98,14 @@ var providerKeyInput = new MaskedInput({
+ });
+ 
+ 
+-$('#custom-providers-button label').click(function(e) {
+-	window.Asc.plugin.sendToPlugin("onOpenCustomProvidersModal");
+-});
++// Custom providers run their code in the plugin page, which reads the Market
++// Canopy session (providers/internal/marketcanopy.js), so they are off.
++$('#custom-providers-button').hide();
++
++// Market Canopy's URL and token come from the session for every request.
++function isMarketCanopyProvider(name) {
++	return name === "Market Canopy";
++}
+ 
+ var updateModelsLoader = null;
+ var updateModelsErrorTip = new Tooltip(updateModelsErrorEl, {
+@@ -373,7 +381,7 @@ function onModelInfo(info) {
+ function onSubmit() {
+ 	var isProviderNameValid = providerNameValidator.validate();
+ 	var isNameInputValid = nameInputValidator.validate();
+-	var isProviderUrlValid = providerUrlValidator.validate();
++	var isProviderUrlValid = isMarketCanopyProvider(providerNameCmbEl.value) || providerUrlValidator.validate();
+ 	var isModelNameValid = modelNameValidator.validate();
+ 	if(!isProviderNameValid || !isNameInputValid || !isProviderUrlValid || !isModelNameValid) return;
+ 
+@@ -402,10 +410,11 @@ function onChangeNameInput() {
+ function onChangeProviderComboBox() {
+ 	var provider = providersList.filter(function(el) { return el.id == providerNameCmbEl.value })[0] || null;
+ 
+-	providerUrlInputEl.value = provider ? provider.url : '';
+-	providerKeyInputEl.value = provider ? provider.key : '';
++	var isManaged = !!provider && isMarketCanopyProvider(provider.name);
++	providerUrlInputEl.value = provider && !isManaged ? provider.url : '';
++	providerKeyInputEl.value = provider && !isManaged ? provider.key : '';
+ 
+-	if (providerUrlInputEl.value === "[external]") {
++	if (isManaged || providerUrlInputEl.value === "[external]") {
+ 		providerUrlInputEl.setAttribute('disabled', true);
+ 		providerKeyInputEl.setAttribute('disabled', true);
+ 	}
+@@ -414,7 +423,7 @@ function onChangeProviderComboBox() {
+ 		providerKeyInputEl.removeAttribute('disabled');
+ 	}
+ 
+-	if (providerUrlInputEl.value) {
++	if (isManaged || providerUrlInputEl.value) {
+ 		updateModelsList();
+ 	}
+ 
+diff --git a/sdkjs-plugins/content/ai/scripts/engine/providers/config.json b/sdkjs-plugins/content/ai/scripts/engine/providers/config.json
+index 92da70b..abacaef 100644
+--- a/sdkjs-plugins/content/ai/scripts/engine/providers/config.json
++++ b/sdkjs-plugins/content/ai/scripts/engine/providers/config.json
+@@ -1,4 +1,6 @@
+ [
++	"marketcanopy",
++
+ 	"openai",
+ 	"google-gemini",
+ 	"anthropic",

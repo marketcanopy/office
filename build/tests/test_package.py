@@ -167,6 +167,28 @@ class WindowsInstallers(unittest.TestCase):
             with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
                 self.assertEqual(handle.read(), "x64")
 
+    def test_an_earlier_release_numbers_installers_are_not_collected(self):
+        # Run 40382287299 (10.0.0-mc.1) found run 36's 10.0.0.0 zip beside its
+        # own in the runner's persistent work folder and stopped.
+        package_dir = os.path.join(self.work.name, "desktop-apps", "package")
+        for number in ("0", "1"):
+            for folder, extension in (("zip", "zip"), ("inno", "exe")):
+                path = os.path.join(package_dir, folder, "MarketCanopy-Office-10.0.0.%s-x64.%s" % (number, extension))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w") as handle:
+                    handle.write(number)
+        ctx = package.replace(self.context(), version="10.0.0-mc.1", build_number="1")
+        self.assertEqual(
+            package.windows_installers(ctx),
+            [
+                "MarketCanopyOffice-10.0.0-mc.1-win-x64-development.zip",
+                "MarketCanopyOffice-10.0.0-mc.1-win-x64-setup-development.exe",
+            ],
+        )
+        for name in os.listdir(os.path.join(self.work.name, "out", "win-x64")):
+            with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
+                self.assertEqual(handle.read(), "1")
+
 
 class WindowsStageThemes(unittest.TestCase):
     def setUp(self):

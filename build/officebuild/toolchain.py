@@ -77,6 +77,8 @@ V8_WINDOWS_SDK_PACKAGE = "windows-sdk-10-version-2004-all"
 STRAWBERRY_PERL_BIN = r"C:\Strawberry\perl\bin"
 # Where Chocolatey's 7zip puts 7z.exe, which desktop-apps' make_zip.ps1 runs.
 SEVEN_ZIP_DIR = r"C:\Program Files\7-Zip"
+# package.py adds this version's unofficial translations, which common.iss names.
+INNO_SETUP_VERSION = "6.7.1"
 NODE_MIN = (22, 12)
 JAVA_MIN_MAJOR = 11
 
@@ -277,8 +279,9 @@ def _v8_sdk_missing(cpus: List[str]) -> List[str]:
     return missing
 
 
-def _choco(package: str, dry_run: bool) -> None:
-    util.run(["choco", "install", package, "--no-progress", "-y"], dry_run=dry_run, check=False)
+def _choco(package: str, dry_run: bool, version: str = "") -> None:
+    pin = ["--version", version] if version else []
+    util.run(["choco", "install", package] + pin + ["--no-progress", "-y"], dry_run=dry_run, check=False)
 
 
 def _grunt(install_deps: bool, dry_run: bool) -> None:
@@ -391,7 +394,7 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
         vs_path, env = pin_windows_sdk(work_root, vs_path, ARM64_WINDOWS_SDK, dry_run)
     pin_icu_sdk(work_root, ARM64_WINDOWS_SDK if "win-arm64" in build else "", dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
-        _choco("innosetup", dry_run)
+        _choco("innosetup", dry_run, INNO_SETUP_VERSION)
     _grunt(install_deps, dry_run)
     extra = windows_build_tools(install_deps, dry_run)
     if install_deps:

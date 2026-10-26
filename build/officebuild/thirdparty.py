@@ -23,11 +23,9 @@ ICU_MAJOR = "74"
 
 
 def _windows_platforms(platforms: List[str]) -> List[str]:
-    # build_tools adds win_64 to a win_arm64 build on an x64 host (config.py).
-    wanted = [p for p in platforms if p.startswith("win_")]
-    if "win_arm64" in wanted and "win_64" not in wanted:
-        wanted.insert(0, "win_64")
-    return wanted
+    # config.py's win_64 addition to a win_arm64 build is disabled at the tag:
+    # an arm64 build configures OpenSSL and ICU for ARM64 only.
+    return [p for p in platforms if p.startswith("win_")]
 
 
 def products(work_root: str, platforms: List[str]) -> Dict[str, List[str]]:

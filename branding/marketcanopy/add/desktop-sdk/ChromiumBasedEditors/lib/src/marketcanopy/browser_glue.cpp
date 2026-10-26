@@ -187,9 +187,8 @@ namespace NSMarketCanopy
 				if (!m_account)
 				{
 					CAccount::CConfig config;
-					config.flavor = EFlavor::Production;
 					config.version = MARKETCANOPY_OFFICE_VERSION;
-					std::string service = ServiceName(config.flavor);
+					std::string service = ServiceName();
 					m_store = CreateOsCredentialStore(service);
 					m_lock = CreateOsStoreLock(service);
 					m_account.reset(new CAccount(this, m_store, m_lock, config));
@@ -368,7 +367,7 @@ namespace NSMarketCanopy
 						return false;
 					Json value;
 					if (Json::Parse(Utf8(param), value) && value.Get("domain").IsString() &&
-						TrimSlash(value.Get("domain").AsString()) == OriginsFor(Flavor()).app)
+						TrimSlash(value.Get("domain").AsString()) == Origins().app)
 					{
 						m_portalLogoutFromPage = true;
 						PostToUi(60000, [this]() { m_portalLogoutFromPage = false; });
@@ -486,11 +485,6 @@ namespace NSMarketCanopy
 			std::vector<CefRefPtr<CefFrame> > m_aiFrames;
 			std::string m_aiSession;
 			long long m_aiExpiresMs;
-
-			static EFlavor Flavor()
-			{
-				return EFlavor::Production;
-			}
 
 			static std::string TrimSlash(const std::string& value)
 			{

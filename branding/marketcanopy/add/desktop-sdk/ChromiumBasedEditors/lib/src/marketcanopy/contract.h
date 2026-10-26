@@ -37,16 +37,14 @@ namespace NSMarketCanopy
 	extern const char* const kEditorAiPluginGuid; // in-editor AI plugin
 	const size_t kMaxGrantBytes = 2048;
 
-	enum class EFlavor { Production, Staging };
-
 	struct COrigins
 	{
 		std::string api;
 		std::string app;
 	};
 
-	const char* ServiceName(EFlavor flavor);
-	COrigins OriginsFor(EFlavor flavor);
+	const char* ServiceName();
+	COrigins Origins();
 	std::string GrantAccount(const std::string& apiOrigin);
 
 	bool IsObjectId(const std::string& value);

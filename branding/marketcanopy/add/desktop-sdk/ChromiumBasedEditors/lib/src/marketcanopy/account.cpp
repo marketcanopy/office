@@ -50,7 +50,7 @@ namespace NSMarketCanopy
 		  m_haveGrant(false), m_accessExpiresMs(0), m_refreshing(false), m_haveBootstrap(false), m_bootstrapAtMs(0), m_epoch(1),
 		  m_pendingSinceMs(0), m_aiExpiresMs(0), m_aiWantedAtMs(0), m_aiMinting(false), m_signedOutPoll(false)
 	{
-		m_origins = OriginsFor(config.flavor);
+		m_origins = Origins();
 		if (!ClientVersionHeader(config.version, m_clientVersion))
 			m_clientVersion = "0";
 	}

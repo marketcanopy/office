@@ -32,24 +32,16 @@ namespace NSMarketCanopy
 	const char* const kAgentPluginGuid = "{9DC93CDB-B576-4F0C-B55E-FCC9C48DD777}";
 	const char* const kEditorAiPluginGuid = "{9DC93CDB-B576-4F0C-B55E-FCC9C48DD007}";
 
-	const char* ServiceName(EFlavor flavor)
+	const char* ServiceName()
 	{
-		return flavor == EFlavor::Production ? "com.marketcanopy.office" : "com.marketcanopy.office.staging";
+		return "com.marketcanopy.office";
 	}
 
-	COrigins OriginsFor(EFlavor flavor)
+	COrigins Origins()
 	{
 		COrigins origins;
-		if (flavor == EFlavor::Production)
-		{
-			origins.api = "https://api.marketcanopy.com";
-			origins.app = "https://app.marketcanopy.com";
-		}
-		else
-		{
-			origins.api = "https://staging-api.marketcanopy.com";
-			origins.app = "https://staging-app.marketcanopy.com";
-		}
+		origins.api = "https://api.marketcanopy.com";
+		origins.app = "https://app.marketcanopy.com";
 		return origins;
 	}
 
@@ -250,7 +242,7 @@ namespace NSMarketCanopy
 				authority.find(':') != std::string::npos)
 				return Invalid();
 			std::string origin = "https://" + Lower(authority);
-			if (origin != OriginsFor(EFlavor::Production).app)
+			if (origin != Origins().app)
 				return Invalid();
 			const std::string prefix = "/office/documents/";
 			if (!StartsWith(path, prefix) || path.size() != prefix.size() + 24 || !IsObjectId(path.substr(prefix.size())))
@@ -807,7 +799,7 @@ namespace NSMarketCanopy
 			b.aiEnabled = false;
 		}
 		// docs open only on an allowed app origin (4.1)
-		if (b.docsAppOrigin != OriginsFor(EFlavor::Production).app)
+		if (b.docsAppOrigin != Origins().app)
 			b.docsEnabled = false;
 		if (b.connectPath != "/office/connect")
 			b.docsEnabled = false;

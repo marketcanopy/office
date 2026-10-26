@@ -201,11 +201,23 @@ def apply_additions():
     log("added %d file(s)" % count)
 
 
+def channel_feeds(settings, flavor):
+    """settings.json updates.<flavor>, with {channel} replaced by OFFICE_CHANNEL
+    (beta or stable): one build is for one channel's feeds."""
+    feeds = settings["updates"][flavor]
+    if not any("{channel}" in str(value) for value in feeds.values()):
+        return feeds
+    channel = os.environ.get("OFFICE_CHANNEL", "")
+    if channel not in ("beta", "stable"):
+        fail("the %s update feeds need OFFICE_CHANNEL beta or stable, not %r" % (flavor, channel))
+    return {key: str(value).replace("{channel}", channel) for key, value in feeds.items()}
+
+
 def resolve_feeds(settings):
     flavor = os.environ.get("OFFICE_FLAVOR", "staging")
     if flavor not in ("staging", "production"):
         fail("OFFICE_FLAVOR must be staging or production, not %r" % flavor)
-    feeds = settings["updates"][flavor]
+    feeds = channel_feeds(settings, flavor)
     upstream_defaults = set(settings["updates"]["upstreamDefaults"])
     main = os.environ.get("DESKTOP_URL_UPDATES_MAIN_CHANNEL") or feeds["windowsAppcast"]
     dev = os.environ.get("DESKTOP_URL_UPDATES_DEV_CHANNEL") or feeds["windowsAppcastDev"]

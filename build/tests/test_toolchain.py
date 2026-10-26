@@ -213,7 +213,7 @@ class WindowsBuildTools(unittest.TestCase):
         self.assertIn("perl Configure", str(raised.exception))
         self.assertIn("py -3", str(raised.exception))
 
-    def test_strawberry_perl_outside_path_is_appended(self):
+    def test_strawberry_perl_outside_path_is_put_first(self):
         def which(name):
             return "C:\\Windows\\py.exe" if name == "py" else None
 
@@ -223,8 +223,32 @@ class WindowsBuildTools(unittest.TestCase):
         ):
             self.assertEqual(toolchain.windows_build_tools(True, False), [toolchain.STRAWBERRY_PERL_BIN])
 
+    def test_git_bash_msys_perl_is_put_behind_strawberry_perl(self):
+        # Under `shell: bash` the first perl on PATH is Git's MSYS build, for
+        # which OpenSSL's Configure writes no makefile.
+        perl_exe = os.path.join(toolchain.STRAWBERRY_PERL_BIN, "perl.exe")
+        with mock.patch.object(
+            toolchain.shutil, "which", return_value=r"C:\Program Files\Git\usr\bin\perl.exe"
+        ), mock.patch.object(toolchain, "_tool_output", return_value="msys"), mock.patch.object(
+            toolchain.os.path, "isfile", side_effect=lambda path: path == perl_exe
+        ):
+            self.assertEqual(toolchain.windows_build_tools(True, False), [toolchain.STRAWBERRY_PERL_BIN])
+        self.assertEqual(self.commands(), [])
+
+    def test_git_bash_msys_perl_alone_installs_strawberry_perl(self):
+        with mock.patch.object(toolchain.shutil, "which", return_value="found"), mock.patch.object(
+            toolchain, "_tool_output", return_value="msys"
+        ), mock.patch.object(toolchain.os.path, "isfile", return_value=False):
+            with self.assertRaises(util.BuildError) as raised:
+                toolchain.windows_build_tools(True, False)
+        choco = [c[2] for c in self.commands() if c[:2] == ["choco", "install"]]
+        self.assertEqual(choco, ["strawberryperl"])
+        self.assertIn("Windows Perl", str(raised.exception))
+
     def test_present_tools_install_nothing(self):
-        with mock.patch.object(toolchain.shutil, "which", return_value="found"):
+        with mock.patch.object(toolchain.shutil, "which", return_value="found"), mock.patch.object(
+            toolchain, "_tool_output", return_value="MSWin32"
+        ):
             self.assertEqual(toolchain.windows_build_tools(True, False), [])
         self.assertEqual(self.commands(), [])
 

@@ -45,6 +45,8 @@
   whose errors it ignores, and creates their output folders first, so without
   them a run "passes" and every later run skips both libraries. --install-deps
   installs Strawberry Perl and Python (with its launcher) through Chocolatey.
+  Strawberry Perl goes first on PATH unless the first perl is already a Windows
+  build: under Git Bash it is MSYS perl, which OpenSSL's Configure refuses.
 - Linux and macOS set DEPOT_TOOLS_DIR to v8's depot_tools as an absolute path.
   build_tools runs `./depot_tools/fetch`, which exports the relative
   `./depot_tools` for the scripts it calls, and bootstrap_python3 changes into
@@ -283,22 +285,31 @@ def _grunt(install_deps: bool, dry_run: bool) -> None:
         util.run([npm, "install", "-g", "grunt-cli"], dry_run=dry_run)
 
 
+def _windows_perl() -> bool:
+    """Whether the first perl on PATH is a Windows build. Under `shell: bash` it
+    is Git's MSYS perl, for which OpenSSL's Configure writes no makefile, and
+    build_tools ignores the error."""
+    return _tool_output(["perl", "-e", "print $^O"], {}).strip() == "MSWin32"
+
+
 def windows_build_tools(install_deps: bool, dry_run: bool) -> List[str]:
-    """Folders to append to PATH so build_tools finds `perl` (OpenSSL) and `py`
-    (ICU's data build). A tool still missing fails the build here instead of
-    leaving an empty library folder behind."""
-    if install_deps and not shutil.which("perl"):
+    """Folders to put first on PATH so build_tools finds a Windows `perl`
+    (OpenSSL) and `py` (ICU's data build). A tool still missing fails the build
+    here instead of leaving an empty library folder behind."""
+    strawberry = os.path.isfile(os.path.join(STRAWBERRY_PERL_BIN, "perl.exe"))
+    windows_perl = not dry_run and shutil.which("perl") and _windows_perl()
+    if install_deps and not windows_perl and not strawberry:
         _choco("strawberryperl", dry_run)
     if install_deps and not shutil.which("py"):
         _choco("python3", dry_run)
     if dry_run:
         return []
     extra = []
-    if not shutil.which("perl") and os.path.isfile(os.path.join(STRAWBERRY_PERL_BIN, "perl.exe")):
+    if not windows_perl and os.path.isfile(os.path.join(STRAWBERRY_PERL_BIN, "perl.exe")):
         extra.append(STRAWBERRY_PERL_BIN)
     missing = []
-    if not (shutil.which("perl") or extra):
-        missing.append("Perl (OpenSSL runs `perl Configure`)")
+    if not (windows_perl or extra):
+        missing.append("a Windows Perl such as Strawberry Perl (OpenSSL runs `perl Configure`)")
     if not shutil.which("py"):
         missing.append("the Python launcher `py` (ICU's data build runs `py -3`)")
     if missing:
@@ -376,7 +387,7 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
     if install_deps:
         env.update(_cmake3(work_root, dry_run))
     if extra:
-        env["PATH"] = os.pathsep.join([env.get("PATH", os.environ.get("PATH", ""))] + extra)
+        env["PATH"] = os.pathsep.join(extra + [env.get("PATH", os.environ.get("PATH", ""))])
     return Toolchain(["--qt-dir", qt_dir, "--vs-version", "2019", "--vs-path", vs_path], env, util.python())
 
 

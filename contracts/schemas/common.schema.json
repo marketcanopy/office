@@ -32,15 +32,13 @@
     "apiOrigin": {
       "type": "string",
       "enum": [
-        "https://api.marketcanopy.com",
-        "https://staging-api.marketcanopy.com"
+        "https://api.marketcanopy.com"
       ]
     },
     "appOrigin": {
       "type": "string",
       "enum": [
-        "https://app.marketcanopy.com",
-        "https://staging-app.marketcanopy.com"
+        "https://app.marketcanopy.com"
       ]
     },
     "releaseVersion": {

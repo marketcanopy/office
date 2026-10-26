@@ -6,7 +6,6 @@ export const SCHEME = 'mc-office';
 
 export const ALLOWED_APP_ORIGINS = [
   'https://app.marketcanopy.com',
-  'https://staging-app.marketcanopy.com',
 ] as const;
 
 const CREDENTIAL_PARAMS = new Set([

@@ -250,7 +250,7 @@ namespace NSMarketCanopy
 				authority.find(':') != std::string::npos)
 				return Invalid();
 			std::string origin = "https://" + Lower(authority);
-			if (origin != OriginsFor(EFlavor::Production).app && origin != OriginsFor(EFlavor::Staging).app)
+			if (origin != OriginsFor(EFlavor::Production).app)
 				return Invalid();
 			const std::string prefix = "/office/documents/";
 			if (!StartsWith(path, prefix) || path.size() != prefix.size() + 24 || !IsObjectId(path.substr(prefix.size())))
@@ -807,7 +807,7 @@ namespace NSMarketCanopy
 			b.aiEnabled = false;
 		}
 		// docs open only on an allowed app origin (4.1)
-		if (b.docsAppOrigin != OriginsFor(EFlavor::Production).app && b.docsAppOrigin != OriginsFor(EFlavor::Staging).app)
+		if (b.docsAppOrigin != OriginsFor(EFlavor::Production).app)
 			b.docsEnabled = false;
 		if (b.connectPath != "/office/connect")
 			b.docsEnabled = false;

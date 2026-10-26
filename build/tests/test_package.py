@@ -167,6 +167,21 @@ class WindowsInstallers(unittest.TestCase):
             with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
                 self.assertEqual(handle.read(), "x64")
 
+    def test_an_earlier_builds_leftover_installers_are_not_collected(self):
+        # Run 40382287299 built 10.0.0.1 and found run 36's 10.0.0.0 zip
+        # beside it in the persistent work folder.
+        package_dir = os.path.join(self.work.name, "desktop-apps", "package")
+        for version in ("10.0.0.0", "10.0.0.7"):
+            for folder, extension in (("zip", "zip"), ("inno", "exe")):
+                path = os.path.join(package_dir, folder, "MarketCanopy-Office-%s-x64.%s" % (version, extension))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w") as handle:
+                    handle.write(version)
+        package.windows_installers(self.context())
+        for name in os.listdir(os.path.join(self.work.name, "out", "win-x64")):
+            with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
+                self.assertEqual(handle.read(), "10.0.0.0")
+
 
 class WindowsStageThemes(unittest.TestCase):
     def setUp(self):

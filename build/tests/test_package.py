@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import unittest
 from unittest import mock
@@ -131,6 +132,18 @@ class WindowsInstallers(unittest.TestCase):
             [UNOFFICIAL % "Greek", UNOFFICIAL % "Vietnamese"],
         )
         self.assertEqual(os.listdir(os.path.join(self.inno, "Languages")), ["Bulgarian.isl"])
+
+    def test_the_chocolatey_shim_on_path_is_not_taken_for_inno_setup(self):
+        # Chocolatey puts an iscc.exe shim in its bin folder, which has no
+        # Languages folder; run 40299651728 copied that and failed on Albanian.
+        shim = os.path.join(self.work.name, "chocolatey", "bin")
+        os.makedirs(shim)
+        os.environ.pop("INNOPATH")
+        with mock.patch.object(shutil, "which", return_value=os.path.join(shim, "iscc.exe")):
+            with mock.patch.object(package, "INNO_SETUP_DIR", self.inno):
+                innopath = package.inno_setup(self.context())
+        self.assertTrue(os.path.isfile(os.path.join(innopath, "ISCC.exe")))
+        self.assertTrue(os.path.isfile(os.path.join(innopath, "Languages", "Greek.isl")))
 
 
 class WindowsStageThemes(unittest.TestCase):

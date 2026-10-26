@@ -198,11 +198,17 @@ def inno_languages(common_iss: str) -> List[str]:
 
 def inno_setup(ctx: Context) -> str:
     """A copy of the installed Inno Setup with every translation common.iss names."""
-    source = os.environ.get("INNOPATH") or os.path.dirname(shutil.which("iscc") or "") or INNO_SETUP_DIR
     copy = os.path.join(ctx.work_root, "inno-setup")
     if ctx.dry_run:
         return copy
-    shutil.copytree(source, copy, dirs_exist_ok=True)
+    # The iscc on PATH can be Chocolatey's shim, whose folder has no Languages.
+    candidates = [os.environ.get("INNOPATH", ""), INNO_SETUP_DIR, os.path.dirname(shutil.which("iscc") or "")]
+    found = [path for path in candidates if path and os.path.isdir(os.path.join(path, "Languages"))]
+    if not found:
+        raise util.BuildError("no Inno Setup installation with a Languages folder in %s" % candidates)
+    # A fresh copy each time: an earlier run may have copied the shim's folder.
+    shutil.rmtree(copy, ignore_errors=True)
+    shutil.copytree(found[0], copy)
     common_iss = os.path.join(ctx.work_root, "desktop-apps", "package", "inno", "common.iss")
     for name in inno_languages(common_iss):
         path = os.path.join(copy, "Languages", name + ".isl")

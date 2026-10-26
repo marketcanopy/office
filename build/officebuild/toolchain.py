@@ -325,6 +325,24 @@ def pin_windows_sdk(work_root: str, vs_path: str, version: str, dry_run: bool) -
     return folder, {"BOOST_BUILD_USER_CONFIG": user_config}
 
 
+def pin_icu_sdk(work_root: str, version: str, dry_run: bool) -> str:
+    """MSBuild's Directory.Build.rsp above ICU's solution, so its ARM64 projects
+    build against `version`: ICU names Windows SDK 10.0.16299.0 for ARM64, which
+    neither Chocolatey nor the Visual Studio 2019 installer offers any longer.
+    An empty `version` removes it, for a build without win-arm64."""
+    path = os.path.join(work_root, "core", "Common", "3dParty", "icu", "Directory.Build.rsp")
+    if dry_run:
+        return path
+    if not version:
+        if os.path.isfile(path):
+            os.remove(path)
+        return path
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as handle:
+        handle.write("/p:WindowsTargetPlatformVersion=%s\n" % version)
+    return path
+
+
 def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool) -> Toolchain:
     qt_dir = os.environ.get("OFFICE_QT_DIR", "")
     if not qt_dir:
@@ -350,6 +368,7 @@ def windows(work_root: str, build: List[str], install_deps: bool, dry_run: bool)
         if install_deps and (dry_run or not _windows_sdk_installed(ARM64_WINDOWS_SDK)):
             _choco(ARM64_WINDOWS_SDK_PACKAGE, dry_run)
         vs_path, env = pin_windows_sdk(work_root, vs_path, ARM64_WINDOWS_SDK, dry_run)
+    pin_icu_sdk(work_root, ARM64_WINDOWS_SDK if "win-arm64" in build else "", dry_run)
     if install_deps and not shutil.which("iscc") and not os.environ.get("INNOPATH"):
         _choco("innosetup", dry_run)
     _grunt(install_deps, dry_run)

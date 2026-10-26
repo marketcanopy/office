@@ -14,6 +14,7 @@ step that did not produce the files core includes and links.
 
 import os
 import shutil
+import stat
 from typing import Dict, List
 
 from . import util
@@ -62,6 +63,15 @@ def missing(work_root: str, platforms: List[str]) -> List[str]:
     return [path for files in products(work_root, platforms).values() for path in files if not os.path.isfile(path)]
 
 
+def _remove_tree(folder: str) -> None:
+    # Git leaves its object files read-only, which Windows refuses to delete.
+    def clear_read_only(function, path, _):
+        os.chmod(path, stat.S_IWRITE)
+        function(path)
+
+    shutil.rmtree(folder, onerror=clear_read_only)
+
+
 def drop_incomplete(work_root: str, platforms: List[str], dry_run: bool = False) -> List[str]:
     """Remove each output folder that exists without its files, so build_tools rebuilds it."""
     dropped = []
@@ -69,7 +79,7 @@ def drop_incomplete(work_root: str, platforms: List[str], dry_run: bool = False)
         if os.path.isdir(folder) and not all(os.path.isfile(path) for path in files):
             util.log("%s is incomplete (a failed build left it); removing it so build_tools rebuilds it" % folder)
             if not dry_run:
-                shutil.rmtree(folder)
+                _remove_tree(folder)
             dropped.append(folder)
     return dropped
 

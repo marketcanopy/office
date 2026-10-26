@@ -146,6 +146,27 @@ class WindowsInstallers(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(innopath, "ISCC.exe")))
         self.assertTrue(os.path.isfile(os.path.join(innopath, "Languages", "Greek.isl")))
 
+    def test_the_other_archs_leftover_installers_are_not_collected(self):
+        # The work folder persists on the runner VMs, which swap arches between
+        # runs; run 40358761103 found arm64's zip beside x64's and stopped.
+        package_dir = os.path.join(self.work.name, "desktop-apps", "package")
+        for arch in ("x64", "arm64"):
+            for folder, extension in (("zip", "zip"), ("inno", "exe")):
+                path = os.path.join(package_dir, folder, "MarketCanopy-Office-10.0.0.0-%s.%s" % (arch, extension))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                with open(path, "w") as handle:
+                    handle.write(arch)
+        self.assertEqual(
+            package.windows_installers(self.context()),
+            [
+                "MarketCanopyOffice-10.0.0-mc.0-win-x64-development.zip",
+                "MarketCanopyOffice-10.0.0-mc.0-win-x64-setup-development.exe",
+            ],
+        )
+        for name in os.listdir(os.path.join(self.work.name, "out", "win-x64")):
+            with open(os.path.join(self.work.name, "out", "win-x64", name)) as handle:
+                self.assertEqual(handle.read(), "x64")
+
 
 class WindowsStageThemes(unittest.TestCase):
     def setUp(self):

@@ -156,12 +156,11 @@ namespace NSMarketCanopy
 			IMPLEMENT_REFCOUNTING(CRequestClient);
 		};
 
-		bool IsStartPage(CCefView* view)
+		bool IsStartPage(CCefView* view, const std::wstring& localEditorsPath)
 		{
 			if (!view || view->GetType() != cvwtSimple)
 				return false;
-			std::wstring url = view->GetUrl();
-			return url.compare(0, 8, L"file:///") == 0;
+			return IsStartPageUrl(view->GetUrl(), localEditorsPath);
 		}
 
 		class CBrowserGlue : public IEnvironment
@@ -363,7 +362,7 @@ namespace NSMarketCanopy
 				{
 					// The start page's own "Log out" of the Market Canopy connection also
 					// signs Office out; the shell goes on with the logout it asked for.
-					if (!IsStartPage(view) || !m_account)
+					if (!IsStartPage(view, m_manager->m_oSettings.local_editors_path) || !m_account)
 						return false;
 					Json value;
 					if (Json::Parse(Utf8(param), value) && value.Get("domain").IsString() &&
@@ -378,7 +377,7 @@ namespace NSMarketCanopy
 				if (command.compare(0, 3, L"mc:") != 0)
 					return false;
 				// Only a start page drives the account; anything else asking is ignored.
-				if (!IsStartPage(view))
+				if (!IsStartPage(view, m_manager->m_oSettings.local_editors_path))
 					return true;
 				m_startPageViewId = view->GetId();
 				EnsureStarted();
@@ -406,7 +405,7 @@ namespace NSMarketCanopy
 
 			void MainFrameLoaded(CCefView* view, CefRefPtr<CefBrowser> browser)
 			{
-				if (IsStartPage(view))
+				if (IsStartPage(view, m_manager->m_oSettings.local_editors_path))
 				{
 					m_startPageViewId = view->GetId();
 					if (m_started)
@@ -508,7 +507,7 @@ namespace NSMarketCanopy
 				for (size_t i = 0; i < ids.size(); ++i)
 				{
 					CCefView* view = m_manager->GetViewById(ids[i]);
-					if (!IsStartPage(view))
+					if (!IsStartPage(view, m_manager->m_oSettings.local_editors_path))
 						continue;
 					NSEditorApi::CAscMenuEvent* event = new NSEditorApi::CAscMenuEvent(ASC_MENU_EVENT_TYPE_CEF_EXECUTE_COMMAND_JS);
 					NSEditorApi::CAscExecCommandJS* data = new NSEditorApi::CAscExecCommandJS();

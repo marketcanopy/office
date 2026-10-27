@@ -453,6 +453,42 @@ namespace
 			std::printf("%s\n", trace.lines[i].c_str());
 	}
 
+	// ---- start page recognition ----------------------------------------------
+
+	void StartPage()
+	{
+		const std::string title = "5b. mc:account: only Office's own start page drives the account";
+#if defined(_WIN32)
+		const std::wstring app = L"C:/Program Files/Market Canopy/Office";
+		const std::wstring editors = L"C:\\Program Files\\Market Canopy\\Office/editors/web-apps/apps/api/documents/index.html";
+		const std::wstring page = L"onlyoffice://plugin/C:/Program%20Files/Market%20Canopy/Office/index.html";
+#else
+		const std::wstring app = L"/opt/marketcanopy/office";
+		const std::wstring editors = L"/opt/marketcanopy/office/editors/web-apps/apps/api/documents/index.html";
+		const std::wstring page = L"onlyoffice://plugin//opt/marketcanopy/office/index.html";
+#endif
+		const std::wstring plugin = L"onlyoffice://plugin/";
+		struct CCase
+		{
+			const char* what;
+			std::wstring url;
+			bool allowed;
+		};
+		std::vector<CCase> cases;
+		cases.push_back(CCase{"the start page as Windows and Linux load it", page + L"?waitingloader=yes&lang=en", true});
+		cases.push_back(CCase{"the start page as macOS loads it", L"file:///Applications/MarketCanopyOffice.app/Contents/Resources/index.html", true});
+		cases.push_back(CCase{"another page in the application folder", plugin + app + L"/other.html", false});
+		cases.push_back(CCase{"the editors' page", plugin + editors, false});
+		cases.push_back(CCase{"a system plugin page", plugin + app + L"/editors/sdkjs-plugins/{9DC93CDB-B576-4F0C-B55E-FCC9C48DD777}/index.html", false});
+		cases.push_back(CCase{"a dot segment back to the start page", plugin + app + L"/editors/../index.html", false});
+		cases.push_back(CCase{"a web page", L"https://app.marketcanopy.com/index.html", false});
+
+		for (size_t i = 0; i < cases.size(); ++i)
+			CHECK_EQ(IsStartPageUrl(cases[i].url, editors), cases[i].allowed, title + ": " + cases[i].what);
+		CHECK_EQ(IsStartPageUrl(page, std::wstring()), false, title + ": no editors path known");
+		std::printf("\n=== %s\n", title.c_str());
+	}
+
 	// ---- AI session (8.2, 9) ---------------------------------------------------
 
 	void AiSession()
@@ -617,6 +653,7 @@ int main()
 	SignOut();
 	AccountChanged();
 	WrongGuid();
+	StartPage();
 	AiSession();
 	UpdateRequired();
 	Organizations();

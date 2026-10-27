@@ -70,6 +70,13 @@
                   "tools",
                   "reasoning"
                 ]
+              },
+              {
+                "id": "mc-image",
+                "name": "Image",
+                "capabilities": [
+                  "image"
+                ]
               }
             ],
             "defaultModel": "mc-standard",

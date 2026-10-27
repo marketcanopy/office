@@ -30,6 +30,12 @@
             "object": "model",
             "created": 1761300000,
             "owned_by": "marketcanopy"
+          },
+          {
+            "id": "mc-image",
+            "object": "model",
+            "created": 1761300000,
+            "owned_by": "marketcanopy"
           }
         ]
       }

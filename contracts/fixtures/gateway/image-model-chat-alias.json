@@ -1,0 +1,37 @@
+{
+  "fixture": 1,
+  "name": "image-model-chat-alias",
+  "description": "A chat alias does not draw images (2.2.0)",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/images/generations",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-image-request",
+      "body": {
+        "model": "mc-standard",
+        "prompt": "A lighthouse"
+      }
+    },
+    "response": {
+      "status": 400,
+      "body": {
+        "error": {
+          "message": "That model isn't available.",
+          "type": "invalid_request_error",
+          "code": "MODEL_NOT_ALLOWED",
+          "param": "model",
+          "request_id": "req_example"
+        }
+      }
+    }
+  },
+  "expect": {
+    "outcome": "MODEL_NOT_ALLOWED"
+  }
+}

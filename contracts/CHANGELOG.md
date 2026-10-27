@@ -2,6 +2,15 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 2.2.0 (2026-10-27)
+
+Requested by the Office test-issues thread: the owner asked for Market Canopy's image generation in the in-editor AI. Minor version under section 14: a consumer that does not know `image` drops it (the in-editor provider filters unknown capabilities, native code passes them through), and nothing it already accepts changes.
+
+- 8.1 and 9: `image` joins the capabilities. A model with `image` has no other capability and is never a chat model. `common.schema.json` `capability`; `fixtures/bootstrap/ready.json`, `fixtures/gateway/models.json` and the two ready `fixtures/ai-session/native-ready*.json` list an image alias.
+- 8.3: `POST /images/generations` with its accepted subset (`model`, `prompt`, `n`, `size`, `response_format`) and its answer, one base64 image. New schemas `gateway-image-request` and `gateway-image-response`; new fixtures `gateway/image-request.json`, `image-request-n-2.json`, `image-request-other-size.json`, `image-generation.json` and `image-model-chat-alias.json`.
+
+Rerun: P08 (gateway: the image route and alias) and P09 (in-editor provider: the image alias and endpoint). Unchanged for P03 to P07 and P10 to P12.
+
 ## 2.1.0 (2026-10-27)
 
 Requested by the Office test-issues thread after the owner tested the published 10.0.0-mc.1. Minor version under section 14: both changes widen what a consumer accepts, and nothing it already accepts changes.

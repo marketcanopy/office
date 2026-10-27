@@ -1,0 +1,17 @@
+{
+  "fixture": 1,
+  "name": "image-request-other-size",
+  "description": "Only the three shapes are accepted sizes (2.2.0)",
+  "subject": "document",
+  "input": {
+    "schema": "gateway-image-request",
+    "value": {
+      "model": "mc-image",
+      "prompt": "A lighthouse",
+      "size": "256x256"
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

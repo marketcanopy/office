@@ -162,7 +162,7 @@ class Artwork:
         self.mapping = []  # (output, source, how)
         # office-icon.png is Office's own symbol (a document with a ribbon),
         # centred on a square canvas for the application icons.
-        icon = Image.open(os.path.join(SOURCE, "office-icon.png")).convert("RGBA")
+        icon = without_haze(Image.open(os.path.join(SOURCE, "office-icon.png")).convert("RGBA"))
         icon = icon.crop(icon.getchannel("A").getbbox())
         side = max(icon.size)
         self.app = Image.new("RGBA", (side, side), (0, 0, 0, 0))
@@ -170,7 +170,7 @@ class Artwork:
         # office-logo.png is the same symbol beside the "Market Canopy"
         # wordmark. It is the lockup as drawn; the mark and the wordmark are
         # cut apart along the transparent column between them.
-        logo = Image.open(os.path.join(SOURCE, "office-logo.png")).convert("RGBA")
+        logo = without_haze(Image.open(os.path.join(SOURCE, "office-logo.png")).convert("RGBA"))
         self.logo = logo.crop(logo.getchannel("A").getbbox())
         alpha = self.logo.getchannel("A")
         columns = [alpha.crop((x, 0, x + 1, self.logo.height)).getbbox() is not None for x in range(self.logo.width)]
@@ -515,6 +515,17 @@ def fit(image, width, height, align="center"):
 
 def scale_to_height(image, height):
     return image.resize((max(1, round(image.width * height / image.height)), height), Image.LANCZOS)
+
+
+def without_haze(image):
+    """Clear the near-invisible pixels (alpha 8 or less) around the owner's artwork.
+
+    They extend its bounding box, so every output would draw the visible
+    artwork smaller than its slot.
+    """
+    out = image.copy()
+    out.putalpha(image.getchannel("A").point(lambda a: 0 if a <= 8 else a))
+    return out
 
 
 def recolor_dark(image, color):

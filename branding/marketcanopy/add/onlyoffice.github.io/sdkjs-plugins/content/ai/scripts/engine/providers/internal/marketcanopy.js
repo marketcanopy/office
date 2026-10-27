@@ -42,7 +42,7 @@ if (!MC) {
 		var NAME = "Market Canopy";
 		var BASE_URL = /^https:\/\/[a-z0-9.-]+\/v1\/office\/ai$/;
 		var ALIAS = /^[a-z0-9][a-z0-9.-]{0,63}$/;
-		var CAPABILITIES = ["chat", "tools", "vision", "reasoning"];
+		var CAPABILITIES = ["chat", "tools", "vision", "reasoning", "image"];
 		var STATES = ["signed_out", "offline", "update_required", "not_entitled"];
 		var LAST_MODELS_KEY = "marketcanopy-plugin-models";
 		var FALLBACK_MODELS = [{ id: "mc-standard", name: "Canopy", capabilities: ["chat"] }];
@@ -212,11 +212,17 @@ if (!MC) {
 
 			var ids = models.map(function(item) { return item.id; });
 			var managedIds = managed.map(function(item) { return item.id; });
-			var chat = session.state === "ready" && managedIds.indexOf(session.defaultModel) !== -1 ?
-				session.defaultModel : managedIds[0];
-			var visionModel = managed.filter(function(item) {
-				return (item.capabilities & AI.CapabilitiesUI.Vision) !== 0;
-			})[0];
+			var withCapability = function(capability) {
+				return managed.filter(function(item) {
+					return (item.capabilities & capability) !== 0;
+				});
+			};
+			// An image alias (contract 2.2.0) draws images and never chats.
+			var chatIds = withCapability(AI.CapabilitiesUI.Chat).map(function(item) { return item.id; });
+			var chat = session.state === "ready" && chatIds.indexOf(session.defaultModel) !== -1 ?
+				session.defaultModel : (chatIds[0] || "");
+			var visionModel = withCapability(AI.CapabilitiesUI.Vision)[0];
+			var imageModel = withCapability(AI.CapabilitiesUI.Image)[0];
 			var choose = function(type, current) {
 				var wanted = ACTION_CAPABILITIES[type] === "vision" ? AI.CapabilitiesUI.Vision :
 					ACTION_CAPABILITIES[type] === "image" ? AI.CapabilitiesUI.Image : AI.CapabilitiesUI.Chat;
@@ -227,7 +233,7 @@ if (!MC) {
 					return visionModel ? visionModel.id : "";
 				if (wanted === AI.CapabilitiesUI.Chat)
 					return chat;
-				return ""; // image generation: the gateway has none
+				return imageModel ? imageModel.id : "";
 			};
 			if (AI.Actions) {
 				for (var type in ACTION_CAPABILITIES) {
@@ -419,14 +425,29 @@ class Provider extends AI.Provider {
 	}
 
 	checkModelCapability(model) {
+		var declared = Array.isArray(model.capabilities) ? model.capabilities : [];
+		if (declared.indexOf("image") !== -1) {
+			model.endpoints.push(AI.Endpoints.Types.v1.Images_Generations);
+			return AI.CapabilitiesUI.Image;
+		}
 		model.endpoints.push(AI.Endpoints.Types.v1.Chat_Completions);
 		var capabilities = AI.CapabilitiesUI.Chat;
-		var declared = Array.isArray(model.capabilities) ? model.capabilities : [];
 		if (declared.indexOf("vision") !== -1)
 			capabilities |= AI.CapabilitiesUI.Vision;
 		if (declared.indexOf("tools") !== -1)
 			capabilities |= AI.CapabilitiesUI.Tools;
 		return capabilities;
+	}
+
+	// Contract 2.2.0 8.3: the gateway's image subset. The alias draws at its
+	// own size; the answer's b64_json is a PNG or JPEG.
+	getImageGeneration(message, model) {
+		return {
+			model: model.id,
+			prompt: message.prompt,
+			n: 1,
+			response_format: "b64_json"
+		};
 	}
 
 	// Read for every request. Nothing is sent while the session is not ready:

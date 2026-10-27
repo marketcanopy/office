@@ -1,0 +1,39 @@
+{
+  "fixture": 1,
+  "name": "image-generation",
+  "description": "One image, as base64, from the organization's image alias (2.2.0)",
+  "subject": "exchange",
+  "input": {
+    "request": {
+      "method": "POST",
+      "path": "/v1/office/ai/images/generations",
+      "headers": {
+        "Authorization": "Bearer <office-ai token>",
+        "x-active-organization-id": "66f0c0ffee0000000000b001",
+        "Content-Type": "application/json"
+      },
+      "schema": "gateway-image-request",
+      "body": {
+        "model": "mc-image",
+        "prompt": "A watercolor of a lighthouse at dawn",
+        "n": 1,
+        "response_format": "b64_json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "schema": "gateway-image-response",
+      "body": {
+        "created": 1761580800,
+        "data": [
+          {
+            "b64_json": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+          }
+        ]
+      }
+    }
+  },
+  "expect": {
+    "outcome": "ok"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "fixture": 1,
+  "name": "image-request",
+  "description": "The in-editor plugin's text to image request (2.2.0)",
+  "subject": "document",
+  "input": {
+    "schema": "gateway-image-request",
+    "value": {
+      "model": "mc-image",
+      "prompt": "A watercolor of a lighthouse at dawn",
+      "n": 1,
+      "size": "1024x1024",
+      "response_format": "b64_json"
+    }
+  },
+  "expect": {
+    "valid": true
+  }
+}

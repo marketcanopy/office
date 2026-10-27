@@ -1,0 +1,17 @@
+{
+  "fixture": 1,
+  "name": "image-request-n-2",
+  "description": "n other than 1 is not in the image subset (2.2.0)",
+  "subject": "document",
+  "input": {
+    "schema": "gateway-image-request",
+    "value": {
+      "model": "mc-image",
+      "prompt": "A lighthouse",
+      "n": 2
+    }
+  },
+  "expect": {
+    "valid": false
+  }
+}

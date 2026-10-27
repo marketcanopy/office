@@ -267,7 +267,7 @@ An optional `$comment` string carries the file's license line, since strict JSON
 - `user`: `{ id, email, displayName }`; `organizations`: active memberships `[{ id, name }]`; `activeOrganizationId`.
 - `office`: `{ minimumVersion, latestVersion, updateRequired }` in the release form (`10.0.0-mc.3`).
 - `docs`: `{ enabled, appOrigin, connectPath: "/office/connect", documentsPath: "/office/documents" }`.
-- `ai`: `{ enabled, disabledReason, baseUrl, models: [{ id, name, capabilities }], defaultModel, limits: { maxRequestBytes, maxOutputTokens } }`. `disabledReason` is `null`, `AI_NOT_ENTITLED` or `QUOTA_EXCEEDED`. `capabilities` ⊆ `chat`, `tools`, `vision`, `reasoning`.
+- `ai`: `{ enabled, disabledReason, baseUrl, models: [{ id, name, capabilities }], defaultModel, limits: { maxRequestBytes, maxOutputTokens } }`. `disabledReason` is `null`, `AI_NOT_ENTITLED` or `QUOTA_EXCEEDED`. `capabilities` ⊆ `chat`, `tools`, `vision`, `reasoning`, `image`. A model with `image` (2.2.0) has no other capability: it draws images through `POST /images/generations` and is never a chat model.
 - When `office.updateRequired` is true, `docs.enabled` and `ai.enabled` are false.
 
 ### 8.2 AI session token (new)
@@ -295,6 +295,18 @@ Base URL `<apiOrigin>/v1/office/ai` (bootstrap `ai.baseUrl`). OpenAI-shaped bodi
 | `n` | Absent or 1 |
 
 Other fields are ignored and never forwarded. The gateway executes no tool.
+
+`POST /images/generations` (2.2.0), the in-editor plugin's Text to Image (`sdkjs-plugins/content/ai/scripts/engine/engine.js` `_imageGenerationRequest`; schema `schemas/gateway-image-request.schema.json`):
+
+| Field | Accepted |
+| --- | --- |
+| `model` | Required; one of the organization's aliases with `image`; any other alias or name `MODEL_NOT_ALLOWED` |
+| `prompt` | Required; 1 to 4,000 characters |
+| `n` | Absent or 1 |
+| `size` | Optional: `1024x1024` (the default), `1536x1024` or `1024x1536`; the image provider draws the nearest shape it has |
+| `response_format` | Absent or `b64_json` |
+
+Other fields are ignored and never forwarded; a body outside the subset is `VALIDATION_ERROR`. The answer is not streamed: `{ "created", "data": [{ "b64_json" }] }` (`schemas/gateway-image-response.schema.json`), one image as base64 with no `data:` prefix. Each image is billed to the organization at the published per-image rate, funded before the image provider is called (`QUOTA_EXCEEDED` when it is not) and billed only when delivered; an image provider failure, or an image with no published rate, is `PROVIDER_UNAVAILABLE`.
 
 Non-streaming responses are `chat.completion` objects with `usage`. Streaming responses are `text/event-stream`:
 
@@ -448,6 +460,7 @@ Changes from the baseline (`contracts.md`, 2026-10-24):
 | Lock states | Locked or not | Adds `lock_file_only` and `read_only` | A crashed Office leaves the lock file (observed) |
 | Provider declaration (1.2.0) | `contracts.md` named the fields; 1.0.0 made it a one-item array with `entryPage` and `icons.light/dark.{normal,big}` | One object with `startPage` and upstream's `icons.themeLight/themeDark.{connectionsList,buttonLogo}`, no `entryPage` | desktop-sdk `providers.h` `GetAllJSON` splices `"path"` after the file's first brace and joins the files into one array, so an array file reaches the start page as a nested array; the start page reads only upstream's icon keys and opens `entryPage` as an absolute address (P07, read at the tag) |
 | Build flavors (2.0.0) | Production and staging, each with its own origins and credential service | Production only: `https://api.marketcanopy.com`, `https://app.marketcanopy.com`, `com.marketcanopy.office`; a staging link or grant is refused | The owner ruled on 2026-10-26 that Office builds production only; the staging origins have no DNS, so a staging build could never sign in (release run 36) |
+| Image generation (2.2.0) | None | `image` capability and `POST /images/generations` | The owner asked for the platform's image generation in the in-editor AI on 2026-10-27 |
 
 ## 15. Not verified
 

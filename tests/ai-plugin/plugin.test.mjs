@@ -87,6 +87,7 @@ async function boot(storage, options = {}) {
     AbortController,
     TextDecoder,
     Response,
+    FormData,
     navigator: { userAgent: "AscDesktopEditor" },
     localStorage,
     fetch,
@@ -177,6 +178,44 @@ test("a vision alias serves the OCR and Vision actions", async () => {
   const { AI } = await boot(profile(), { session });
   assert.equal(AI.Actions.OCR.model, "mc-standard");
   assert.equal(AI.Actions.Vision.model, "mc-standard");
+});
+
+const PNG_1PX = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+const withImage = () =>
+  ready({
+    models: [
+      { id: "mc-standard", name: "Canopy", capabilities: ["chat", "tools"] },
+      { id: "mc-image", name: "Canopy Image", capabilities: ["image"] },
+    ],
+  });
+
+test("an image alias serves Text to Image and never chats (contract 2.2.0)", async () => {
+  const { AI } = await boot(profile(), { session: withImage() });
+  assert.equal(AI.Actions.ImageGeneration.model, "mc-image");
+  assert.equal(AI.Actions.Chat.model, "mc-standard");
+  assert.equal(AI.Actions.Summarization.model, "mc-standard");
+  const image = AI.Models.find((m) => m.id === "mc-image");
+  assert.equal(image.capabilities, AI.CapabilitiesUI.Image);
+});
+
+test("Text to Image sends the gateway's image subset and inserts the PNG it answers", async () => {
+  const requests = [];
+  const fetch = async (url, init) => {
+    requests.push({ url, init });
+    return new Response(JSON.stringify({ created: 1761580800, data: [{ b64_json: PNG_1PX }] }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  };
+  const { AI } = await boot(profile(), { session: withImage(), fetch });
+  const result = await AI.Request.create("ImageGeneration").imageGenerationRequest("A lighthouse at dawn", false);
+  assert.equal(result, `data:image/png;base64,${PNG_1PX}`);
+  assert.equal(requests.length, 1);
+  const { url, init } = requests[0];
+  assert.equal(url, `${BASE_URL}/images/generations`);
+  assert.equal(init.headers.Authorization, `Bearer ${TOKEN}`);
+  assert.equal(init.headers["x-active-organization-id"], ORGANIZATION);
+  assert.deepEqual(JSON.parse(init.body), { model: "mc-image", prompt: "A lighthouse at dawn", n: 1, response_format: "b64_json" });
 });
 
 test("an upgraded profile keeps the person's providers and loses custom providers", async () => {

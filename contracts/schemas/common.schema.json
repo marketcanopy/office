@@ -80,7 +80,8 @@
         "chat",
         "tools",
         "vision",
-        "reasoning"
+        "reasoning",
+        "image"
       ]
     },
     "model": {

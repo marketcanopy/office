@@ -3,38 +3,285 @@ From: Market Canopy <office@marketcanopy.invalid>
 Date: Sat, 24 Oct 2026 00:00:00 +0000
 Subject: [PATCH] Sign in to Market Canopy from the start screen
 
-The start screen shows the Market Canopy account the native account
-module keeps (desktop-sdk patch 0002): Sign in to Market Canopy opens the
-system browser, then the signed-in person, the organization picker,
-Update required or offline. Market Canopy's cloud connection is made by
-native code after sign-in, so there is no connect step; Market Canopy
-documents opens a tab on the provider's startPage (providers/marketcanopy,
-P07), which the module connects before the page shows the drive. Window
-focus asks the module to read the credential store again (P02 contract
-5.4).
+The start screen's Market Canopy item (where upstream has Clouds) shows
+the Market Canopy account the native account module keeps (desktop-sdk
+patch 0002), laid out like upstream's connected clouds: one row for each
+organization the person belongs to, whose only action is Open. Signed
+out, one Market Canopy row offers Sign in, which opens the system
+browser; signing in, Update required and offline say so on the page.
+Signing out is the web page's, whose sign-out reaches the module through
+portal:logout. Market Canopy's cloud connection is made by native code
+after sign-in, so there is no connect step: Open selects the
+organization when it is not the active one, then opens a tab on the
+provider's startPage (providers/marketcanopy, P07), which the module
+connects before the page shows the drive. Window focus asks the module
+to read the credential store again (P02 contract 5.4), whichever page
+shows.
 
 Both shells hand every launch argument and opened link to the module
 first (CallCommand "mc:scheme:"), so a sign-in callback forwarded by the
 single-instance check, or a link that carries a credential, is never
 opened as a document.
 ---
- .../home/components/MarketCanopyAccount.jsx   | 125 ++++++++++++++++++
- .../components/MarketCanopyAccount.styles.css |  34 +++++
- common/loginpage/src/routes/home/index.jsx    |   5 +
+ common/loginpage/src/app.jsx                  |   4 +-
+ .../src/routes/clouds/MarketCanopy.jsx        | 171 ++++++++++++++++++
+ .../src/routes/clouds/MarketCanopy.styles.css |  15 ++
+ common/loginpage/src/shell/Sidebar.jsx        |   4 +
+ common/loginpage/src/stores/marketcanopy.js   |  42 +++++
  macos/ONLYOFFICE/AppDelegate.mm               |   6 +
  .../src/cascapplicationmanagerwrapper.cpp     |   5 +
- 5 files changed, 175 insertions(+)
- create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
- create mode 100644 common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
+ 7 files changed, 246 insertions(+), 1 deletion(-)
+ create mode 100644 common/loginpage/src/routes/clouds/MarketCanopy.jsx
+ create mode 100644 common/loginpage/src/routes/clouds/MarketCanopy.styles.css
+ create mode 100644 common/loginpage/src/stores/marketcanopy.js
 
-diff --git a/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
+diff --git a/common/loginpage/src/app.jsx b/common/loginpage/src/app.jsx
+index 96d3b97..a85f4ae 100644
+--- a/common/loginpage/src/app.jsx
++++ b/common/loginpage/src/app.jsx
+@@ -1,3 +1,5 @@
++// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: the
++// clouds route is the Market Canopy page (routes/clouds/MarketCanopy.jsx).
+ import { Show, For, lazy, createEffect, createSignal, onMount } from "solid-js";
+ import { HashRouter, useLocation } from "@solidjs/router";
+ import Sidebar from "./shell/Sidebar";
+@@ -93,7 +95,7 @@ const routes = [
+   { path: "/plugin/:pluginId", component: lazy(() => import("./routes/plugin/index.jsx")) },
+   { path: "/open", component: lazy(() => import("./routes/open/index.jsx")) },
+   { path: "/templates", component: () => null },
+-  { path: "/clouds/*", component: lazy(() => import("./routes/clouds/index.jsx")) },
++  { path: "/clouds/*", component: lazy(() => import("./routes/clouds/MarketCanopy.jsx")) },
+   {
+     path: "/settings",
+     component: lazy(() => import("./routes/settings/layout.jsx")),
+diff --git a/common/loginpage/src/routes/clouds/MarketCanopy.jsx b/common/loginpage/src/routes/clouds/MarketCanopy.jsx
 new file mode 100644
-index 0000000..164d7f0
+index 0000000..0aa5126
 --- /dev/null
-+++ b/common/loginpage/src/routes/home/components/MarketCanopyAccount.jsx
-@@ -0,0 +1,125 @@
++++ b/common/loginpage/src/routes/clouds/MarketCanopy.jsx
+@@ -0,0 +1,171 @@
 +/*
-+ * Market Canopy Office: the Market Canopy account on the start screen.
++ * Market Canopy Office: the Market Canopy page of the start screen.
++ * Copyright (C) 2026 Market Canopy LLC
++ *
++ * This program is free software: you can redistribute it and/or modify it
++ * under the terms of the GNU Affero General Public License version 3 as
++ * published by the Free Software Foundation, together with the additional
++ * terms in the LICENSE file of https://github.com/marketcanopy/office.
++ *
++ * This program is distributed WITHOUT ANY WARRANTY; without even the implied
++ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
++ * AGPL at https://www.gnu.org/licenses/agpl-3.0.html.
++ *
++ * SPDX-License-Identifier: AGPL-3.0-only
++ */
++
++// Laid out like upstream's connected clouds: one row per organization the
++// person belongs to, whose only action is Open. Signing out is the web
++// page's (its sign-out reaches the account module through portal:logout),
++// so no row offers Log out or Remove. Market Canopy's cloud connection is
++// made by native code after sign-in: Open selects the organization when it
++// is not the active one, then opens the provider's startPage, whose load the
++// account module connects before the page shows the drive.
++import { For, Match, Show, Switch, createEffect, createSignal } from "solid-js";
++import { openPortal, relpath } from "@/sdk/portals.js";
++import { t } from "@/services/l10n.js";
++import { Button, DropdownMenu } from "@/components";
++import { account, sendAccount } from "@/stores/marketcanopy.js";
++import "./clouds.css";
++import "./MarketCanopy.styles.css";
++
++function MarketCanopyIcon() {
++  const base = `${relpath}/providers/marketcanopy/assets`;
++  return (
++    <div class="provider-icon">
++      <img class="icon icon__light" src={`${base}/listicon.svg`} alt="" />
++      <img class="icon icon__dark" src={`${base}/listicon_dark.svg`} alt="" />
++    </div>
++  );
++}
++
++function OrganizationRow(props) {
++  const [menuOpen, setMenuOpen] = createSignal(false);
++  const user = () => account()?.user;
++  const userInfo = () => (user()?.displayName && user()?.email ? `${user().displayName} (${user().email})` : user()?.displayName || user()?.email || "");
++
++  return (
++    <div class="portal-row" onClick={() => !menuOpen() && props.onOpen(props.organization)}>
++      <MarketCanopyIcon />
++      <div class="portal-info">
++        <p class="portal-name" title={props.organization.name}>
++          {props.organization.name}
++        </p>
++        <p class="portal-user">{userInfo()}</p>
++      </div>
++      <div class="portal-actions">
++        <DropdownMenu placement="bottom-end" onOpenChange={setMenuOpen}>
++          <DropdownMenu.Trigger class="btn-portal-action" onClick={(e) => e.stopPropagation()}>
++            <svg class="icon">
++              <use href="#more" />
++            </svg>
++          </DropdownMenu.Trigger>
++          <DropdownMenu.Content class="iconless">
++            <DropdownMenu.Item onSelect={() => props.onOpen(props.organization)}>{t("menuFileOpen")}</DropdownMenu.Item>
++          </DropdownMenu.Content>
++        </DropdownMenu>
++      </div>
++    </div>
++  );
++}
++
++export default function MarketCanopy() {
++  // The organization to open once the account module has made it the active one.
++  const [pending, setPending] = createSignal(null);
++  const state = () => account()?.state ?? "starting";
++  const docsAvailable = () => !!(account()?.docs?.enabled && account()?.appOrigin);
++
++  function openDocuments() {
++    if (docsAvailable()) openPortal(account().appOrigin, "marketcanopy", "/office/connect");
++  }
++
++  function open(organization) {
++    if (organization.id === account()?.activeOrganizationId && state() === "signed_in") {
++      setPending(null);
++      openDocuments();
++      return;
++    }
++    setPending(organization.id);
++    sendAccount("selectOrganization", { organizationId: organization.id });
++  }
++
++  createEffect(() => {
++    if (!pending() || state() !== "signed_in" || account()?.activeOrganizationId !== pending()) return;
++    setPending(null);
++    openDocuments();
++  });
++
++  return (
++    <div class="clouds-page mc-cloud" aria-live="polite">
++      <Switch>
++        <Match when={state() === "starting" || (state() === "connecting" && !account()?.organizations?.length)}>
++          <section>
++            <p class="mc-cloud-note">{t("mcAccountConnecting", "Connecting to Market Canopy...")}</p>
++          </section>
++        </Match>
++        <Match when={state() === "signing_in"}>
++          <section>
++            <h2 class="clouds-section-title">Market Canopy</h2>
++            <div class="provider-item">
++              <MarketCanopyIcon />
++              <span class="provider-name">{t("mcAccountFinishInBrowser", "Finish signing in in your browser.")}</span>
++              <Button variant="default" class="provider-connect-btn" onClick={() => sendAccount("cancelSignIn")}>
++                {t("btnCancel", "Cancel")}
++              </Button>
++            </div>
++          </section>
++        </Match>
++        <Match when={state() === "update_required"}>
++          <section>
++            <h2 class="clouds-section-title">Market Canopy</h2>
++            <p class="mc-cloud-note">{t("mcAccountUpdateRequired", "Update required")}</p>
++            <p class="mc-cloud-note">
++              {t("mcAccountUpdateNote", "Market Canopy cloud and AI need a newer version of Office. Local files still open and save.")}
++            </p>
++            <Show when={account()?.update?.storeUrl}>
++              <Button variant="accent" onClick={() => sendAccount("openStore")}>{t("mcAccountGetUpdate", "Get the update")}</Button>
++            </Show>
++          </section>
++        </Match>
++        <Match when={["signed_in", "no_organization", "offline", "connecting"].includes(state())}>
++          <section>
++            <h2 class="clouds-section-title">{t("mcOrganizations", "Your organizations")}</h2>
++            <Show when={state() === "offline"}>
++              <p class="mc-cloud-note">{t("mcAccountOffline", "Market Canopy can't be reached. Local files still open and save.")}</p>
++            </Show>
++            <Show when={state() === "signed_in" && !docsAvailable() && !pending()}>
++              <p class="mc-cloud-note">{t("mcDocumentsUnavailable", "Market Canopy documents aren't available in this organization.")}</p>
++            </Show>
++            <div class="portal-list">
++              <For each={account()?.organizations ?? []}>
++                {(organization) => (
++                  <div class="portal-item-wrap">
++                    <OrganizationRow organization={organization} onOpen={open} />
++                  </div>
++                )}
++              </For>
++            </div>
++          </section>
++        </Match>
++        <Match when={true}>
++          <section>
++            <h2 class="clouds-section-title">Market Canopy</h2>
++            <div class="provider-item" onClick={() => sendAccount("signIn")}>
++              <MarketCanopyIcon />
++              <span class="provider-name">Market Canopy</span>
++              <Button variant="default" class="provider-connect-btn">{t("mcCloudSignIn", "Sign in")}</Button>
++            </div>
++            <Show when={account()?.credentialStore === "unavailable"}>
++              <p class="mc-cloud-note">
++                {t("mcAccountMemoryOnly", "This computer has no secure credential store, so you stay signed in only until Office closes.")}
++              </p>
++            </Show>
++            <Show when={account()?.error && account().error !== "SIGNED_OUT"}>
++              <p class="mc-cloud-note">{t("mcAccountCouldNotConnect", "Couldn't connect to Market Canopy. Try again.")}</p>
++            </Show>
++          </section>
++        </Match>
++      </Switch>
++    </div>
++  );
++}
+diff --git a/common/loginpage/src/routes/clouds/MarketCanopy.styles.css b/common/loginpage/src/routes/clouds/MarketCanopy.styles.css
+new file mode 100644
+index 0000000..4e09e2b
+--- /dev/null
++++ b/common/loginpage/src/routes/clouds/MarketCanopy.styles.css
+@@ -0,0 +1,15 @@
++/*
++ * Market Canopy Office: styles of the start screen's Market Canopy page.
++ * Copyright (C) 2026 Market Canopy LLC
++ * SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the
++ * LICENSE file of https://github.com/marketcanopy/office)
++ */
++
++.mc-cloud {
++  .mc-cloud-note {
++    margin: 0 0 12px;
++    font-size: 12px;
++    line-height: 18px;
++    color: var(--text-secondary);
++  }
++}
+diff --git a/common/loginpage/src/shell/Sidebar.jsx b/common/loginpage/src/shell/Sidebar.jsx
+index 40bf021..fe716f4 100644
+--- a/common/loginpage/src/shell/Sidebar.jsx
++++ b/common/loginpage/src/shell/Sidebar.jsx
+@@ -10,6 +10,9 @@ import { aichat, closeSidePanel, openFullAIPanel } from "@/stores/aichat.js";
+ import "./Sidebar.styles.css";
+ // Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Clouds menu
+ // item; Office connects to Market Canopy by itself.
++// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: the
++// Market Canopy item opens its organizations (routes/clouds/MarketCanopy.jsx).
++import "@/stores/marketcanopy.js";
+ // import { sendPluginVisibility } from "@/services/ai-panel.js";
+ 
+ export default function Sidebar() {
+@@ -64,6 +67,7 @@ export default function Sidebar() {
+       <MenuItem href="/" icon="#home" label={t("actHome")} end />
+       <MenuItem href="/open" icon="#folder" label={t("actOpenLocal")} />
+       <MenuItem action="templates" href="/templates" icon="#templates" label={t("actTemplates")} />
++      <MenuItem href="/clouds" icon="#cloud" label="Market Canopy" />
+       <Show when={appliedUseAi()}>
+         <MenuItem href="/aitools" onClick={clickAiTools} icon="#aitools" label={t("actAiTools", "AI Tools")} />
+       </Show>
+diff --git a/common/loginpage/src/stores/marketcanopy.js b/common/loginpage/src/stores/marketcanopy.js
+new file mode 100644
+index 0000000..a2d20cf
+--- /dev/null
++++ b/common/loginpage/src/stores/marketcanopy.js
+@@ -0,0 +1,42 @@
++/*
++ * Market Canopy Office: the Market Canopy account the start page shows.
 + * Copyright (C) 2026 Market Canopy LLC
 + *
 + * This program is free software: you can redistribute it and/or modify it
@@ -50,181 +297,31 @@ index 0000000..164d7f0
 + */
 +
 +// The native account module (desktop-sdk src/marketcanopy) owns everything:
-+// this only shows its state and sends the person's choices. It never sees a
-+// token, a code or a device id. Market Canopy's cloud connection is set up by
-+// native code after sign-in, so there is no "connect a cloud" step; Market
-+// Canopy documents opens the provider's startPage (providers/marketcanopy),
-+// whose load the native module connects before the page shows the drive.
-+import { For, Match, Show, Switch, createSignal, onCleanup, onMount } from "solid-js";
++// this only keeps its last published state and sends the person's choices.
++// It never sees a token, a code or a device id. The sidebar imports it, so it
++// listens for as long as the start page is open, whichever page shows.
++import { createSignal } from "solid-js";
 +import { onNativeMessage } from "@/sdk/events.js";
 +import { command } from "@/sdk/bridge.js";
-+import { openPortal } from "@/sdk/portals.js";
-+import { t } from "@/services/l10n.js";
-+import { Button } from "@/components";
-+import "./MarketCanopyAccount.styles.css";
 +
-+function send(action, extra) {
-+  command("mc:account", { action, ...(extra ?? {}) });
++const [account, setAccount] = createSignal(null);
++export { account };
++
++export function sendAccount(action, extra) {
++  command("mc:account", { action, ...extra });
 +}
 +
-+export function MarketCanopyAccount() {
-+  const [account, setAccount] = createSignal(null);
-+
-+  onMount(() => {
-+    const unsub = onNativeMessage((cmd, param) => {
-+      if (cmd !== "mc:account") return;
-+      try {
-+        setAccount(JSON.parse(param));
-+      } catch {
-+        // a malformed state leaves the last one on screen
-+      }
-+    });
-+    // SPEC 5.4 rule 5: a signed-out Office reads the credential store again when its window gains focus
-+    const activate = () => send("activate");
-+    window.addEventListener("focus", activate);
-+    send("state");
-+    onCleanup(() => {
-+      unsub();
-+      window.removeEventListener("focus", activate);
-+    });
-+  });
-+
-+  const state = () => account()?.state ?? "starting";
-+  const organizations = () => account()?.organizations ?? [];
-+
-+  return (
-+    <section class="mc-account" aria-live="polite">
-+      <Switch>
-+        <Match when={state() === "starting" || state() === "connecting"}>
-+          <p class="mc-account-text">{t("mcAccountConnecting", "Connecting to Market Canopy...")}</p>
-+        </Match>
-+        <Match when={state() === "signing_in"}>
-+          <p class="mc-account-text">{t("mcAccountFinishInBrowser", "Finish signing in in your browser.")}</p>
-+          <Button onClick={() => send("cancelSignIn")}>{t("btnCancel", "Cancel")}</Button>
-+        </Match>
-+        <Match when={state() === "signed_in" || state() === "no_organization" || state() === "offline"}>
-+          <p class="mc-account-text">
-+            <Show when={account()?.user} fallback={t("mcAccountSignedIn", "Signed in to Market Canopy")}>
-+              {t("mcAccountSignedInAs", "Signed in to Market Canopy as $1").replace("$1", account().user.displayName || account().user.email)}
-+            </Show>
-+          </p>
-+          <Show when={state() === "offline"}>
-+            <p class="mc-account-note">{t("mcAccountOffline", "Market Canopy can't be reached. Local files still open and save.")}</p>
-+          </Show>
-+          <Show when={state() === "no_organization"}>
-+            <p class="mc-account-note">{t("mcAccountChooseOrganization", "Choose an organization to use Market Canopy.")}</p>
-+          </Show>
-+          <Show when={organizations().length > 1 || state() === "no_organization"}>
-+            <select
-+              class="mc-account-organization"
-+              aria-label={t("mcAccountOrganization", "Organization")}
-+              value={account()?.activeOrganizationId ?? ""}
-+              onChange={(e) => e.currentTarget.value && send("selectOrganization", { organizationId: e.currentTarget.value })}
-+            >
-+              <Show when={!account()?.activeOrganizationId}>
-+                <option value="">{t("mcAccountChoose", "Choose...")}</option>
-+              </Show>
-+              <For each={organizations()}>{(org) => <option value={org.id}>{org.name}</option>}</For>
-+            </select>
-+          </Show>
-+          <Show when={state() === "signed_in" && account()?.docs?.enabled && account()?.appOrigin}>
-+            <Button variant="accent" onClick={() => openPortal(account().appOrigin, "marketcanopy", "/office/connect")}>
-+              {t("mcAccountDocuments", "Market Canopy documents")}
-+            </Button>
-+          </Show>
-+          <Button onClick={() => send("signOut")}>{t("mcAccountSignOut", "Sign out")}</Button>
-+        </Match>
-+        <Match when={state() === "update_required"}>
-+          <p class="mc-account-text">{t("mcAccountUpdateRequired", "Update required")}</p>
-+          <p class="mc-account-note">
-+            {t("mcAccountUpdateNote", "Market Canopy cloud and AI need a newer version of Office. Local files still open and save.")}
-+          </p>
-+          <Show when={account()?.update?.storeUrl}>
-+            <Button variant="accent" onClick={() => send("openStore")}>{t("mcAccountGetUpdate", "Get the update")}</Button>
-+          </Show>
-+        </Match>
-+        <Match when={true}>
-+          <Button variant="accent" onClick={() => send("signIn")}>{t("mcAccountSignIn", "Sign in to Market Canopy")}</Button>
-+          <Show when={account()?.credentialStore === "unavailable"}>
-+            <p class="mc-account-note">
-+              {t("mcAccountMemoryOnly", "This computer has no secure credential store, so you stay signed in only until Office closes.")}
-+            </p>
-+          </Show>
-+          <Show when={account()?.error && account().error !== "SIGNED_OUT"}>
-+            <p class="mc-account-note">{t("mcAccountCouldNotConnect", "Couldn't connect to Market Canopy. Try again.")}</p>
-+          </Show>
-+        </Match>
-+      </Switch>
-+    </section>
-+  );
-+}
-diff --git a/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css b/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
-new file mode 100644
-index 0000000..749d03a
---- /dev/null
-+++ b/common/loginpage/src/routes/home/components/MarketCanopyAccount.styles.css
-@@ -0,0 +1,34 @@
-+/*
-+ * Market Canopy Office: styles of the start screen's Market Canopy account.
-+ * Copyright (C) 2026 Market Canopy LLC
-+ * SPDX-License-Identifier: AGPL-3.0-only (with the additional terms in the
-+ * LICENSE file of https://github.com/marketcanopy/office)
-+ */
-+
-+.mc-account {
-+  display: flex;
-+  flex-wrap: wrap;
-+  align-items: center;
-+  gap: 8px 12px;
-+  margin-bottom: 16px;
-+  padding: 12px 16px;
-+  border-radius: 4px;
-+  background: var(--background-action-panel);
-+  color: var(--text-normal);
-+
-+  .mc-account-text {
-+    margin: 0;
-+    font-weight: 600;
++onNativeMessage((cmd, param) => {
++  if (cmd !== "mc:account") return;
++  try {
++    setAccount(JSON.parse(param));
++  } catch {
++    // a malformed state leaves the last one on screen
 +  }
-+
-+  .mc-account-note {
-+    flex-basis: 100%;
-+    margin: 0;
-+    font-size: 12px;
-+    line-height: 18px;
-+  }
-+
-+  .mc-account-organization {
-+    min-width: 160px;
-+  }
-+}
-diff --git a/common/loginpage/src/routes/home/index.jsx b/common/loginpage/src/routes/home/index.jsx
-index ecc4c63..3de4ba6 100644
---- a/common/loginpage/src/routes/home/index.jsx
-+++ b/common/loginpage/src/routes/home/index.jsx
-@@ -1,3 +1,5 @@
-+// Modified by Market Canopy on 2026-10-24 for Market Canopy Office: the start
-+// screen shows the Market Canopy account (MarketCanopyAccount.jsx).
- import { Show, createSignal, onCleanup, onMount } from "solid-js";
- import { createStore, reconcile } from "solid-js/store";
- import { t } from "@/services/l10n.js";
-@@ -19,6 +21,7 @@ import { DocTypeGrid } from "./components/DocTypeGrid.jsx";
- import { RecentList } from "./components/RecentList.jsx";
- import { RecoverList } from "./components/RecoverList.jsx";
- import { FileDropZone } from "./components/FileDropZone.jsx";
-+import { MarketCanopyAccount } from "./components/MarketCanopyAccount.jsx";
- import { aichat, openFullAIPanel, openSidePanel } from "@/stores/aichat.js";
- import { command } from "@/sdk/bridge.js";
- import "@/styles/components/home.css";
-@@ -205,6 +208,8 @@ export default function Index() {
- 
-   return (
-     <div class="home-page">
-+      <MarketCanopyAccount />
-+
-       <div class="cnt-title">
-         <h1>{t("actCreateNew")}</h1>
-       </div>
++});
++// SPEC 5.4 rule 5: a signed-out Office reads the credential store again when its window gains focus
++window.addEventListener("focus", () => sendAccount("activate"));
++sendAccount("state");
 diff --git a/macos/ONLYOFFICE/AppDelegate.mm b/macos/ONLYOFFICE/AppDelegate.mm
 index fbad228..95843b2 100644
 --- a/macos/ONLYOFFICE/AppDelegate.mm

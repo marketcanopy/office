@@ -45,7 +45,7 @@ if (!MC) {
 		var CAPABILITIES = ["chat", "tools", "vision", "reasoning"];
 		var STATES = ["signed_out", "offline", "update_required", "not_entitled"];
 		var LAST_MODELS_KEY = "marketcanopy-plugin-models";
-		var FALLBACK_MODELS = [{ id: "mc-standard", name: "Standard", capabilities: ["chat"] }];
+		var FALLBACK_MODELS = [{ id: "mc-standard", name: "Canopy", capabilities: ["chat"] }];
 		var WATCH_INTERVAL_MS = 3000;
 		// register.js's action types and what each needs.
 		var ACTIONS_KEY = "onlyoffice_ai_actions_key";

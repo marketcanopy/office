@@ -775,6 +775,11 @@ namespace NSMarketCanopy
 			organization.name = JsonString(organizations.At(i).Get("name"));
 			if (!IsObjectId(organization.id))
 				return false;
+			// The start page shows the logo; anything but a plain https URL is dropped.
+			std::string logoUrl = JsonString(organizations.At(i).Get("logoUrl"));
+			if (StartsWith(logoUrl, "https://") && logoUrl.size() <= 4096 &&
+				logoUrl.find_first_of(" \t\r\n\"'<>\\") == std::string::npos)
+				organization.logoUrl = logoUrl;
 			b.organizations.push_back(organization);
 		}
 		b.activeOrganizationId = JsonString(data.Get("activeOrganizationId"));

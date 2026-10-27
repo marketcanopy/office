@@ -21,6 +21,12 @@
           "name": {
             "type": "string",
             "minLength": 1
+          },
+          "logoUrl": {
+            "description": "2.3.0: the organization's logo from its settings, an https URL valid for at least a day; absent when none is set",
+            "type": "string",
+            "pattern": "^https://[^\\s]+$",
+            "maxLength": 4096
           }
         },
         "required": [

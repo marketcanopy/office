@@ -177,6 +177,27 @@ namespace
 				CHECK(read, where);
 			else
 				CHECK(!read || (!bootstrap.aiEnabled && !(bootstrap.updateRequired && bootstrap.docsEnabled)), where);
+			// 2.3.0: an organization's https logo is kept, anything else is dropped
+			const Json& organizations = value.Get("organizations");
+			for (size_t i = 0; valid && read && i < organizations.Size() && i < bootstrap.organizations.size(); ++i)
+			{
+				const Json& logo = organizations.At(i).Get("logoUrl");
+				CHECK_EQ(bootstrap.organizations[i].logoUrl, logo.IsString() ? logo.AsString() : std::string(), where + " logoUrl");
+				if (!logo.IsString())
+					continue;
+				const char* refused[] = {"http://files.example.com/logo.png", "javascript:alert(1)", "https://files.example.com/a b.png",
+										 "https://files.example.com/\"onerror=\".png"};
+				for (size_t r = 0; r < sizeof(refused) / sizeof(refused[0]); ++r)
+				{
+					std::string text = value.Dump();
+					size_t at = text.find(Json::Quote(logo.AsString()));
+					text.replace(at, Json::Quote(logo.AsString()).size(), Json::Quote(refused[r]));
+					Json changed;
+					CBootstrap other;
+					CHECK(Json::Parse(text, changed) && ReadBootstrap(changed, other), where + " refused logo still reads");
+					CHECK_EQ(other.organizations[i].logoUrl, std::string(), where + " refused logo: " + refused[r]);
+				}
+			}
 		}
 		else
 		{

@@ -12,9 +12,9 @@ writes the data files the component imports.
 ---
  .../src/routes/about/MarketCanopyNotice.jsx   | 74 +++++++++++++++++++
  common/loginpage/src/routes/about/index.jsx   |  4 +
- .../src/routes/about/marketcanopy-notice.css  | 53 +++++++++++++
+ .../src/routes/about/marketcanopy-notice.css  | 70 ++++++++++++++++++
  win-linux/src/defines.h                       |  1 +
- 4 files changed, 132 insertions(+)
+ 4 files changed, 149 insertions(+)
  create mode 100644 common/loginpage/src/routes/about/MarketCanopyNotice.jsx
  create mode 100644 common/loginpage/src/routes/about/marketcanopy-notice.css
 
@@ -124,10 +124,10 @@ index e7ffded..77ed9f3 100644
          </div>
 diff --git a/common/loginpage/src/routes/about/marketcanopy-notice.css b/common/loginpage/src/routes/about/marketcanopy-notice.css
 new file mode 100644
-index 0000000..e753d34
+index 0000000..906703a
 --- /dev/null
 +++ b/common/loginpage/src/routes/about/marketcanopy-notice.css
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,70 @@
 +/*
 + * Market Canopy Office: styles of the About notices.
 + * Copyright (C) 2026 Market Canopy LLC
@@ -135,7 +135,24 @@ index 0000000..e753d34
 + * LICENSE file of https://github.com/marketcanopy/office)
 + */
 +
++/* The dialog is a column whose notices take what is left of its height, so
++   they scroll inside the card however small the window is. */
++.about-dialog {
++  display: flex;
++  flex-direction: column;
++
++  .dlg-body,
++  .about-content {
++    display: flex;
++    flex-direction: column;
++    flex: 1 1 auto;
++    min-height: 0;
++  }
++}
++
 +.mc-notice {
++  flex: 1 1 auto;
++  min-height: 0;
 +  max-height: 40vh;
 +  overflow-y: auto;
 +  margin-top: 12px;

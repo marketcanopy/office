@@ -2,6 +2,15 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 2.3.0 (2026-10-27)
+
+Requested by the Office test-issues thread after the owner tested the published 10.0.0-mc.2. Minor version under section 14: both changes widen what a consumer accepts, and nothing it already accepts changes.
+
+- 8.1: each bootstrap organization may carry `logoUrl`, the organization's logo from its settings (an `https` URL valid for at least a day), so the start screen's Cloud page shows it; absent when none is set. `fixtures/bootstrap/ready.json` lists one.
+- 9: an editor's plugin frame reports the file URL inside the plugin scheme (`onlyoffice://plugin/file:///.../index.html`), which neither 2.1.0 rule matched, so the in-editor AI plugin still had no session in 10.0.0-mc.2 ("AI needs a network connection", no image model). That form now qualifies for the same folder and entries.
+
+Rerun: P05 (native account module: AI frame check, organization logo), P06 (bootstrap: `logoUrl`). Unchanged for P03, P04, P07 to P12.
+
 ## 2.2.0 (2026-10-27)
 
 Requested by the Office test-issues thread: the owner asked for Market Canopy's image generation in the in-editor AI. Minor version under section 14: a consumer that does not know `image` drops it (the in-editor provider filters unknown capabilities, native code passes them through), and nothing it already accepts changes.

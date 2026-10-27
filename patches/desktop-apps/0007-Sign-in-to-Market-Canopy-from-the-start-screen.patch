@@ -3,15 +3,16 @@ From: Market Canopy <office@marketcanopy.invalid>
 Date: Sat, 24 Oct 2026 00:00:00 +0000
 Subject: [PATCH] Sign in to Market Canopy from the start screen
 
-The start screen's Market Canopy item (where upstream has Clouds) shows
-the Market Canopy account the native account module keeps (desktop-sdk
-patch 0002), laid out like upstream's connected clouds: one row for each
-organization the person belongs to, whose only action is Open. Signed
+The start screen's Cloud item (where upstream has Clouds) shows the
+Market Canopy account the native account module keeps (desktop-sdk patch
+0002), laid out like upstream's available clouds: one row for each
+organization the person belongs to, with its logo (the organization's
+own, else upstream's generic cloud), its name and Connect. Signed
 out, one Market Canopy row offers Sign in, which opens the system
 browser; signing in, Update required and offline say so on the page.
 Signing out is the web page's, whose sign-out reaches the module through
 portal:logout. Market Canopy's cloud connection is made by native code
-after sign-in, so there is no connect step: Open selects the
+after sign-in, so there is no connect step: Connect selects the
 organization when it is not the active one, then opens a tab on the
 provider's startPage (providers/marketcanopy, P07), which the module
 connects before the page shows the drive. Window focus asks the module
@@ -24,13 +25,13 @@ single-instance check, or a link that carries a credential, is never
 opened as a document.
 ---
  common/loginpage/src/app.jsx                  |   4 +-
- .../src/routes/clouds/MarketCanopy.jsx        | 171 ++++++++++++++++++
+ .../src/routes/clouds/MarketCanopy.jsx        | 169 ++++++++++++++++++
  .../src/routes/clouds/MarketCanopy.styles.css |  15 ++
  common/loginpage/src/shell/Sidebar.jsx        |   4 +
  common/loginpage/src/stores/marketcanopy.js   |  42 +++++
  macos/ONLYOFFICE/AppDelegate.mm               |   6 +
  .../src/cascapplicationmanagerwrapper.cpp     |   5 +
- 7 files changed, 246 insertions(+), 1 deletion(-)
+ 7 files changed, 244 insertions(+), 1 deletion(-)
  create mode 100644 common/loginpage/src/routes/clouds/MarketCanopy.jsx
  create mode 100644 common/loginpage/src/routes/clouds/MarketCanopy.styles.css
  create mode 100644 common/loginpage/src/stores/marketcanopy.js
@@ -56,10 +57,10 @@ index 96d3b97..a85f4ae 100644
      component: lazy(() => import("./routes/settings/layout.jsx")),
 diff --git a/common/loginpage/src/routes/clouds/MarketCanopy.jsx b/common/loginpage/src/routes/clouds/MarketCanopy.jsx
 new file mode 100644
-index 0000000..0aa5126
+index 0000000..33fde26
 --- /dev/null
 +++ b/common/loginpage/src/routes/clouds/MarketCanopy.jsx
-@@ -0,0 +1,171 @@
+@@ -0,0 +1,169 @@
 +/*
 + * Market Canopy Office: the Market Canopy page of the start screen.
 + * Copyright (C) 2026 Market Canopy LLC
@@ -76,17 +77,18 @@ index 0000000..0aa5126
 + * SPDX-License-Identifier: AGPL-3.0-only
 + */
 +
-+// Laid out like upstream's connected clouds: one row per organization the
-+// person belongs to, whose only action is Open. Signing out is the web
-+// page's (its sign-out reaches the account module through portal:logout),
++// Laid out like upstream's available clouds: one row for each organization
++// the person belongs to, with the organization's logo (its settings' logo,
++// else upstream's generic cloud), its name and Connect. Signing out is the
++// web page's (its sign-out reaches the account module through portal:logout),
 +// so no row offers Log out or Remove. Market Canopy's cloud connection is
-+// made by native code after sign-in: Open selects the organization when it
++// made by native code after sign-in: Connect selects the organization when it
 +// is not the active one, then opens the provider's startPage, whose load the
 +// account module connects before the page shows the drive.
 +import { For, Match, Show, Switch, createEffect, createSignal } from "solid-js";
 +import { openPortal, relpath } from "@/sdk/portals.js";
 +import { t } from "@/services/l10n.js";
-+import { Button, DropdownMenu } from "@/components";
++import { Button } from "@/components";
 +import { account, sendAccount } from "@/stores/marketcanopy.js";
 +import "./clouds.css";
 +import "./MarketCanopy.styles.css";
@@ -101,32 +103,34 @@ index 0000000..0aa5126
 +  );
 +}
 +
-+function OrganizationRow(props) {
-+  const [menuOpen, setMenuOpen] = createSignal(false);
-+  const user = () => account()?.user;
-+  const userInfo = () => (user()?.displayName && user()?.email ? `${user().displayName} (${user().email})` : user()?.displayName || user()?.email || "");
-+
++function OrganizationLogo(props) {
++  const [failed, setFailed] = createSignal(false);
 +  return (
-+    <div class="portal-row" onClick={() => !menuOpen() && props.onOpen(props.organization)}>
-+      <MarketCanopyIcon />
-+      <div class="portal-info">
-+        <p class="portal-name" title={props.organization.name}>
-+          {props.organization.name}
-+        </p>
-+        <p class="portal-user">{userInfo()}</p>
-+      </div>
-+      <div class="portal-actions">
-+        <DropdownMenu placement="bottom-end" onOpenChange={setMenuOpen}>
-+          <DropdownMenu.Trigger class="btn-portal-action" onClick={(e) => e.stopPropagation()}>
-+            <svg class="icon">
-+              <use href="#more" />
-+            </svg>
-+          </DropdownMenu.Trigger>
-+          <DropdownMenu.Content class="iconless">
-+            <DropdownMenu.Item onSelect={() => props.onOpen(props.organization)}>{t("menuFileOpen")}</DropdownMenu.Item>
-+          </DropdownMenu.Content>
-+        </DropdownMenu>
-+      </div>
++    <div class="provider-icon">
++      <Show
++        when={props.logoUrl && !failed()}
++        fallback={
++          <svg class="icon">
++            <use href="#cloud" />
++          </svg>
++        }
++      >
++        <img src={props.logoUrl} alt="" onError={() => setFailed(true)} />
++      </Show>
++    </div>
++  );
++}
++
++function OrganizationItem(props) {
++  return (
++    <div class="provider-item" onClick={() => props.onOpen(props.organization)}>
++      <OrganizationLogo logoUrl={props.organization.logoUrl} />
++      <span class="provider-name" title={props.organization.name}>
++        {props.organization.name}
++      </span>
++      <Button variant="default" class="provider-connect-btn">
++        {t("btnConnectAction", "Connect")}
++      </Button>
 +    </div>
 +  );
 +}
@@ -191,20 +195,15 @@ index 0000000..0aa5126
 +        </Match>
 +        <Match when={["signed_in", "no_organization", "offline", "connecting"].includes(state())}>
 +          <section>
-+            <h2 class="clouds-section-title">{t("mcOrganizations", "Your organizations")}</h2>
 +            <Show when={state() === "offline"}>
 +              <p class="mc-cloud-note">{t("mcAccountOffline", "Market Canopy can't be reached. Local files still open and save.")}</p>
 +            </Show>
 +            <Show when={state() === "signed_in" && !docsAvailable() && !pending()}>
 +              <p class="mc-cloud-note">{t("mcDocumentsUnavailable", "Market Canopy documents aren't available in this organization.")}</p>
 +            </Show>
-+            <div class="portal-list">
++            <div class="provider-list">
 +              <For each={account()?.organizations ?? []}>
-+                {(organization) => (
-+                  <div class="portal-item-wrap">
-+                    <OrganizationRow organization={organization} onOpen={open} />
-+                  </div>
-+                )}
++                {(organization) => <OrganizationItem organization={organization} onOpen={open} />}
 +              </For>
 +            </div>
 +          </section>
@@ -253,7 +252,7 @@ index 0000000..4e09e2b
 +  }
 +}
 diff --git a/common/loginpage/src/shell/Sidebar.jsx b/common/loginpage/src/shell/Sidebar.jsx
-index 40bf021..fe716f4 100644
+index 40bf021..377fdc4 100644
 --- a/common/loginpage/src/shell/Sidebar.jsx
 +++ b/common/loginpage/src/shell/Sidebar.jsx
 @@ -10,6 +10,9 @@ import { aichat, closeSidePanel, openFullAIPanel } from "@/stores/aichat.js";
@@ -261,7 +260,7 @@ index 40bf021..fe716f4 100644
  // Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Clouds menu
  // item; Office connects to Market Canopy by itself.
 +// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: the
-+// Market Canopy item opens its organizations (routes/clouds/MarketCanopy.jsx).
++// Cloud item opens the Market Canopy organizations (routes/clouds/MarketCanopy.jsx).
 +import "@/stores/marketcanopy.js";
  // import { sendPluginVisibility } from "@/services/ai-panel.js";
  
@@ -270,7 +269,7 @@ index 40bf021..fe716f4 100644
        <MenuItem href="/" icon="#home" label={t("actHome")} end />
        <MenuItem href="/open" icon="#folder" label={t("actOpenLocal")} />
        <MenuItem action="templates" href="/templates" icon="#templates" label={t("actTemplates")} />
-+      <MenuItem href="/clouds" icon="#cloud" label="Market Canopy" />
++      <MenuItem href="/clouds" icon="#cloud" label="Cloud" />
        <Show when={appliedUseAi()}>
          <MenuItem href="/aitools" onClick={clickAiTools} icon="#aitools" label={t("actAiTools", "AI Tools")} />
        </Show>

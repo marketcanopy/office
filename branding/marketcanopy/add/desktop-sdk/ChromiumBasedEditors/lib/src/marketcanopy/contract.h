@@ -161,6 +161,10 @@ namespace NSMarketCanopy
 
 	// 9. the frames that may call the AI session method: system plugins only
 	bool IsAiSessionFrame(const std::wstring& frameUrl, const std::wstring& systemPluginsDir);
+
+	// The start page, which alone drives the account (mc:account) and hears
+	// its state: localEditorsPath is the manager's local_editors_path setting.
+	bool IsStartPageUrl(const std::wstring& url, const std::wstring& localEditorsPath);
 }
 
 #endif // MARKETCANOPY_CONTRACT_H

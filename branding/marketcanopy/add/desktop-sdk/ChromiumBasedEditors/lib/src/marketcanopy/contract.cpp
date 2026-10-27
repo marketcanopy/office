@@ -948,6 +948,35 @@ namespace NSMarketCanopy
 		return true;
 	}
 
+	bool IsStartPageUrl(const std::wstring& url, const std::wstring& localEditorsPath)
+	{
+		// macOS loads the start page from a file URL
+		if (url.compare(0, 8, L"file:///") == 0)
+			return true;
+		// Windows and Linux load <application folder>/index.html through the
+		// plugin scheme (desktop-apps HTML_SCHEME); the editors live at
+		// <application folder>/editors/web-apps/apps/api/documents/index.html.
+		const std::wstring scheme = L"onlyoffice://plugin/";
+		const std::wstring editors = L"/editors/web-apps/apps/api/documents/index.html";
+		if (url.compare(0, scheme.size(), scheme) != 0)
+			return false;
+		std::wstring root = Normalize(localEditorsPath);
+		if (root.size() <= editors.size() || root.compare(root.size() - editors.size(), editors.size(), editors) != 0)
+			return false;
+		root.erase(root.size() - editors.size());
+		std::wstring path = url.substr(scheme.size());
+		size_t cut = path.find_first_of(L"?#");
+		if (cut != std::wstring::npos)
+			path = path.substr(0, cut);
+		std::wstring decoded;
+		if (!DecodeWide(path, decoded) || decoded.empty())
+			return false;
+		decoded = Normalize(decoded);
+		if (HasDotSegment(decoded) || HasDotSegment(root))
+			return false;
+		return decoded == root + L"/index.html";
+	}
+
 	bool IsAiSessionFrame(const std::wstring& frameUrl, const std::wstring& systemPluginsDir)
 	{
 		const std::wstring scheme = L"onlyoffice://plugin/";

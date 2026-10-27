@@ -435,7 +435,19 @@ namespace
 		cases.push_back(CCase{"a dot segment back into the agent", plugin + root + L"/{B631D5D8-1B53-4C4A-8E7F-8E1D47A03D35}/../" + agent + L"/index.html", false});
 		cases.push_back(CCase{"an encoded dot segment", plugin + root + L"/%2E%2E/sdkjs-plugins/" + agent + L"/index.html", false});
 		cases.push_back(CCase{"a web page", L"https://app.marketcanopy.com/" + agent + L"/index.html", false});
-		cases.push_back(CCase{"the same file as file:///", L"file:///" + root + L"/" + agent + L"/index.html", false});
+		// An editor loads its system plugins from file URLs (desktop-sdk plugins.h serializePlugins)
+#if defined(_WIN32)
+		const std::wstring fileRoot = L"file:///C:/Program%20Files/Market%20Canopy/Office/editors/sdkjs-plugins";
+		const std::wstring fileUser = L"file:///C:/Users/person/AppData/Local/MarketCanopy/Office/data/sdkjs-plugins";
+#else
+		const std::wstring fileRoot = L"file://" + root;
+		const std::wstring fileUser = L"file://" + user;
+#endif
+		cases.push_back(CCase{"in-editor AI plugin loaded by an editor (file URL)", fileRoot + L"/" + editor + L"/index.html?lang=en", true});
+		cases.push_back(CCase{"another system plugin by file URL", fileRoot + L"/{B631D5D8-1B53-4C4A-8E7F-8E1D47A03D35}/index.html", false});
+		cases.push_back(CCase{"the editor AI GUID as a user plugin by file URL", fileUser + L"/" + editor + L"/index.html", false});
+		cases.push_back(CCase{"a file URL dot segment back into the plugin", fileRoot + L"/x/%2E%2E/" + editor + L"/index.html", false});
+		cases.push_back(CCase{"a file URL on another host", L"file://server/share/" + editor + L"/index.html", false});
 		cases.push_back(CCase{"no system plugins folder known", plugin + root + L"/" + agent + L"/index.html", false});
 
 		CTrace trace;

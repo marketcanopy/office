@@ -249,6 +249,8 @@ namespace NSMarketCanopy
 				return Invalid();
 
 			int organizationCount = 0;
+			int desktopCount = 0;
+			int placementCount = 0;
 			std::string organizationId;
 			for (size_t i = 0; i < params.size(); ++i)
 			{
@@ -259,13 +261,20 @@ namespace NSMarketCanopy
 				}
 				else if (params[i].first == "desktop")
 				{
+					++desktopCount;
 					if (params[i].second != "true")
+						return Invalid();
+				}
+				else if (params[i].first == "placement") // an editor tab opened from a page (4.1)
+				{
+					++placementCount;
+					if (params[i].second != "desktop")
 						return Invalid();
 				}
 				else
 					return Invalid();
 			}
-			if (organizationCount != 1 || !IsObjectId(organizationId))
+			if (organizationCount != 1 || desktopCount > 1 || placementCount > 1 || !IsObjectId(organizationId))
 				return Invalid();
 
 			CSchemeLink link;
@@ -979,10 +988,20 @@ namespace NSMarketCanopy
 
 	bool IsAiSessionFrame(const std::wstring& frameUrl, const std::wstring& systemPluginsDir)
 	{
+		// The start window loads plugins through the plugin scheme; an editor
+		// loads its system plugins from file URLs (desktop-sdk plugins.h
+		// serializePlugins: "file:///" + folder, or "file://" + "/folder").
 		const std::wstring scheme = L"onlyoffice://plugin/";
-		if (systemPluginsDir.empty() || frameUrl.compare(0, scheme.size(), scheme) != 0)
+		const std::wstring file = L"file:///";
+		if (systemPluginsDir.empty())
 			return false;
-		std::wstring path = frameUrl.substr(scheme.size());
+		std::wstring path;
+		if (frameUrl.compare(0, scheme.size(), scheme) == 0)
+			path = frameUrl.substr(scheme.size());
+		else if (frameUrl.compare(0, file.size(), file) == 0)
+			path = frameUrl.substr(file.size() - 1); // keeps the leading slash
+		else
+			return false;
 		size_t cut = path.find_first_of(L"?#");
 		if (cut != std::wstring::npos)
 			path = path.substr(0, cut);

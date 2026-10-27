@@ -1,0 +1,15 @@
+{
+  "fixture": 1,
+  "name": "open-placement-param",
+  "description": "Office appends placement=desktop when it opens the URL as an editor tab from a page (observed), after desktop=true",
+  "subject": "deep-link",
+  "input": "mc-office://open|n|Quarterly%20plan|https://app.marketcanopy.com/office/documents/66f0c0ffee0000000000c001?organizationId=66f0c0ffee0000000000b001&desktop=true&placement=desktop",
+  "expect": {
+    "ok": true,
+    "kind": "open",
+    "name": "Quarterly plan",
+    "appOrigin": "https://app.marketcanopy.com",
+    "documentId": "66f0c0ffee0000000000c001",
+    "organizationId": "66f0c0ffee0000000000b001"
+  }
+}

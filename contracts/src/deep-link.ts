@@ -80,10 +80,12 @@ function parseDocumentUrl(raw: string): SchemeUrl {
   const match = /^\/office\/documents\/([0-9a-f]{24})$/.exec(url.pathname);
   if (!match) return invalid;
   const keys = [...url.searchParams.keys()];
-  const extra = keys.filter((key) => key !== 'organizationId' && key !== 'desktop');
+  const extra = keys.filter((key) => key !== 'organizationId' && key !== 'desktop' && key !== 'placement');
   if (extra.length > 0) return invalid;
   if (url.searchParams.getAll('organizationId').length !== 1) return invalid;
+  if (url.searchParams.getAll('desktop').length > 1 || url.searchParams.getAll('placement').length > 1) return invalid;
   if (url.searchParams.has('desktop') && url.searchParams.get('desktop') !== 'true') return invalid;
+  if (url.searchParams.has('placement') && url.searchParams.get('placement') !== 'desktop') return invalid;
   const organizationId = url.searchParams.get('organizationId') ?? '';
   if (!OBJECT_ID.test(organizationId)) return invalid;
   return {

@@ -159,7 +159,8 @@ namespace NSMarketCanopy
 							   const std::string& defaultModel);
 	std::string AiSessionState(const char* state); // signed_out, offline, update_required, not_entitled
 
-	// 9. the frames that may call the AI session method: system plugins only
+	// 9. the frames that may call the AI session method: system plugins only,
+	// through the plugin scheme (start window) or a file URL (editors)
 	bool IsAiSessionFrame(const std::wstring& frameUrl, const std::wstring& systemPluginsDir);
 
 	// The start page, which alone drives the account (mc:account) and hears

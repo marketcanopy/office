@@ -2,6 +2,15 @@
 
 Every change after the freeze increments `VERSION`, recomputes `CONTRACT.sha256` (`npm run hash > CONTRACT.sha256`) and names the downstream units that rerun.
 
+## 2.1.0 (2026-10-27)
+
+Requested by the Office test-issues thread after the owner tested the published 10.0.0-mc.1. Minor version under section 14: both changes widen what a consumer accepts, and nothing it already accepts changes.
+
+- 4.1: Office appends `placement=desktop` when it opens a document link as an editor tab from a page (desktop-sdk `cefview.cpp`, the `bIsEditor` branch), so the drive's documents opened in Office reached the `/office/documents/` page with a parameter it refused ("This is not a Market Canopy document link"). The page and the deep-link parser now accept `placement=desktop` beside `desktop=true`, each at most once and with exactly that value. New fixtures `open-placement-param.json` and `placement-other-value.json`.
+- 9: an editor loads its system plugins from file URLs (desktop-sdk `plugins.h` `serializePlugins`), not through the plugin scheme, so the in-editor AI plugin never got the AI session ("AI needs a network connection" on every request, and custom assistants failing). `getMarketCanopyAiSession()` is now callable from `file:///<system plugins folder>/<GUID>/<entry>.html` as well; the user plugins folder still never qualifies.
+
+Rerun: P05 (native account module: deep-link parser, AI frame check) and P07 (`/office/documents/` page). Unchanged for P03, P04, P06, P08 to P12.
+
 ## 2.0.0 (2026-10-26)
 
 Requested by the Office test-issues thread after the owner ruled on 2026-10-26 that Office builds production only. The staging origins have no DNS, so release run 36, a staging build, could never sign in. Major version under section 14: a consumer that still accepts staging must change. Wire shapes are unchanged: schema `$id`s stay under `/office/v1/` and bootstrap's `contractVersion` stays `"1"`.

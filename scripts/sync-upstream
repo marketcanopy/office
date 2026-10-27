@@ -28,7 +28,8 @@
 #      with `git format-patch` against the new commit, so offsets are current;
 #   4. lists the overlay files copied from upstream whose upstream original
 #      changed between the two commits, and replacement targets that moved;
-#   5. runs scripts/smoke-test on the result, with the patched workspace.
+#   5. copies the overlay (replace/ and add/) into the patched workspace, as
+#      office-build does for a build, and runs scripts/smoke-test on it.
 #
 # It only edits this working tree and writes the report; committing, pushing
 # and the pull request are the sync workflow's (office-sync.yml in the release
@@ -281,6 +282,10 @@ def sync():
                 ],
                 folders[repo],
             )
+        # The smoke test checks the workspace a build compiles: the patches and
+        # the overlay office-build copies in after them.
+        queue.apply_replacements(ROOT, work)
+        queue.apply_additions(ROOT, work)
         smoke_report = os.path.join(work, "smoke.md")
         smoke = subprocess.run(
             [sys.executable, os.path.join(ROOT, "scripts", "smoke-test"), "--work", work, "--report", smoke_report],

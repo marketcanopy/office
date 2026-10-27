@@ -107,6 +107,8 @@ namespace NSMarketCanopy
 				Json organization = Json::MakeObject();
 				organization.Set("id", Json::MakeString(m_bootstrap.organizations[i].id));
 				organization.Set("name", Json::MakeString(m_bootstrap.organizations[i].name));
+				if (!m_bootstrap.organizations[i].logoUrl.empty())
+					organization.Set("logoUrl", Json::MakeString(m_bootstrap.organizations[i].logoUrl));
 				organizations.Push(organization);
 			}
 			value.Set("organizations", organizations);

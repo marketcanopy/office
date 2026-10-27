@@ -63,7 +63,7 @@ index 5eb2d56..ac1c231 100644
              class="btn-recents-tool pin"
              classList={{ pinned: props.model.pinned }}
 diff --git a/common/loginpage/src/shell/Sidebar.jsx b/common/loginpage/src/shell/Sidebar.jsx
-index fe716f4..d10d7b3 100644
+index 377fdc4..c687268 100644
 --- a/common/loginpage/src/shell/Sidebar.jsx
 +++ b/common/loginpage/src/shell/Sidebar.jsx
 @@ -1,17 +1,16 @@
@@ -82,7 +82,7 @@ index fe716f4..d10d7b3 100644
  // Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Clouds menu
  // item; Office connects to Market Canopy by itself.
  // Modified by Market Canopy on 2026-10-27 for Market Canopy Office: the
- // Market Canopy item opens its organizations (routes/clouds/MarketCanopy.jsx).
+ // Cloud item opens the Market Canopy organizations (routes/clouds/MarketCanopy.jsx).
 +// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: no AI chat
 +// or AI Tools items; Office's AI is the one inside documents.
  import "@/stores/marketcanopy.js";
@@ -138,7 +138,7 @@ index fe716f4..d10d7b3 100644
        <MenuItem href="/" icon="#home" label={t("actHome")} end />
        <MenuItem href="/open" icon="#folder" label={t("actOpenLocal")} />
        <MenuItem action="templates" href="/templates" icon="#templates" label={t("actTemplates")} />
-       <MenuItem href="/clouds" icon="#cloud" label="Market Canopy" />
+       <MenuItem href="/clouds" icon="#cloud" label="Cloud" />
 -      <Show when={appliedUseAi()}>
 -        <MenuItem href="/aitools" onClick={clickAiTools} icon="#aitools" label={t("actAiTools", "AI Tools")} />
 -      </Show>

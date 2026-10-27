@@ -775,6 +775,11 @@ namespace NSMarketCanopy
 			organization.name = JsonString(organizations.At(i).Get("name"));
 			if (!IsObjectId(organization.id))
 				return false;
+			// The start page shows the logo; anything but a plain https URL is dropped.
+			std::string logoUrl = JsonString(organizations.At(i).Get("logoUrl"));
+			if (StartsWith(logoUrl, "https://") && logoUrl.size() <= 4096 &&
+				logoUrl.find_first_of(" \t\r\n\"'<>\\") == std::string::npos)
+				organization.logoUrl = logoUrl;
 			b.organizations.push_back(organization);
 		}
 		b.activeOrganizationId = JsonString(data.Get("activeOrganizationId"));
@@ -990,14 +995,20 @@ namespace NSMarketCanopy
 	{
 		// The start window loads plugins through the plugin scheme; an editor
 		// loads its system plugins from file URLs (desktop-sdk plugins.h
-		// serializePlugins: "file:///" + folder, or "file://" + "/folder").
+		// serializePlugins: "file:///" + folder, or "file://" + "/folder"),
+		// and its plugin frames carry that file URL inside the plugin scheme
+		// ("onlyoffice://plugin/file:///opt/...").
 		const std::wstring scheme = L"onlyoffice://plugin/";
 		const std::wstring file = L"file:///";
 		if (systemPluginsDir.empty())
 			return false;
 		std::wstring path;
 		if (frameUrl.compare(0, scheme.size(), scheme) == 0)
+		{
 			path = frameUrl.substr(scheme.size());
+			if (path.compare(0, file.size(), file) == 0)
+				path = path.substr(file.size() - 1); // keeps the leading slash
+		}
 		else if (frameUrl.compare(0, file.size(), file) == 0)
 			path = frameUrl.substr(file.size() - 1); // keeps the leading slash
 		else

@@ -1,6 +1,6 @@
 {
   "name": "@marketcanopy/office-contracts",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Market Canopy Office integration contract: schemas, fixtures and a TypeScript reference implementation",
   "license": "MIT",
   "private": true,

@@ -448,6 +448,13 @@ namespace
 		cases.push_back(CCase{"the editor AI GUID as a user plugin by file URL", fileUser + L"/" + editor + L"/index.html", false});
 		cases.push_back(CCase{"a file URL dot segment back into the plugin", fileRoot + L"/x/%2E%2E/" + editor + L"/index.html", false});
 		cases.push_back(CCase{"a file URL on another host", L"file://server/share/" + editor + L"/index.html", false});
+		// What an editor's in-editor AI frame reports in 10.0.0-mc.2: the file
+		// URL inside the plugin scheme, with the GUID's braces encoded
+		const std::wstring encodedEditor = L"%7B9DC93CDB-B576-4F0C-B55E-FCC9C48DD007%7D";
+		cases.push_back(CCase{"in-editor AI plugin in an editor (plugin scheme around a file URL)", plugin + fileRoot + L"/" + encodedEditor + L"/index.html?lang=en-US&theme-type=", true});
+		cases.push_back(CCase{"another system plugin (plugin scheme around a file URL)", plugin + fileRoot + L"/{B631D5D8-1B53-4C4A-8E7F-8E1D47A03D35}/index.html", false});
+		cases.push_back(CCase{"the editor AI GUID as a user plugin (plugin scheme around a file URL)", plugin + fileUser + L"/" + encodedEditor + L"/index.html", false});
+		cases.push_back(CCase{"a file URL on another host inside the plugin scheme", plugin + L"file://server/share/" + editor + L"/index.html", false});
 		cases.push_back(CCase{"no system plugins folder known", plugin + root + L"/" + agent + L"/index.html", false});
 
 		CTrace trace;

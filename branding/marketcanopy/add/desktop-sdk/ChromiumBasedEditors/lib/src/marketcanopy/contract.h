@@ -129,6 +129,7 @@ namespace NSMarketCanopy
 	{
 		std::string id;
 		std::string name;
+		std::string logoUrl; // 2.3.0, empty when none or not an https URL
 	};
 	struct CBootstrap
 	{

@@ -30,7 +30,8 @@
           "organizations": [
             {
               "id": "66f0c0ffee0000000000b001",
-              "name": "Example Co"
+              "name": "Example Co",
+              "logoUrl": "https://files.example.com/logos/example-co.png?sig=abc"
             },
             {
               "id": "66f0c0ffee0000000000b002",

@@ -47,8 +47,8 @@ const ready = (overrides = {}) => ({
   expiresAt: "2026-10-25T12:00:00Z",
   organizationId: ORGANIZATION,
   models: [
-    { id: "mc-standard", name: "Standard", capabilities: ["chat", "tools"] },
-    { id: "mc-reasoning", name: "Reasoning", capabilities: ["chat", "tools", "reasoning"] },
+    { id: "mc-standard", name: "Canopy", capabilities: ["chat", "tools"] },
+    { id: "mc-reasoning", name: "Canopy Think", capabilities: ["chat", "tools", "reasoning"] },
   ],
   defaultModel: "mc-standard",
   ...overrides,
@@ -171,7 +171,7 @@ test("a clean profile lists Market Canopy first, with the session's aliases", as
 test("a vision alias serves the OCR and Vision actions", async () => {
   const session = ready({
     models: [
-      { id: "mc-standard", name: "Standard", capabilities: ["chat", "tools", "vision"] },
+      { id: "mc-standard", name: "Canopy", capabilities: ["chat", "tools", "vision"] },
     ],
   });
   const { AI } = await boot(profile(), { session });
@@ -284,7 +284,7 @@ test("the person can add a model of their own provider, and it survives a sessio
 test("a key or URL typed for Market Canopy is ignored", async () => {
   const storage = profile();
   const { AI } = await boot(storage);
-  AI.Storage.addModel({ name: "Standard", id: "mc-standard", provider: { name: "Market Canopy", url: "https://evil.example", key: "sk-typed" }, capabilities: 1 });
+  AI.Storage.addModel({ name: "Canopy", id: "mc-standard", provider: { name: "Market Canopy", url: "https://evil.example", key: "sk-typed" }, capabilities: 1 });
   const provider = AI.Providers["Market Canopy"];
   assert.equal(provider.key, "");
   assert.equal(provider.url, BASE_URL);
@@ -317,7 +317,7 @@ test("an organization change cancels requests in flight and reloads the models",
 
   state.session = ready({
     organizationId: "66f0c0ffee0000000000b002",
-    models: [{ id: "mc-reasoning", name: "Reasoning", capabilities: ["chat"] }],
+    models: [{ id: "mc-reasoning", name: "Canopy Think", capabilities: ["chat"] }],
     defaultModel: "mc-reasoning",
   });
   state.intervals[0].fn();

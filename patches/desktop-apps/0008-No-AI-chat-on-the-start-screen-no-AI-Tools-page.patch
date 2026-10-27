@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Market Canopy <office@marketcanopy.invalid>
+Date: Sun, 25 Oct 2026 00:00:00 +0000
+Subject: [PATCH] No AI chat on the start screen; no AI Tools page
+
+Office's AI is the AI plugin inside documents (ADR 0525 as amended on
+2026-10-27): the start screen offers no AI chat. Upstream shows the
+bundled agent only in its own branded builds (OO_BRANDING, which
+build_tools never defines), so the start page never learns the agent is
+there and draws no AI side panel; the AI chat menu item and the recent
+files' "add to AI chat" actions, which would otherwise ask to install
+the vendor's add-on, are removed.
+
+The AI Tools item opened the add-on's tool gallery, which Office does
+not have, so it is removed too.
+---
+ .../src/routes/home/components/RecentList.jsx | 21 +-------
+ common/loginpage/src/shell/Sidebar.jsx        | 53 ++-----------------
+ 2 files changed, 6 insertions(+), 68 deletions(-)
+
+diff --git a/common/loginpage/src/routes/home/components/RecentList.jsx b/common/loginpage/src/routes/home/components/RecentList.jsx
+index 5eb2d56..ac1c231 100644
+--- a/common/loginpage/src/routes/home/components/RecentList.jsx
++++ b/common/loginpage/src/routes/home/components/RecentList.jsx
+@@ -4,17 +4,13 @@ import { t } from "@/services/l10n";
+ import { ContextMenu, DropdownMenu } from "@/components";
+ import { usePngIcons } from "@/services/display";
+ import "./RecentList.styles.css";
+-import { appliedUseAi } from "@/services/settings-sync";
++// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: no "add to
++// AI chat" on recent files; Office's AI is the one inside documents.
+ 
+ function FileMenuItems(props) {
+   const Menu = props.menu;
+   return (
+     <>
+-      <Show when={props.model.islocal && appliedUseAi()}>
+-        <Menu.Item icon="#aichat20" onSelect={() => props.onAddToChat(props.model)}>
+-          {t("actAiChat")}
+-        </Menu.Item>
+-      </Show>
+       <Menu.Item icon="#gofolder" onSelect={() => exploreFile(props.model)}>
+         {t("menuFileExplore")}
+       </Menu.Item>
+@@ -94,19 +90,6 @@ function RecentRow(props) {
+           </div>
+         </Show>
+         <div class="col-actions">
+-          <Show when={props.model.islocal && appliedUseAi()}>
+-            <button
+-              class="btn-recents-tool aichat"
+-              onClick={(e) => {
+-                e.stopPropagation();
+-                props.onAddToChat(props.model);
+-              }}
+-            >
+-              <Show when={usePngIcons()} fallback={<svg class="icon"><use href="#aichat_rcl" /></svg>}>
+-                <i class="icon tool-icon aichat" />
+-              </Show>
+-            </button>
+-          </Show>
+           <button
+             class="btn-recents-tool pin"
+             classList={{ pinned: props.model.pinned }}
+diff --git a/common/loginpage/src/shell/Sidebar.jsx b/common/loginpage/src/shell/Sidebar.jsx
+index fe716f4..d10d7b3 100644
+--- a/common/loginpage/src/shell/Sidebar.jsx
++++ b/common/loginpage/src/shell/Sidebar.jsx
+@@ -1,17 +1,16 @@
+-import { For, Show, createSignal, createEffect } from "solid-js";
++import { For, createSignal, createEffect } from "solid-js";
+ import { useLocation } from "@solidjs/router";
+ import { t } from "@/services/l10n";
+ import { extPlugins, pluginRouteId } from "@/stores/ext-plugins";
+-import { openAbout, aboutVisible, addonInfo } from "@/services/about";
+-import { appliedUseAi } from "@/services/settings-sync";
++import { openAbout, aboutVisible } from "@/services/about";
+ import { MenuItem } from "./MenuItem.jsx";
+-import { command } from "@/sdk/bridge.js";
+-import { aichat, closeSidePanel, openFullAIPanel } from "@/stores/aichat.js";
+ import "./Sidebar.styles.css";
+ // Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Clouds menu
+ // item; Office connects to Market Canopy by itself.
+ // Modified by Market Canopy on 2026-10-27 for Market Canopy Office: the
+ // Market Canopy item opens its organizations (routes/clouds/MarketCanopy.jsx).
++// Modified by Market Canopy on 2026-10-27 for Market Canopy Office: no AI chat
++// or AI Tools items; Office's AI is the one inside documents.
+ import "@/stores/marketcanopy.js";
+ // import { sendPluginVisibility } from "@/services/ai-panel.js";
+ 
+@@ -21,56 +20,12 @@ export default function Sidebar() {
+   const [settingsHref, setSettingsHref] = createSignal("/settings/general");
+   createEffect(() => { if (isSettingsActive()) setSettingsHref(location.pathname); });
+ 
+-  const clickAiChat = (e) => {
+-    if (aichat.available) {
+-      if (addonInfo()?.restart === true) {
+-        e.preventDefault();
+-        command('addon:action', 'askrestart');
+-      } else if (addonInfo()?.compatible === false) {
+-        e.preventDefault();
+-        command('addon:action', 'incompatible');
+-      } else {
+-        closeSidePanel();
+-        openFullAIPanel();
+-        // sendPluginVisibility("expanded");
+-        // href handles navigation
+-      }
+-    } else {
+-      e.preventDefault();
+-      command('addon:action', 'intro');
+-    }
+-  };
+-
+-  const clickAiTools = (e) => {
+-    if (aichat.available) {
+-      if (addonInfo()?.restart === true) {
+-        e.preventDefault();
+-        command('addon:action', 'askrestart');
+-      } else if (addonInfo()?.compatible === false) {
+-        e.preventDefault();
+-        command('addon:action', 'incompatible');
+-      }
+-      // closeSidePanel();
+-      // href handles navigation
+-    } else {
+-      e.preventDefault();
+-      command('addon:action', 'intro');
+-    }
+-  };
+-
+   return (
+     <nav class="tool-menu">
+-      <Show when={appliedUseAi()}>
+-        <MenuItem href="/aichat" onClick={clickAiChat} icon="#aichat" label={t("actAiChat")} />
+-        <li class="menu-item separator" />
+-      </Show>
+       <MenuItem href="/" icon="#home" label={t("actHome")} end />
+       <MenuItem href="/open" icon="#folder" label={t("actOpenLocal")} />
+       <MenuItem action="templates" href="/templates" icon="#templates" label={t("actTemplates")} />
+       <MenuItem href="/clouds" icon="#cloud" label="Market Canopy" />
+-      <Show when={appliedUseAi()}>
+-        <MenuItem href="/aitools" onClick={clickAiTools} icon="#aitools" label={t("actAiTools", "AI Tools")} />
+-      </Show>
+       <For each={extPlugins()}>
+         {(plugin) => (
+           <MenuItem

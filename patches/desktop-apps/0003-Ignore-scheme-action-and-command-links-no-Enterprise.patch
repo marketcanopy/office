@@ -10,11 +10,16 @@ section 3.2), so a web page cannot install a plugin or run an app
 command. The Enterprise add-on is built out (build_tools defaults
 disable_addon_mode; macOS fastlane no longer defines USE_ADDON_MODE),
 and About no longer shows its commercial license.
+
+The start page is also never told that the bundled AI agent is
+integrated (upstream sends that whenever OO_BRANDING is defined, which
+Office's build defines), so it draws no AI agent panel and About lists
+no "ONLYOFFICE AI Tools"; Office's AI is the one inside documents.
 ---
  macos/ONLYOFFICE/AppDelegate.mm               | 37 ++++---------------
  .../src/cascapplicationmanagerwrapper.cpp     | 20 ++--------
- win-linux/src/windows/cmainwindow.cpp         |  3 +-
- 3 files changed, 13 insertions(+), 47 deletions(-)
+ win-linux/src/windows/cmainwindow.cpp         | 13 ++-----
+ 3 files changed, 15 insertions(+), 55 deletions(-)
 
 diff --git a/macos/ONLYOFFICE/AppDelegate.mm b/macos/ONLYOFFICE/AppDelegate.mm
 index 89d4411..fbad228 100644
@@ -122,22 +127,32 @@ index 9f27182..e463d05 100644
          } else {
              open_opts.wurl = arg;
 diff --git a/win-linux/src/windows/cmainwindow.cpp b/win-linux/src/windows/cmainwindow.cpp
-index 935e2e3..c0a90b7 100644
+index 935e2e3..25bc330 100644
 --- a/win-linux/src/windows/cmainwindow.cpp
 +++ b/win-linux/src/windows/cmainwindow.cpp
-@@ -1,5 +1,6 @@
+@@ -1,5 +1,7 @@
  /*
   * Copyright (C) Ascensio System SIA, 2009-2026
 + * Modified by Market Canopy on 2026-10-24 for Market Canopy Office: no Enterprise add-on license in About.
++ * Modified by Market Canopy on 2026-10-28 for Market Canopy Office: no AI agent on the start page.
   *
   * This program is a free software product. You can redistribute it and/or
   * modify it under the terms of the GNU Affero General Public License (AGPL)
-@@ -1185,7 +1186,7 @@ void CMainWindow::onDocumentReady(int uid)
-         jsn["name"]         = AI_TOOLS_CAPTION;
-         jsn["version"]      = VER_FILEVERSION_STR;
-         jsn["integrated"]   = true;
--        jsn["license"]      = QJsonObject({{"title","Commercial"},{"url", URL_BSL_LICENSE}});
-+        // Market Canopy Office ships no Enterprise add-on, so no commercial license is shown.
+@@ -1180,15 +1182,8 @@ void CMainWindow::onDocumentReady(int uid)
+             focus(); // TODO: move to app manager
+         });
  
-         AscAppManager::sendCommandTo(SEND_TO_ALL_START_PAGE, "addon:status", Utils::stringifyJson(jsn));
- #endif
+-#if !defined(USE_ADDON_MODE) && defined(OO_BRANDING)
+-        QJsonObject jsn;
+-        jsn["name"]         = AI_TOOLS_CAPTION;
+-        jsn["version"]      = VER_FILEVERSION_STR;
+-        jsn["integrated"]   = true;
+-        jsn["license"]      = QJsonObject({{"title","Commercial"},{"url", URL_BSL_LICENSE}});
+-
+-        AscAppManager::sendCommandTo(SEND_TO_ALL_START_PAGE, "addon:status", Utils::stringifyJson(jsn));
+-#endif
++        // Market Canopy Office: the start page is never told the AI agent is integrated, so it shows
++        // no AI panel and About lists no AI add-on; Office's AI is the one inside documents.
+     } else {
+         m_pTabs->applyPageLoadingStatus(uid, DOCUMENT_CHANGED_LOADING_FINISH);
+ 

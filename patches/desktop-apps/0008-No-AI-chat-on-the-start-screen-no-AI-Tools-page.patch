@@ -4,12 +4,11 @@ Date: Sun, 25 Oct 2026 00:00:00 +0000
 Subject: [PATCH] No AI chat on the start screen; no AI Tools page
 
 Office's AI is the AI plugin inside documents (ADR 0525 as amended on
-2026-10-27): the start screen offers no AI chat. Upstream shows the
-bundled agent only in its own branded builds (OO_BRANDING, which
-build_tools never defines), so the start page never learns the agent is
-there and draws no AI side panel; the AI chat menu item and the recent
-files' "add to AI chat" actions, which would otherwise ask to install
-the vendor's add-on, are removed.
+2026-10-27): the start screen offers no AI chat. Patch 0003 keeps the
+start page from learning the agent is there, so it draws no AI side
+panel; the AI chat menu item and the recent files' "add to AI chat"
+actions, which would otherwise ask to install the vendor's add-on, are
+removed.
 
 The AI Tools item opened the add-on's tool gallery, which Office does
 not have, so it is removed too.
